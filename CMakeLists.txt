@@ -25,6 +25,7 @@ add_executable(${PROJECT_NAME}
     ${CMAKE_CURRENT_LIST_DIR}/lib/hw_config.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/pcg_basic.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/usb_descriptors.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/flash.c
 )
 
 
