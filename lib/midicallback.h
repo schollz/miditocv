@@ -24,6 +24,32 @@ void midi_note_off(int note) {
 #endif
 }
 
+bool get_sysex_param_float_value(const char *param_name, const uint8_t *sysex,
+                                 size_t length, float *out_value) {
+  size_t param_len = strlen(param_name);
+
+  // Check if the SysEx message is long enough and contains the parameter name
+  if (length > param_len && memcmp(sysex, param_name, param_len) == 0) {
+    // Allocate a temporary buffer for the float part
+    char value_str[length - param_len + 1];
+
+    // Copy the float part into the buffer
+    for (size_t i = param_len; i < length; i++) {
+      value_str[i - param_len] = sysex[i];
+    }
+
+    // Null-terminate the string
+    value_str[length - param_len] = '\0';
+
+    // Convert the extracted string to a float and store it in out_value
+    *out_value = strtof(value_str, NULL);
+    return true;
+  }
+
+  // Return false if the parameter name is not found or the message is invalid
+  return false;
+}
+
 void midi_sysex_callback(uint8_t *sysex, int length) {
 #ifdef DEBUG_MIDI
   // build a string from the sysex buffer
@@ -39,11 +65,12 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
     sysex_str[j + 7] = sysex[j];
   }
   sysex_str[length + 7] = '\n';
-
-  // printf("sysex: %s\n", sysex_str);
   send_buffer_as_sysex(sysex_str, length + 7 + 1);
-  // printf("\n");
 #endif
+  float val;
+  if (get_sysex_param_float_value("hello", sysex, length, &val)) {
+    printf("hello: %f\n", val);
+  }
 }
 
 void midi_note_on(int note, int velocity) {
