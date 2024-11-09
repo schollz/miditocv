@@ -25,7 +25,6 @@ add_executable(${PROJECT_NAME}
     ${CMAKE_CURRENT_LIST_DIR}/lib/hw_config.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/pcg_basic.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/usb_descriptors.c
-    ${CMAKE_CURRENT_LIST_DIR}/lib/flash.c
 )
 
 
@@ -70,7 +69,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     SDCARD_USE_CD=false
     SDCARD_CD_GPIO=21 # not used...
     PICO_XOSC_STARTUP_DELAY_MULTIPLIER=4
-    DO_OVERCLOCK=1
+    # DO_OVERCLOCK=1
 
     # pins
     SDCARD_CMD_GPIO=11
@@ -88,7 +87,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     WS2812_NUM_LEDS=8
     
     # settings
-    INCLUDE_MIDI=1
+    # INCLUDE_MIDI=1
 
     # debugging
     DEBUG_MIDI=1
@@ -96,18 +95,18 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     USBD_PID=0x1836
 )
 
-# uncomment these lines to include midi
-target_link_libraries(${PROJECT_NAME} 
-    tinyusb_device
-    tinyusb_board
-)
-pico_enable_stdio_usb(${PROJECT_NAME} 0)
-pico_enable_stdio_uart(${PROJECT_NAME} 1)
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-
-# # uncomment these lines to have normal USB
-# pico_enable_stdio_usb(${PROJECT_NAME} 1)
+# # uncomment these lines to include midi
+# target_link_libraries(${PROJECT_NAME} 
+#     tinyusb_device
+#     tinyusb_board
+# )
+# pico_enable_stdio_usb(${PROJECT_NAME} 0)
 # pico_enable_stdio_uart(${PROJECT_NAME} 1)
+# target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+
+# uncomment these lines to have normal USB
+pico_enable_stdio_usb(${PROJECT_NAME} 1)
+pico_enable_stdio_uart(${PROJECT_NAME} 1)
 
 
 pico_add_extra_outputs(${PROJECT_NAME})

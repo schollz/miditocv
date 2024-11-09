@@ -55,7 +55,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/adsr.h"
 #include "lib/dac.h"
 #include "lib/filterexp.h"
-#include "lib/flash.h"
+#include "lib/flashmem.h"
 #include "lib/knob_change.h"
 #include "lib/mcp3208.h"
 #include "lib/memusage.h"
@@ -79,35 +79,6 @@ const uint8_t *flash_target_contents =
     (const uint8_t *)(XIP_BASE +
                       FLASH_TARGET_OFFSET);  //++ Pointer pointing at the Flash
                                              // Address Location
-
-void flash_task()  //++ Example Function to perform Flash Operations
-{
-  uint32_t counter0 = 0;  //++ Declaration of Variables to be stored
-  uint32_t counter1 = 100;
-  uint32_t counter2 = 1000;
-
-  uint32_t flash_data[FLASH_PAGE_SIZE];  //++ Declaring an array of size 256 to
-                                         // store the variables
-
-  counter0++;
-  counter1++;
-  counter2++;
-  flash_data[0] = counter0;  //++ Storing variables on respective array indexes
-  flash_data[1] = counter1;
-  flash_data[2] = counter2;
-  pico_flash_read(FLASH_TARGET_OFFSET,
-                  3);  //++ Flash operation to read 3 Flash Addresses before
-                       // erasing and storing new data
-  pico_flash_erase(
-      FLASH_TARGET_OFFSET);  //++ Flash operation to erase entire flash page (
-                             // 256 locations together )
-  pico_flash_read(FLASH_TARGET_OFFSET,
-                  3);  //++ Flash operation to read 3 Flash Addresses after
-                       // erasing entire page
-  pico_flash_write(FLASH_TARGET_OFFSET, flash_data,
-                   3);  //++ Flash operation to write the 3 Flash Address with
-                        // the array containg the variables
-}
 
 int main() {
   // Set PLL_USB 96MHz
@@ -198,12 +169,11 @@ int main() {
 #endif
 
     ct = to_ms_since_boot(get_absolute_time());
-    if (ct - ct_last_print > 1000) {
+    if (ct - ct_last_print > 1200) {
       ct_last_print = ct;
       uint32_t ct2 = to_ms_since_boot(get_absolute_time());
       print_memory_usage();
-      flash_task();
-      // printf_sysex("time: %d\n", ct2);
+      flash_mem_test();
     }
 
     // // read knobs
