@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 3 Scenes and Outputs</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <link rel="stylesheet" href="/static/tiny-brutalism.css">
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .inactive {
+      color: gray;
+      background-color: #f0f0f0;
+    }
+
+    .active {
+      font-weight: bold;
+      color: white;
+      background-color: #007bff;
+    }
+
+    .button-row {
+      margin-bottom: 10px;
+      /* proportion equally across the row */
+      display: flex;
+      justify-content: space-evenly;
+    }
+
+    .output-details {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="app">
+    <!-- Scene Selection Dropdown -->
+    <div class="dropdown">
+      <label for="scene-select">Select Scene:</label>
+      <select id="scene-select" v-model="current_scene">
+        <option v-for="(scene, index) in scenes" :key="index" :value="index">
+          Scene {{ index + 1 }}
+        </option>
+      </select>
+    </div>
+
+
+    <!-- Output Selection Buttons -->
+    <!-- label for button row -->
+    <h3>Outputs</h3>
+    <div class="button-row">
+      <button v-for="(output, index) in scenes[current_scene].outputs" :key="index"
+        :class="[current_output !== index && 'inactive', current_output === index && 'active']"
+        @click="select_output(index)">
+        {{ index + 1 }}
+      </button>
+    </div>
+
+    <!-- Output Details -->
+    <div class="output-details" v-if="current_output !== null">
+      <div class="row">
+        <div class="col col-3 fr">
+          <label for="mode-select">Select Mode:</label>
+        </div>
+        <div class="col col-9">
+          <select id="mode-select" v-model="selected_output.mode">
+            <option value=0>Manual</option>
+            <option value=0>Pitch</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col col-6">
+          <label>
+            Slew rate:
+            <input type="number" v-model.number="selected_output.slew_rate" />
+          </label>
+        </div>
+
+      </div>
+      <div v-if="Number(selected_output.mode) === 0" class="row">
+        <div class="col col-6">
+          <label>
+            Min Voltage:
+            <input type="number" v-model.number="selected_output.min_voltage" />
+          </label>
+        </div>
+        <div class="col col-6">
+          <label>
+            Max Voltage:
+            <input type="number" v-model.number="selected_output.max_voltage" />
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, watch } = Vue;
+
+    const app = createApp({
+      setup() {
+        // Initialize scenes and outputs
+        const scenes = ref(
+          Array.from({ length: 8 }, () => ({
+            outputs: Array.from({ length: 8 }, () => ({
+              mode: 0,
+              min_voltage: 0,
+              max_voltage: 5,
+            })),
+          }))
+        );
+
+        const current_scene = ref(0);
+        const current_output = ref(0);
+
+        // Computed property to get the selected output
+        const selected_output = computed(() => {
+          return scenes.value[current_scene.value].outputs[current_output.value];
+        });
+
+
+        // Debounce function
+        function debounce(fn, delay) {
+          let timeout;
+          return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => fn(...args), delay);
+          };
+        }
+
+        // Create a map to store debounce timers for each output
+        const debounceMap = new Map();
+
+        // Helper function to get a unique key for each output
+        function getDebounceKey(sceneIndex, outputIndex, property) {
+          return `${sceneIndex}-${outputIndex}-${property}`;
+        }
+
+        // Function to log changes with per-output debouncing
+        function logChange(sceneIndex, outputIndex, property, value) {
+          const key = getDebounceKey(sceneIndex, outputIndex, property);
+
+          // Create a debounced logger if it doesn't exist
+          if (!debounceMap.has(key)) {
+            debounceMap.set(
+              key,
+              debounce((sceneIdx, outputIdx, prop, val) => {
+                console.log(`scene[${sceneIdx}].output[${outputIdx}].${prop} = ${val}`);
+              }, 1000)
+            );
+          }
+
+          // Call the debounced logger with the current change
+          debounceMap.get(key)(sceneIndex, outputIndex, property, value);
+        }
+
+        // Watcher with per-output debouncing
+        watch(
+          () => JSON.stringify(scenes.value),
+          (newVal, oldVal) => {
+            const parseNew = JSON.parse(newVal);
+            const parseOld = JSON.parse(oldVal);
+
+            // Iterate through each scene and output
+            parseNew.forEach((scene, sceneIndex) => {
+              scene.outputs.forEach((output, outputIndex) => {
+                const oldOutput = parseOld[sceneIndex]?.outputs[outputIndex];
+
+                // Check for changes in "mode"
+                if (output.mode !== oldOutput?.mode) {
+                  logChange(sceneIndex, outputIndex, 'mode', output.mode);
+                }
+
+                // Check for changes in "min_voltage"
+                if (output.min_voltage !== oldOutput?.min_voltage) {
+                  logChange(sceneIndex, outputIndex, 'min_voltage', output.min_voltage);
+                }
+
+                // Check for changes in "max_voltage"
+                if (output.max_voltage !== oldOutput?.max_voltage) {
+                  logChange(sceneIndex, outputIndex, 'max_voltage', output.max_voltage);
+                }
+              });
+            });
+          },
+          { deep: true }
+        );
+
+        // Functions to update the current scene and output
+        const select_scene = (index) => {
+          current_scene.value = index;
+        };
+
+        const select_output = (index) => {
+          current_output.value = index;
+        };
+
+        return {
+          scenes,
+          current_scene,
+          current_output,
+          selected_output,
+          select_scene,
+          select_output,
+        };
+      },
+    });
+
+    app.mount('#app');
+  </script>
+</body>
+
+</html>

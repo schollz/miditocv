@@ -35,7 +35,9 @@ uint32_t send_text_as_sysex(const char* text) {
   sysex_data[text_length + 1] = 0xF7;  // End of SysEx
 
   // Call the stream write function with the SysEx message
-  return tud_midi_n_stream_write(0, 0, sysex_data, sizeof(sysex_data));
+  uint32_t v = tud_midi_n_stream_write(0, 0, sysex_data, sizeof(sysex_data));
+  sleep_ms(1);
+  return v;
 }
 
 void send_midi_clock() {
