@@ -29,8 +29,6 @@ add_executable(${PROJECT_NAME}
 
 
 # Tell CMake where to find other source code
-add_subdirectory(lib/my_pico_audio)
-add_subdirectory(lib/my_pico_audio_i2s)
 add_subdirectory(lib/sdio build)
 
 # generate pio

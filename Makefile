@@ -49,7 +49,6 @@ clean:
 	rm -rf build
 	rm -rf *.wav
 	rm -rf lib/biquad.h
-	rm -rf pico-extras
 
 cloc:
 	cloc --exclude-list-file=dev/.clocignore --exclude-lang="make,CMake,D,Markdown,JSON,INI,Bourne Shell,TOML,TypeScript,YAML,Assembly" *
