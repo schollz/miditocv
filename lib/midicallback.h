@@ -24,6 +24,28 @@ void midi_note_off(int note) {
 #endif
 }
 
+void midi_sysex_callback(uint8_t *sysex, int length) {
+#ifdef DEBUG_MIDI
+  // build a string from the sysex buffer
+  char sysex_str[length + 2 + 7];
+  sysex_str[0] = 's';
+  sysex_str[1] = 'y';
+  sysex_str[2] = 's';
+  sysex_str[3] = 'e';
+  sysex_str[4] = 'x';
+  sysex_str[5] = ':';
+  sysex_str[6] = ' ';
+  for (int j = 0; j < length; j++) {
+    sysex_str[j + 7] = sysex[j];
+  }
+  sysex_str[length + 7] = '\n';
+
+  // printf("sysex: %s\n", sysex_str);
+  send_buffer_as_sysex(sysex_str, length + 7 + 1);
+  // printf("\n");
+#endif
+}
+
 void midi_note_on(int note, int velocity) {
 #ifdef DEBUG_MIDI
   printf("note_on: %d\n", note);

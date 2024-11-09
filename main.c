@@ -29,10 +29,6 @@ bool usb_midi_present = false;
 #include "lib/midi_comm.h"
 #endif
 
-// utilities
-typedef void (*callback_fn_uint8_t_uint32_t)(uint8_t, uint32_t);
-typedef void (*callback_fn_uint8_t)(uint8_t);
-
 // utility functions
 #define util_clamp(x, a, b) ((x) > (b) ? (b) : ((x) < (a) ? (a) : (x)))
 
@@ -160,8 +156,8 @@ int main() {
   while (true) {
 #ifdef INCLUDE_MIDI
     tud_task();
-    midi_comm_task(NULL, midi_note_on, midi_note_off, midi_start, midi_continue,
-                   midi_stop, midi_timing);
+    midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off, midi_start,
+                   midi_continue, midi_stop, midi_timing);
 #endif
 
     ct = to_ms_since_boot(get_absolute_time());

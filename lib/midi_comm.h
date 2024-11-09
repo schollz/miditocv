@@ -9,6 +9,7 @@ typedef void (*callback_int32)(int32_t);
 typedef void (*callback_uint8_uint8)(uint8_t, uint8_t);
 typedef void (*callback_uint8)(uint8_t);
 typedef void (*callback_uint16)(uint16_t);
+typedef void (*callback_uint8_buffer)(uint8_t* buffer, int length);
 typedef void (*callback_void)();
 
 uint32_t send_buffer_as_sysex(char* buffer, uint32_t bufsize) {
@@ -114,14 +115,14 @@ int printf_sysex(const char* format, ...) {
 typedef void (*midi_comm_callback)(uint8_t, uint8_t, uint8_t, uint8_t);
 
 uint8_t midi_buffer[32];
-uint8_t midi_sysex[128];
+uint8_t midi_sysex_buffer[128];
 bool midi_sysex_active = false;
 uint8_t midi_sysex_index = 0;
 
-void midi_comm_task(midi_comm_callback callback, callback_int_int midi_note_on,
-                    callback_int midi_note_off, callback_void midi_start,
-                    callback_void midi_continue, callback_void midi_stop,
-                    callback_void midi_timing) {
+void midi_comm_task(callback_uint8_buffer sysex_callback,
+                    callback_int_int midi_note_on, callback_int midi_note_off,
+                    callback_void midi_start, callback_void midi_continue,
+                    callback_void midi_stop, callback_void midi_timing) {
   uint32_t bytes_read = 0;
   if (tud_midi_n_available(0, 0)) {
     bytes_read = tud_midi_n_stream_read(0, 0, midi_buffer, 3);
@@ -131,9 +132,9 @@ void midi_comm_task(midi_comm_callback callback, callback_int_int midi_note_on,
   if (bytes_read == 0) {
     return;
   }
-  for (int i = 0; i < bytes_read; i++) {
-    printf_sysex("[%d]: %x\n", i, midi_buffer[i]);
-  }
+  // for (int i = 0; i < bytes_read; i++) {
+  //   printf_sysex("[%d]: %x\n", i, midi_buffer[i]);
+  // }
 
   for (int i = 0; i < bytes_read; i++) {
     if (midi_buffer[i] == 0xF0) {
@@ -141,21 +142,12 @@ void midi_comm_task(midi_comm_callback callback, callback_int_int midi_note_on,
       midi_sysex_index = 0;
     } else if (midi_buffer[i] == 0xF7) {
       midi_sysex_active = false;
-      // build a string from the sysex buffer
-      char sysex_str[midi_sysex_index + 1];
-      for (int j = 0; j < midi_sysex_index; j++) {
-        sysex_str[j] = midi_sysex[j];
+      if (sysex_callback != NULL) {
+        sysex_callback(midi_sysex_buffer, midi_sysex_index);
       }
-      sysex_str[midi_sysex_index] = '\0';
-      printf_sysex("sysex: %s\n", sysex_str);
-      // TODO: handle callback
-      //   const char* str = "hello";
-      //   if (memcmp(midi_sysex, str, strlen(str)) == 0) {
-      //     send_text_as_sysex("world\n");
-      //   }
       return;
     } else if (midi_sysex_active) {
-      midi_sysex[midi_sysex_index] = midi_buffer[i];
+      midi_sysex_buffer[midi_sysex_index] = midi_buffer[i];
       midi_sysex_index++;
     }
   }
@@ -163,54 +155,54 @@ void midi_comm_task(midi_comm_callback callback, callback_int_int midi_note_on,
     return;
   }
 
-  //   if (midi_buffer[0] == 0xf8) {
-  //     // timing received
-  //     usb_midi_present = true;
-  //     if (midi_timing != NULL) {
-  //       midi_timing();
-  //     }
-  //     return;
-  //   } else if (midi_buffer[0] == 0xfa) {
-  //     // start received
-  //     usb_midi_present = true;
-  //     if (midi_start != NULL) {
-  //       midi_start();
-  //     }
-  //     return;
-  //   } else if (midi_buffer[0] == 0xfb) {
-  //     // continue received
-  //     usb_midi_present = true;
-  //     if (midi_continue != NULL) {
-  //       midi_continue();
-  //     }
-  //     return;
-  //   } else if (midi_buffer[0] == 0xfc) {
-  //     // stop received
-  //     usb_midi_present = true;
-  //     if (midi_stop != NULL) {
-  //       midi_stop();
-  //     }
-  //     return;
-  //   } else if (midi_buffer[0] == 0x80 && bytes_read > 1) {
-  //     // note off received
-  //     usb_midi_present = true;
-  //     if (midi_note_off != NULL) {
-  //       midi_note_off(midi_buffer[1]);
-  //     }
-  //     return;
-  //   } else if (midi_buffer[0] == 0x90 && bytes_read > 2) {
-  //     // note on received
-  //     usb_midi_present = true;
-  //     if (midi_note_on != NULL) {
-  //       if (bytes_read == 3) {
-  //         // TODO: for some reason this is not working
-  //         midi_note_on(midi_buffer[1], midi_buffer[2]);
-  //       } else {
-  //         midi_note_on(midi_buffer[1], 0);
-  //       }
-  //     }
-  //     return;
-  //   }
+  if (midi_buffer[0] == 0xf8) {
+    // timing received
+    usb_midi_present = true;
+    if (midi_timing != NULL) {
+      midi_timing();
+    }
+    return;
+  } else if (midi_buffer[0] == 0xfa) {
+    // start received
+    usb_midi_present = true;
+    if (midi_start != NULL) {
+      midi_start();
+    }
+    return;
+  } else if (midi_buffer[0] == 0xfb) {
+    // continue received
+    usb_midi_present = true;
+    if (midi_continue != NULL) {
+      midi_continue();
+    }
+    return;
+  } else if (midi_buffer[0] == 0xfc) {
+    // stop received
+    usb_midi_present = true;
+    if (midi_stop != NULL) {
+      midi_stop();
+    }
+    return;
+  } else if (midi_buffer[0] == 0x80 && bytes_read > 1) {
+    // note off received
+    usb_midi_present = true;
+    if (midi_note_off != NULL) {
+      midi_note_off(midi_buffer[1]);
+    }
+    return;
+  } else if (midi_buffer[0] == 0x90 && bytes_read > 2) {
+    // note on received
+    usb_midi_present = true;
+    if (midi_note_on != NULL) {
+      if (bytes_read == 3) {
+        // TODO: for some reason this is not working
+        midi_note_on(midi_buffer[1], midi_buffer[2]);
+      } else {
+        midi_note_on(midi_buffer[1], 0);
+      }
+    }
+    return;
+  }
 
   if (bytes_read == 3) {
     usb_midi_present = true;
@@ -227,9 +219,6 @@ void midi_comm_task(midi_comm_callback callback, callback_int_int midi_note_on,
       reset_usb_boot(0, 0);
     } else if (status == 176 && channel == 0 && note == 1) {
       send_text_as_sysex("version=v6.2.1");
-    }
-    if (callback != NULL) {
-      callback(status, channel, note, velocity);
     }
   }
 }
