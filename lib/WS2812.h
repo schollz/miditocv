@@ -25,9 +25,8 @@
 #ifndef WS2812_H
 #define WS2812_H
 
+#define NUM_LEDS_MAX 32
 #include "WS2812.pio.h"
-
-#define NUM_LEDS 18
 
 const uint8_t ws2812_brightness_values[16] = {
     0, 1, 2, 3, 4, 6, 10, 15, 21, 30, 39, 51, 64, 80, 97, 117,
@@ -40,13 +39,15 @@ typedef struct WS2812 {
   PIO pio;
   uint sm;
   uint8_t bytes[4];
-  uint32_t data[NUM_LEDS];
+  uint32_t data[NUM_LEDS_MAX];
   uint8_t brightness;
+  uint8_t num_leds;
 } WS2812;
 
-WS2812 *WS2812_new(uint pin, PIO pio, uint sm) {
+WS2812 *WS2812_new(uint pin, PIO pio, uint sm, uint8_t num_leds) {
   WS2812 *ws;
   ws = malloc(sizeof(WS2812));
+  ws->num_leds = num_leds;
   ws->pin = pin;
   ws->pio = pio;
   ws->sm = sm;
@@ -74,9 +75,17 @@ void WS2812_set_brightness(WS2812 *ws, uint8_t brightness) {
   return;
 }
 
+enum WS2812_Color {
+  WS2812_RED,
+  WS2812_GREEN,
+  WS2812_BLUE,
+  WS2812_YELLOW,
+  WS2812_MAGENTA,
+};
+
 void WS2812_fill(WS2812 *ws, int index, uint8_t red, uint8_t green,
                  uint8_t blue) {
-  if (index < 0 || index >= NUM_LEDS) {
+  if (index < 0 || index >= ws->num_leds) {
     return;  // Safety check to avoid overflow
   }
   // scale by brightness level
@@ -107,8 +116,42 @@ void WS2812_fill(WS2812 *ws, int index, uint8_t red, uint8_t green,
   return;
 }
 
+void WS2812_set_color(WS2812 *ws, uint8_t index, enum WS2812_Color color,
+                      uint8_t brightness) {
+  if (index >= ws->num_leds) return;
+  uint8_t r = 0;
+  uint8_t g = 0;
+  uint8_t b = 0;
+  switch (color) {
+    case WS2812_RED:
+      r = 201;
+      break;
+    case WS2812_GREEN:
+      r = 50;
+      g = 174;
+      break;
+    case WS2812_BLUE:
+      g = 56;
+      b = 255;
+      break;
+    case WS2812_YELLOW:
+      r = 253;
+      g = 166;
+      break;
+    case WS2812_MAGENTA:
+      r = 150;
+      b = 255;
+      break;
+  }
+  r = (r * brightness) / 255;
+  g = (g * brightness) / 255;
+  b = (b * brightness) / 255;
+  WS2812_fill(ws, index, r, g, b);
+  return;
+}
+
 void WS2812_show(WS2812 *ws) {
-  for (int i = 0; i < NUM_LEDS; i++) {
+  for (int i = 0; i < ws->num_leds; i++) {
     pio_sm_put_blocking(ws->pio, ws->sm, ws->data[i]);
   }
   return;

@@ -21,9 +21,12 @@
 #include "pico/stdlib.h"
 #include "pico/types.h"
 
+bool usb_midi_present = false;
 #ifdef INCLUDE_MIDI
 #include "bsp/board.h"
 #include "tusb.h"
+//
+#include "lib/midi_comm.h"
 #endif
 
 // utilities
@@ -51,14 +54,27 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "my_debug.h"
 #include "sd_card.h"
 //
+//
+#include "lib/WS2812.h"
+#include "lib/adsr.h"
+#include "lib/dac.h"
 #include "lib/filterexp.h"
 #include "lib/knob_change.h"
+#include "lib/mcp3208.h"
 #include "lib/memusage.h"
 #include "lib/pcg_basic.h"
 #include "lib/random.h"
 #include "lib/sdcard.h"
 // globals
 float g_bpm = 120.0;
+DAC *dac;
+WS2812 *ws2812;
+ADSR *adsr[8];
+
+#ifdef INCLUDE_MIDI
+#include "lib/midi_comm.h"
+#include "lib/midicallback.h"
+#endif
 
 int main() {
   // Set PLL_USB 96MHz
@@ -102,6 +118,10 @@ int main() {
   gpio_pull_up(I2C1_SDA_PIN);
   gpio_pull_up(I2C1_SCL_PIN);
 
+#ifdef INCLUDE_MIDI
+  tusb_init();
+#endif
+
   // Implicitly called by disk_initialize,
   // but called here to set up the GPIOs
   // before enabling the card detect interrupt:
@@ -110,28 +130,58 @@ int main() {
   // initialize random library
   random_initialize();
 
-  // initialize SD card
-  printf("[main]: initializing sd card\n");
-  for (uint8_t i = SDCARD_CMD_GPIO - 1; i < SDCARD_D0_GPIO + 5; i++) {
-    gpio_pull_up(i);
-  }
-  while (!run_mount()) {
-    sleep_ms(10);
-  }
-  big_file_test("test.bin", 2, 0);  // perform read/write test
+  // // initialize MCP3208
+  // MCP3208 *mcp3208 =
+  //     MCP3208_malloc(spi0, PIN_SPI_CSN, PIN_SPI_CLK, PIN_SPI_RX, PIN_SPI_TX);
+
+  // // initialize WS2812
+  // ws2812 = WS2812_new(WS2812_PIN, pio0, WS2812_SM, WS2812_NUM_LEDS);
+  // WS2812_set_brightness(ws2812, 50);
+  // for (int i = 0; i < WS2812_NUM_LEDS; i++) {
+  //   WS2812_fill(ws2812, i, 150, 0, 255);
+  // }
+  // WS2812_show(ws2812);
+
+  // // initialize SD card
+  // printf("[main]: initializing sd card\n");
+  // for (uint8_t i = SDCARD_CMD_GPIO - 1; i < SDCARD_D0_GPIO + 5; i++) {
+  //   gpio_pull_up(i);
+  // }
+  // if (!run_mount()) {
+  //   sleep_ms(1000);
+  //   printf("[main]: failed to mount sd card\n");
+  // } else {
+  //   big_file_test("test.bin", 2, 0);  // perform read/write test
+  // }
 
   uint32_t ct = to_ms_since_boot(get_absolute_time());
-  uint32_t ct_last_knob = ct;
-  uint32_t ct_last_button = ct;
   uint32_t ct_last_print = ct;
   uint32_t ct_next_bpm = ct + (60.0 / g_bpm * 1000);
   while (true) {
+#ifdef INCLUDE_MIDI
+    tud_task();
+    midi_comm_task(NULL, midi_note_on, midi_note_off, midi_start, midi_continue,
+                   midi_stop, midi_timing);
+#endif
+
     ct = to_ms_since_boot(get_absolute_time());
     if (ct - ct_last_print > 1000) {
       ct_last_print = ct;
       uint32_t ct2 = to_ms_since_boot(get_absolute_time());
       print_memory_usage();
+      // printf_sysex("time: %d\n", ct2);
     }
+
+    // // read knobs
+    // for (uint8_t i = 0; i < 8; i++) {
+    //   uint16_t val = MCP3208_read(mcp3208, i, false);
+    //   printf("Knob %d: %d\n", i, val);
+    // }
+
+    // if (ct > ct_next_bpm) {
+    //   ct_next_bpm = ct + (60.0 / g_bpm * 1000);
+    //   printf("BPM: %f\n", g_bpm);
+    // }
     sleep_us(1);
   }
 }

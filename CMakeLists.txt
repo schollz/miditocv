@@ -69,32 +69,44 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     SDCARD_USE_CD=false
     SDCARD_CD_GPIO=21 # not used...
     PICO_XOSC_STARTUP_DELAY_MULTIPLIER=4
+    DO_OVERCLOCK=1
 
-    # weact
+    # pins
     SDCARD_CMD_GPIO=11
     SDCARD_D0_GPIO=12 
-    I2C0_SDA_PIN=20
-    I2C0_SCL_PIN=21
-    I2C1_SDA_PIN=0
-    I2C1_SCL_PIN=1
+    I2C0_SDA_PIN=4
+    I2C0_SCL_PIN=5
+    I2C1_SDA_PIN=2
+    I2C1_SCL_PIN=3
+    PIN_SPI_CSN=17
+    PIN_SPI_CLK=18
+    PIN_SPI_RX=16
+    PIN_SPI_TX=19
+    WS2812_PIN=7
+    WS2812_SM=2
+    WS2812_NUM_LEDS=8
+    
+    # settings
+    INCLUDE_MIDI=1
 
-    DO_OVERCLOCK=1
+    # debugging
+    DEBUG_MIDI=1
 
     USBD_PID=0x1836
 )
 
-# # uncomment these lines to include midi
-# target_link_libraries(${PROJECT_NAME} 
-#     tinyusb_device
-#     tinyusb_board
-# )
-# pico_enable_stdio_usb(${PROJECT_NAME} 0)
-# pico_enable_stdio_uart(${PROJECT_NAME} 1)
-# target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-
-# uncomment these lines to have normal USB
-pico_enable_stdio_usb(${PROJECT_NAME} 1)
+# uncomment these lines to include midi
+target_link_libraries(${PROJECT_NAME} 
+    tinyusb_device
+    tinyusb_board
+)
+pico_enable_stdio_usb(${PROJECT_NAME} 0)
 pico_enable_stdio_uart(${PROJECT_NAME} 1)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+
+# # uncomment these lines to have normal USB
+# pico_enable_stdio_usb(${PROJECT_NAME} 1)
+# pico_enable_stdio_uart(${PROJECT_NAME} 1)
 
 
 pico_add_extra_outputs(${PROJECT_NAME})
