@@ -7,6 +7,36 @@ function addToMidiConsole(message) {
     console.log('MIDI message:', message);
 }
 
+let resolveExternalTrigger; // This will hold the resolve function for the external trigger promise
+
+// Function that simulates an external trigger
+function externalTrigger() {
+    if (resolveExternalTrigger) {
+        resolveExternalTrigger(); // Trigger the promise when called
+        resolveExternalTrigger = null; // Reset to avoid double triggering
+    }
+}
+
+// Function that waits for the external trigger with a maximum wait time
+function waitForTriggerOrTimeout(maxWaitTime) {
+    return new Promise((resolve, reject) => {
+        // Create a new promise for the external trigger
+        const externalPromise = new Promise(resolveTrigger => {
+            resolveExternalTrigger = resolveTrigger; // Assign the resolve function
+        });
+
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, rejectTimeout) => {
+            setTimeout(() => {
+                rejectTimeout(new Error('Timeout exceeded'));
+            }, maxWaitTime);
+        });
+
+        // Use Promise.race to wait for either the trigger or the timeout
+        Promise.race([externalPromise, timeoutPromise]).then(resolve).catch(reject);
+    });
+}
+
 async function updateWithoutWatcher(scene_num, output_num, param, value) {
     disableWatchers = true;
     vm.scenes[scene_num].outputs[output_num][param] = value;
@@ -21,14 +51,22 @@ async function updateLocalScene(scene_num) {
     scenes_updated[scene_num] = true;
     disableWatchers = true;
     // get all parameters
+
     for (let output_num = 0; output_num < 8; output_num++) {
         for (let param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
             let value = vm.scenes[scene_num].outputs[output_num][param];
             sysex_string = `${scene_num}_${output_num}_${param.replace(/_/g, '')}_-10.0`;
-            console.log(`[sending_sysex] ${sysex_string}`);
-            send_sysex(sysex_string);
-            await new Promise(resolve => setTimeout(resolve, 10));
-            await Vue.nextTick();
+            for (let i = 0; i < 3; i++) {
+                try {
+                    console.log(`[sending_sysex] ${sysex_string}`);
+                    send_sysex(sysex_string);
+                    await waitForTriggerOrTimeout(200);
+                    await Vue.nextTick();
+                    break;
+                } catch (error) {
+                    console.log('Retrying the current iteration due to timeout...');
+                }
+            }
         }
     }
     disableWatchers = false;
@@ -60,6 +98,7 @@ function setupMidiInputListener() {
                     updateLocalScene(scene_num);
                 } else if (fields.length == 4) {
                     // check if field [3] is a parameter
+                    externalTrigger();
                     console.log(`[sysex_receieved] ${fields[0]} ${fields[1]} ${fields[2]} ${fields[3]}`);
                     let scene_num = Number(fields[0]);
                     let output_num = Number(fields[1]);
@@ -341,7 +380,7 @@ const app = createApp({
                         sysex_string = `${sceneIdx}_${outputIdx}_${prop.replace(/_/g, '')}_${val.toPrecision(4)}`;
                         console.log(`[sending_sysex] ${sysex_string}`);
                         send_sysex(sysex_string);
-                    }, 150)
+                    }, 300)
                 );
             }
 
