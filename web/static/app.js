@@ -1,6 +1,7 @@
 const { createApp, ref, computed, watch } = Vue;
 var vm;
 let disableWatchers = false;
+let scenes_updated = [false, false, false, false, false, false, false, false];
 function addToMidiConsole(message) {
     console.log('MIDI message:', message);
 }
@@ -12,23 +13,22 @@ async function updateWithoutWatcher(scene_num, output_num, param, value) {
     disableWatchers = false;
 }
 
-async function onConnection() {
+async function updateLocalScene(scene_num) {
+    if (scenes_updated[scene_num]) {
+        return;
+    }
+    scenes_updated[scene_num] = true;
     disableWatchers = true;
     // get all parameters
-    for (let scene_num = 0; scene_num < 8; scene_num++) {
-        for (let output_num = 0; output_num < 8; output_num++) {
-            for (let param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
-                let value = vm.scenes[scene_num].outputs[output_num][param];
-                sysex_string = `${scene_num}_${output_num}_${param.replace(/_/g, '')}_-10.0`;
-                console.log(`[sending_sysex] ${sysex_string}`);
-                send_sysex(sysex_string);
-                // wait 10 ms
-                await new Promise(resolve => setTimeout(resolve, 10));
-                await Vue.nextTick();
-            }
-            break;
+    for (let output_num = 0; output_num < 8; output_num++) {
+        for (let param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
+            let value = vm.scenes[scene_num].outputs[output_num][param];
+            sysex_string = `${scene_num}_${output_num}_${param.replace(/_/g, '')}_-10.0`;
+            console.log(`[sending_sysex] ${sysex_string}`);
+            send_sysex(sysex_string);
+            await new Promise(resolve => setTimeout(resolve, 1));
+            await Vue.nextTick();
         }
-        break;
     }
     disableWatchers = false;
 }
@@ -92,6 +92,7 @@ function setupMidi() {
                 if (output.name.includes("yoctocore") || output.name.includes("zeptocore") || output.name.includes("ectocore")) {
                     window.yoctocoreDevice = output;
                     console.log("output device connected");
+                    updateLocalScene(0);
                     break;
                 }
             }
@@ -234,6 +235,14 @@ const app = createApp({
                 max_voltage: 5,
             },
         };
+
+        // watch scene change 
+        watch(
+            () => current_scene.value,
+            (newScene) => {
+                updateLocalScene(newScene);
+            }
+        );
 
         watch(
             () => selected_output.value.max_voltage,
