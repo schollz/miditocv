@@ -127,6 +127,9 @@ int main() {
   tusb_init();
 #endif
 
+  // load the Scene data
+  Scene_load_data();
+
   // Implicitly called by disk_initialize,
   // but called here to set up the GPIOs
   // before enabling the card detect interrupt:

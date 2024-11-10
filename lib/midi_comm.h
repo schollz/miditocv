@@ -21,7 +21,8 @@ uint32_t send_buffer_as_sysex(char* buffer, uint32_t bufsize) {
   }
   sysex_data[bufsize + 1] = 0xF7;  // End of SysEx
 
-  return tud_midi_n_stream_write(0, 0, sysex_data, sizeof(sysex_data));
+  uint32_t v = tud_midi_n_stream_write(0, 0, sysex_data, sizeof(sysex_data));
+  return v;
 }
 
 uint32_t send_text_as_sysex(const char* text) {

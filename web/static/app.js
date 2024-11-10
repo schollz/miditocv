@@ -1,8 +1,38 @@
 const { createApp, ref, computed, watch } = Vue;
-
+var vm;
+let disableWatchers = false;
 function addToMidiConsole(message) {
     console.log('MIDI message:', message);
 }
+
+async function updateWithoutWatcher(scene_num, output_num, param, value) {
+    disableWatchers = true;
+    vm.scenes[scene_num].outputs[output_num][param] = value;
+    await Vue.nextTick();
+    disableWatchers = false;
+}
+
+async function onConnection() {
+    disableWatchers = true;
+    // get all parameters
+    for (let scene_num = 0; scene_num < 8; scene_num++) {
+        for (let output_num = 0; output_num < 8; output_num++) {
+            for (let param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
+                let value = vm.scenes[scene_num].outputs[output_num][param];
+                sysex_string = `${scene_num}_${output_num}_${param.replace(/_/g, '')}_-10.0`;
+                console.log(`[sending_sysex] ${sysex_string}`);
+                send_sysex(sysex_string);
+                // wait 10 ms
+                await new Promise(resolve => setTimeout(resolve, 10));
+                await Vue.nextTick();
+            }
+            break;
+        }
+        break;
+    }
+    disableWatchers = false;
+}
+
 function setupMidiInputListener() {
     if (window.inputMidiDevice) {
         window.inputMidiDevice.onmidimessage = (midiMessage) => {
@@ -13,9 +43,23 @@ function setupMidiInputListener() {
                 for (var i = 1; i < midiMessage.data.length - 1; i++) {
                     sysex += String.fromCharCode(midiMessage.data[i]);
                 }
+                fields = sysex.split(" ");
                 // see if it starts with version=
                 if (sysex.startsWith("version=")) {
                     console.log(`[setupMidiInputListener] Device version: ${app.deviceVersion}`);
+                } else if (fields.length == 4) {
+                    // check if field [3] is a parameter
+                    console.log(`[fields] ${fields[0]} ${fields[1]} ${fields[2]} ${fields[3]}`);
+                    let scene_num = Number(fields[0]);
+                    let output_num = Number(fields[1]);
+                    if (vm.scenes[scene_num] && vm.scenes[scene_num].outputs[output_num]) {
+                        let output = vm.scenes[scene_num].outputs[output_num];
+                        let param = fields[2];
+                        let value = Number(fields[3]);
+                        if (output[param] != value) {
+                            updateWithoutWatcher(scene_num, output_num, param, value);
+                        }
+                    }
                 } else {
                     addToMidiConsole(sysex);
                 }
@@ -251,8 +295,10 @@ const app = createApp({
                 debounceMap.set(
                     key,
                     debounce((sceneIdx, outputIdx, prop, val) => {
-                        console.log(`${sceneIdx} ${outputIdx} ${prop} ${val}`);
-                        send_sysex(`${sceneIdx}_${outputIdx}_${prop.replace(/_/g, '')}_${val}`);
+                        val = Number(val);
+                        sysex_string = `${sceneIdx}_${outputIdx}_${prop.replace(/_/g, '')}_${val.toPrecision(4)}`;
+                        console.log(`[sending_sysex] ${sysex_string}`);
+                        send_sysex(sysex_string);
                     }, 1000)
                 );
             }
@@ -267,6 +313,9 @@ const app = createApp({
         watch(
             () => JSON.stringify(scenes.value),
             (newVal, oldVal) => {
+                if (disableWatchers) {
+                    return;
+                }
                 const parseNew = JSON.parse(newVal);
                 const parseOld = JSON.parse(oldVal);
 
@@ -309,4 +358,4 @@ const app = createApp({
     },
 });
 
-app.mount('#app');
+vm = app.mount('#app');

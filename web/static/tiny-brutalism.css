@@ -124,10 +124,10 @@ button,
     transition: all 0.2s ease;
 }
 
-button:hover,
+/* button:hover,
 .button:hover {
     box-shadow: 6px 6px 0 #000;
-}
+} */
 
 /* Forms */
 input,
