@@ -55,6 +55,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 //
 #include "lib/WS2812.h"
 #include "lib/adsr.h"
+#include "lib/clockout.h"
 #include "lib/dac.h"
 #include "lib/filterexp.h"
 #include "lib/knob_change.h"
@@ -74,6 +75,14 @@ ADSR *adsr[8];
 #include "lib/midi_comm.h"
 #include "lib/midicallback.h"
 #endif
+
+void clockout_callback(bool on) {
+  if (on) {
+    printf("Clockout on\n");
+  } else {
+    printf("Clockout off\n");
+  }
+}
 
 int main() {
   // Set PLL_USB 96MHz
@@ -121,8 +130,8 @@ int main() {
   tusb_init();
 #endif
 
-  // load the Scene data
-  Scene_load_data();
+  // // load the Scene data
+  // Scene_load_data();
 
   // Implicitly called by disk_initialize,
   // but called here to set up the GPIOs
@@ -131,6 +140,11 @@ int main() {
 
   // initialize random library
   random_initialize();
+
+  // initalize clock
+  Clockout clockout;
+  Clockout_init(&clockout, 240, 4, clockout_callback);
+  Clockout_start(&clockout, to_ms_since_boot(get_absolute_time()));
 
   // // initialize MCP3208
   // MCP3208 *mcp3208 =
@@ -169,9 +183,8 @@ int main() {
     ct = to_ms_since_boot(get_absolute_time());
     if (ct - ct_last_print > 1200) {
       ct_last_print = ct;
-      uint32_t ct2 = to_ms_since_boot(get_absolute_time());
       // print_memory_usage();
-      // flash_mem_test();
+      //  flash_mem_test();
     }
 
     // // read knobs
@@ -185,7 +198,8 @@ int main() {
     //   printf("BPM: %f\n", g_bpm);
     // }
 
-    Scene_save_data();
+    Clockout_process(&clockout, ct);
+    // Scene_save_data();
     sleep_us(1);
   }
 }
