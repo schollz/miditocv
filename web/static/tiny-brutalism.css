@@ -13,6 +13,7 @@
 html,
 body,
 button,
+select,
 input {
     height: 100%;
     font-family: 'Roboto Mono', monospace;
@@ -55,6 +56,8 @@ p {
 .col {
     flex: 1;
     padding: 0.5rem;
+    /* center vertically */
+
 }
 
 .col-1 {

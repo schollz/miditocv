@@ -6,10 +6,7 @@ GOVERSION = go1.21.11
 GOBIN = $(HOME)/go/bin
 GOINSTALLPATH = $(GOBIN)/$(GOVERSION)
 
-dobuild: pico-extras build
-	make -C build -j$(NPROCS)
-
-build: 
+build: pico-extras
 	rm -rf build
 	mkdir build
 	cd build && cmake ..

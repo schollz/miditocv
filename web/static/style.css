@@ -19,6 +19,66 @@ body {
     text-align: right;
 }
 
+.center {
+    display: flex;
+    justify-content: center;
+    text-align: center;
+}
+
 #app {
     width: 800px;
+}
+
+
+.active {
+    font-weight: bold;
+    /* add a shdwo to the top + left */
+    box-shadow: -12px -12px 0 #000;
+
+}
+
+.button-row {
+    margin-bottom: 10px;
+    /* proportion equally across the row */
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.output-details {
+    margin-top: 20px;
+}
+
+.mode-manual {
+    background-color: #f0f0f0;
+    color: gray;
+}
+
+.mode-midi-pitch {
+    background-color: #ffadad;
+    color: black;
+}
+
+.mode-midi-envelope {
+    background-color: #ffd6a5;
+    color: black;
+}
+
+.mode-midi-cc {
+    background-color: #fdffb6;
+    color: black;
+}
+
+.mode-midi-clock {
+    background-color: #caffbf;
+    color: black;
+}
+
+.mode-clock {
+    background-color: #9bf6ff;
+    color: black;
+}
+
+.mode-lfo {
+    background-color: #a0c4ff;
+    color: black;
 }

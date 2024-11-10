@@ -9,27 +9,7 @@
   <link rel="stylesheet" href="/static/tiny-brutalism.css">
   <link rel="stylesheet" href="/static/style.css">
   <style>
-    .inactive {
-      color: gray;
-      background-color: #f0f0f0;
-    }
 
-    .active {
-      font-weight: bold;
-      color: white;
-      background-color: #007bff;
-    }
-
-    .button-row {
-      margin-bottom: 10px;
-      /* proportion equally across the row */
-      display: flex;
-      justify-content: space-evenly;
-    }
-
-    .output-details {
-      margin-top: 20px;
-    }
   </style>
 </head>
 
@@ -51,7 +31,7 @@
     <h3>Outputs</h3>
     <div class="button-row">
       <button v-for="(output, index) in scenes[current_scene].outputs" :key="index"
-        :class="[current_output !== index && 'inactive', current_output === index && 'active']"
+        :class="[current_output !== index && 'inactive', current_output === index && 'active', getButtonClass(output.mode)]"
         @click="select_output(index)">
         {{ index + 1 }}
       </button>
@@ -66,150 +46,140 @@
         <div class="col col-9">
           <select id="mode-select" v-model="selected_output.mode">
             <option value=0>Manual</option>
-            <option value=0>Pitch</option>
+            <option value=1>MIDI Pitch</option>
+            <option value=2>MIDI Envelope</option>
+            <option value=3>MIDI CC</option>
+            <option value=4>MIDI Clock</option>
+            <option value=5>Clock</option>
+            <option value=6>LFO</option>
           </select>
         </div>
       </div>
-      <div class="row">
-        <div class="col col-6">
-          <label>
-            Slew rate:
-            <input type="number" v-model.number="selected_output.slew_rate" />
-          </label>
+      <div class="row" v-if="Number(selected_output.mode) === 0">
+        <div class="col col-3 fr">
+          <label for="slew-rate">Slew time (seconds):</label>
         </div>
-
+        <div class="col col-9">
+          <input id="slew-rate" type="number" v-model.number="selected_output.slew_time" />
+        </div>
       </div>
-      <div v-if="Number(selected_output.mode) === 0" class="row">
-        <div class="col col-6">
+      <div class="row">
+        <div class="col col-3 fr">
           <label>
-            Min Voltage:
-            <input type="number" v-model.number="selected_output.min_voltage" />
+            Voltage range:
           </label>
         </div>
-        <div class="col col-6">
-          <label>
-            Max Voltage:
-            <input type="number" v-model.number="selected_output.max_voltage" />
+        <div class="col col-4">
+          <input type="number" v-model.number="selected_output.min_voltage" min="-5" max="10" step="0.01" />
+        </div>
+        <div class="col col-1 center">
+          to
+        </div>
+        <div class="col col-4">
+          <input type="number" v-model.number="selected_output.max_voltage" min="-5" max="10" step="0.01" />
+        </div>
+      </div>
+      <div class="row" v-if="[0, 1].includes(Number(selected_output.mode))">
+        <div class="col col-3 fr">
+          <label for="quantization">
+            Quantization:
           </label>
+        </div>
+        <div class="col col-9">
+          <select id="quantization" v-model="selected_output.quantization">
+            <option value=0>Free</option>
+            <option value=1>Chromatic</option>
+          </select>
+        </div>
+      </div>
+      <!-- midi stuff -->
+      <div class="row" v-if="[3].includes(Number(selected_output.mode))">
+        <div class="col col-3 fr">
+          <label for="midi-cc">
+            MIDI CC:
+          </label>
+        </div>
+        <div class="col col-9">
+          <input id="midi-cc" type="number" v-model.number="selected_output.midi_cc" min="0" max="16" />
+        </div>
+      </div>
+      <!-- midi stuff -->
+      <div class="row" v-if="[1,2,3,4].includes(Number(selected_output.mode))">
+        <div class="col col-3 fr">
+          <label for="midi-channel">
+            MIDI Channel:
+          </label>
+        </div>
+        <div class="col col-9">
+          <input id="midi-channel" type="number" v-model.number="selected_output.midi_channel" min="0" max="16" />
+        </div>
+      </div>
+
+      <!-- clock stuff -->
+      <div class="row" v-if="[5].includes(Number(selected_output.mode))">
+        <div class="col col-3 fr">
+          <label for="clock-tempo">
+            Clock tempo:
+          </label>
+        </div>
+        <div class="col col-3">
+          <input id="clock-tempo" type="number" v-model.number="selected_output.clock_tempo" min="15" max="300" />
+        </div>
+        <div class="col col-3 fr">
+          <label for="clock-divider">
+            Clock division:
+          </label>
+        </div>
+        <div class="col col-3">
+          <select id="clock-divider" v-model="selected_output.clock_division">
+            <option value=1>1x</option>
+            <option value=0.5>1/2</option>
+            <option value=0.25>1/4</option>
+            <option value=0.125>1/8</option>
+            <option value=0.016>1/16</option>
+          </select>
+        </div>
+      </div>
+      <!-- lfo stuff -->
+      <div class="row" v-if="[6].includes(Number(selected_output.mode))">
+        <div class="col col-3 fr">
+          <label for="lfo-waveform">
+            LFO waveform:
+          </label>
+        </div>
+        <div class="col col-9">
+          <select id="lfo-waveform" v-model="selected_output.lfo_waveform">
+            <option value=0>Sine</option>
+            <option value=1>Triangle</option>
+            <option value=2>Sawtooth</option>
+            <option value=3>Square</option>
+            <option value=4>Random</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" v-if="[6].includes(Number(selected_output.mode))">
+        <div class="col col-3 fr">
+          <label for="lfo-period">
+            LFO period:
+          </label>
+        </div>
+        <div class="col col-3">
+          <input id="lfo-rate" type="number" v-model.number="selected_output.lfo_period" min="0.1" max="10"
+            step="0.1" />
+        </div>
+        <div class="col col-3 fr">
+          <label for="lfo-depth">
+            LFO depth:
+          </label>
+        </div>
+        <div class="col col-3">
+          <input id="lfo-depth" type="number" v-model.number="selected_output.lfo_depth" min="0" max="1" step="0.01" />
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    const { createApp, ref, computed, watch } = Vue;
-
-    const app = createApp({
-      setup() {
-        // Initialize scenes and outputs
-        const scenes = ref(
-          Array.from({ length: 8 }, () => ({
-            outputs: Array.from({ length: 8 }, () => ({
-              mode: 0,
-              min_voltage: 0,
-              max_voltage: 5,
-            })),
-          }))
-        );
-
-        const current_scene = ref(0);
-        const current_output = ref(0);
-
-        // Computed property to get the selected output
-        const selected_output = computed(() => {
-          return scenes.value[current_scene.value].outputs[current_output.value];
-        });
-
-
-        // Debounce function
-        function debounce(fn, delay) {
-          let timeout;
-          return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => fn(...args), delay);
-          };
-        }
-
-        // Create a map to store debounce timers for each output
-        const debounceMap = new Map();
-
-        // Helper function to get a unique key for each output
-        function getDebounceKey(sceneIndex, outputIndex, property) {
-          return `${sceneIndex}-${outputIndex}-${property}`;
-        }
-
-        // Function to log changes with per-output debouncing
-        function logChange(sceneIndex, outputIndex, property, value) {
-          const key = getDebounceKey(sceneIndex, outputIndex, property);
-
-          // Create a debounced logger if it doesn't exist
-          if (!debounceMap.has(key)) {
-            debounceMap.set(
-              key,
-              debounce((sceneIdx, outputIdx, prop, val) => {
-                console.log(`scene[${sceneIdx}].output[${outputIdx}].${prop} = ${val}`);
-              }, 1000)
-            );
-          }
-
-          // Call the debounced logger with the current change
-          debounceMap.get(key)(sceneIndex, outputIndex, property, value);
-        }
-
-        // Watcher with per-output debouncing
-        watch(
-          () => JSON.stringify(scenes.value),
-          (newVal, oldVal) => {
-            const parseNew = JSON.parse(newVal);
-            const parseOld = JSON.parse(oldVal);
-
-            // Iterate through each scene and output
-            parseNew.forEach((scene, sceneIndex) => {
-              scene.outputs.forEach((output, outputIndex) => {
-                const oldOutput = parseOld[sceneIndex]?.outputs[outputIndex];
-
-                // Check for changes in "mode"
-                if (output.mode !== oldOutput?.mode) {
-                  logChange(sceneIndex, outputIndex, 'mode', output.mode);
-                }
-
-                // Check for changes in "min_voltage"
-                if (output.min_voltage !== oldOutput?.min_voltage) {
-                  logChange(sceneIndex, outputIndex, 'min_voltage', output.min_voltage);
-                }
-
-                // Check for changes in "max_voltage"
-                if (output.max_voltage !== oldOutput?.max_voltage) {
-                  logChange(sceneIndex, outputIndex, 'max_voltage', output.max_voltage);
-                }
-              });
-            });
-          },
-          { deep: true }
-        );
-
-        // Functions to update the current scene and output
-        const select_scene = (index) => {
-          current_scene.value = index;
-        };
-
-        const select_output = (index) => {
-          current_output.value = index;
-        };
-
-        return {
-          scenes,
-          current_scene,
-          current_output,
-          selected_output,
-          select_scene,
-          select_output,
-        };
-      },
-    });
-
-    app.mount('#app');
-  </script>
+  <script src="/static/app.js"></script>
 </body>
 
 </html>
