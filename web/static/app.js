@@ -27,7 +27,7 @@ async function updateLocalScene(scene_num) {
             sysex_string = `${scene_num}_${output_num}_${param.replace(/_/g, '')}_-10.0`;
             console.log(`[sending_sysex] ${sysex_string}`);
             send_sysex(sysex_string);
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise(resolve => setTimeout(resolve, 20));
             await Vue.nextTick();
         }
     }

@@ -190,6 +190,8 @@ int main() {
     //   ct_next_bpm = ct + (60.0 / g_bpm * 1000);
     //   printf("BPM: %f\n", g_bpm);
     // }
+
+    Scene_save_data();
     sleep_us(1);
   }
 }

@@ -18,7 +18,9 @@ typedef struct Scene {
 } Scene;
 
 Scene scenes[8];
-
+bool scene_dirty[9] = {false, false, false, false, false,
+                       false, false, false, false};
+uint32_t debounce_scene_save = 0;
 typedef struct StateData {
   uint8_t scene;
 } StateData;
@@ -178,10 +180,48 @@ void Scene_update_with_sysex(uint8_t *buffer) {
   }
 
   if (did_update) {
+    scene_dirty[scene_num] = true;
     printf("scene %d output %d %s to %f (%d)\n", scene_num, output_num, param,
            val, sizeof(Scene));
-    pico_flash_erase(scene_num);
-    uint8_t flash_data[FLASH_PAGE_SIZE * 2];  // 512 bytes
+    debounce_scene_save = to_ms_since_boot(get_absolute_time());
+  }
+  if (did_update_state) {
+    printf("state scene to %d\n", state.scene);
+    scene_dirty[8] = true;
+    debounce_scene_save = to_ms_since_boot(get_absolute_time());
+  }
+}
+
+void Scene_save_data() {
+  if (debounce_scene_save == 0) {
+    return;
+  }
+  if (to_ms_since_boot(get_absolute_time()) - debounce_scene_save < 1000) {
+    return;
+  }
+  printf("saving data\n");
+  debounce_scene_save = 0;
+  // flash_range_erase(FLASH_TARGET_OFFSET + (0 * FLASH_SECTOR_SIZE),
+  //                   FLASH_SECTOR_SIZE);
+  // flash_range_erase(FLASH_TARGET_OFFSET + (1 * FLASH_SECTOR_SIZE),
+  //                   FLASH_SECTOR_SIZE);
+
+  if (scene_dirty[8] || true) {
+    // save state data
+    uint8_t flash_data[FLASH_PAGE_SIZE];
+    memcpy(flash_data, &state, sizeof(StateData));
+    uint32_t interrupts = save_and_disable_interrupts();
+    flash_range_program(FLASH_TARGET_OFFSET + 8 * FLASH_PAGE_SIZE, flash_data,
+                        FLASH_PAGE_SIZE);
+    restore_interrupts(interrupts);
+    scene_dirty[8] = false;
+  }
+
+  for (size_t scene_num = 0; scene_num < 8; scene_num++) {
+    // if (!scene_dirty[scene_num]) {
+    //   continue;
+    // }
+    uint8_t flash_data[FLASH_PAGE_SIZE * 2];
     // copy each output to the flash data
     for (int i = 0; i < 8; i++) {
       memcpy(flash_data + i * sizeof(Output), &scenes[scene_num].output[i],
@@ -191,17 +231,7 @@ void Scene_update_with_sysex(uint8_t *buffer) {
     flash_range_program(FLASH_TARGET_OFFSET + scene_num * FLASH_PAGE_SIZE,
                         flash_data, 2 * FLASH_PAGE_SIZE);
     restore_interrupts(interrupts);
-  }
-  if (did_update_state) {
-    printf("state scene to %d\n", state.scene);
-    pico_flash_erase(8);
-
-    uint8_t flash_data[FLASH_PAGE_SIZE];  // 256 bytes
-    memcpy(flash_data, &state, sizeof(StateData));
-    uint32_t interrupts = save_and_disable_interrupts();
-    flash_range_program(FLASH_TARGET_OFFSET + 8 * FLASH_PAGE_SIZE, flash_data,
-                        FLASH_PAGE_SIZE);
-    restore_interrupts(interrupts);
+    scene_dirty[scene_num] = false;
   }
 }
 
