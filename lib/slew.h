@@ -1,81 +1,74 @@
 #ifndef SLEW_LIB
 #define SLEW_LIB 1
 
-typedef struct Slew {
-  float current_value;
-  float target_value;
+#include <math.h>
+
+typedef struct SlewInstance {
   float start_value;
-  float duration;          // Duration of the transition in milliseconds
-  float progress;          // Progress of the transition (0 to 1)
-  float last_update_time;  // Time of the last update
+  float target_value;
+  float duration_ms;
+  float progress;
+  float delta_value;
+  float last_update_time;
+} SlewInstance;
+
+typedef struct Slew {
+  SlewInstance current_slew;
+  float current_value;
 } Slew;
 
-// Set the slew duration based on a period in milliseconds
-void Slew_set_period(Slew *slew, float period_ms) {
-  if (period_ms <= 0) {
-    slew->duration = 0;
-  } else {
-    slew->duration = period_ms;
-  }
-}
-
-// Initialize the Slew object
-void Slew_init(Slew *slew, float slew_period, float initial_value) {
-  slew->current_value = initial_value;
-  slew->target_value = initial_value;
-  slew->start_value = initial_value;
+void SlewInstance_init(SlewInstance *slew, float target_value,
+                       float start_value, float duration_ms) {
+  slew->start_value = start_value;
+  slew->target_value = target_value;
   slew->progress = 0.0f;
-  slew->last_update_time = -1.0f;  // Use -1 to indicate uninitialized time
-  Slew_set_period(slew, slew_period);
+  slew->last_update_time = -1.0f;
+  slew->duration_ms = duration_ms > 0 ? duration_ms : 1.0f;
+  slew->delta_value = target_value - start_value;
 }
 
-// Update the current value based on the elapsed time (quadratic smoothing)
-float Slew_process(Slew *slew, float ct) {
-  if (slew->last_update_time < 0 || slew->duration == 0) {
+float SlewInstance_process(SlewInstance *slew, float ct) {
+  if (slew->last_update_time < 0) {
     slew->last_update_time = ct;
-    return slew->current_value;
+    return slew->start_value;
   }
 
-  float delta_time = ct - slew->last_update_time;
-
-  // Ensure delta_time is non-negative
-  if (delta_time < 0) {
-    delta_time = 0;
+  float dt = ct - slew->last_update_time;
+  if (dt < 0) {
+    dt = 0;
   }
 
-  // Update progress based on elapsed time
-  slew->progress += delta_time / slew->duration;
-
-  // Clamp progress to the range [0, 1]
-  if (slew->progress > 1.0f) {
-    slew->progress = 1.0f;
-  }
-
-  // Quadratic easing in and out (smooth transition)
-  float t = slew->progress;
-  float eased_t = t < 0.5f ? 2 * t * t : 1 - (-2 * t + 2) * (-2 * t + 2) / 2;
-
-  // Update the current value based on eased progress
-  slew->current_value =
-      slew->start_value + (slew->target_value - slew->start_value) * eased_t;
-
-  // If the transition is complete, reset progress
+  slew->progress += dt / slew->duration_ms;
   if (slew->progress >= 1.0f) {
-    slew->current_value = slew->target_value;
-    slew->progress = 0.0f;
-    slew->start_value = slew->target_value;
+    slew->progress = 1.0f;
+    return slew->target_value;  // Early return for completed slew
   }
+
+  float t = slew->progress;
+  // Consider using a lookup table or a more efficient easing function
+  // approximation for performance-critical applications
+  float eased_t = t * t * (3.0f - 2.0f * t);  // Cubic easing
+  float current_value = slew->start_value + slew->delta_value * eased_t;
 
   slew->last_update_time = ct;
+  return current_value;
+}
+
+void Slew_init(Slew *slew, float duration_ms, float initial_value) {
+  SlewInstance_init(&slew->current_slew, initial_value, initial_value,
+                    duration_ms);
+  slew->current_value = initial_value;
+}
+
+float Slew_process(Slew *slew, float ct) {
+  slew->current_value = SlewInstance_process(&slew->current_slew, ct);
   return slew->current_value;
 }
 
-// Set a new target value and reset the transition
 void Slew_set_target(Slew *slew, float target_value) {
-  if (slew->target_value != target_value) {
-    slew->start_value = slew->current_value;
-    slew->target_value = target_value;
-    slew->progress = 0.0f;
+  if (slew->current_slew.target_value != target_value) {
+    SlewInstance_init(&slew->current_slew, target_value, slew->current_value,
+                      slew->current_slew.duration_ms);
   }
 }
 
