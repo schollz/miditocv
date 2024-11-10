@@ -143,7 +143,7 @@ int main() {
 
   // initalize clock
   Clockout clockout;
-  Clockout_init(&clockout, 240, 4, clockout_callback);
+  Clockout_init(&clockout, 60, 4, clockout_callback);
   Clockout_start(&clockout, to_ms_since_boot(get_absolute_time()));
 
   // // initialize MCP3208

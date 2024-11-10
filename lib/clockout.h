@@ -80,7 +80,6 @@ void Clockout_process(Clockout *self, uint32_t current_time) {
   if (time_diff >= self->next_pulse_difference) {
     self->on = !self->on;
     int32_t error = (int32_t)(time_diff - self->next_pulse_difference);
-    printf("Error: %d\n", error);
     Clockout_set_next_pulse_difference(self, error);
     if (self->pulse_callback != NULL) {
       self->pulse_callback(self->on);
