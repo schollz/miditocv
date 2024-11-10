@@ -13,27 +13,21 @@ int main() {
   }
 
   Slew slew;
-  Slew_init(&slew, 2000, 0);
+  Slew_init(&slew, 3000, 0);
 
   // Generate and write the triangle wave data
   uint32_t dt = 1;
   for (uint32_t ct = 0; ct < 12000; ct += dt) {
     if (ct == 1000) {
       dt = 1;
-      Slew_set_target(&slew, 1);
-    } else if (ct == 1501) {
-      Slew_set_target(&slew, 10);
-    } else if (ct == 5000) {
-      Slew_set_target(&slew, 0.45);
+      Slew_set_target(&slew, 3.14);
+    } else if (ct == 2000) {
+      Slew_set_target(&slew, -5);
     } else if (ct == 6000) {
-      dt = 60;
-    } else if (ct == 7000) {
-      Slew_set_target(&slew, 11.34);
-    } else if (ct == 9000) {
-      dt = 1;
-      Slew_set_target(&slew, 5.3);
-    } else if (ct == 11000) {
-      Slew_set_target(&slew, 4.0);
+      Slew_set_target(&slew, 6.28);
+    } else if (ct == 6000) {
+      dt = 40;
+      Slew_set_target(&slew, 0);
     }
     float value = Slew_process(&slew, ct);
     fprintf(file, "%f,%f\n", (float)ct / 1000.0f, value);
