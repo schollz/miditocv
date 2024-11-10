@@ -68,8 +68,8 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   send_buffer_as_sysex(sysex_str, length + 7 + 1);
 #endif
   float val;
-  if (get_sysex_param_float_value("hello", sysex, length, &val)) {
-    printf("hello: %f\n", val);
+  if (get_sysex_param_float_value("version", sysex, length, &val)) {
+    printf("v1.0.0");
   } else {
     Scene_update_with_sysex(sysex);
   }

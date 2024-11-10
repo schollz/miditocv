@@ -40,6 +40,8 @@ bool usb_midi_present = false;
 static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #define DURATION_HOLD 500
 #define DURATION_HOLD_LONG 1250
+#define FLASH_TARGET_OFFSET (6 * 256 * 1024)
+
 //
 #include "ff.h" /* Obtains integer types */
 //
@@ -74,8 +76,6 @@ ADSR *adsr[8];
 #include "lib/midicallback.h"
 #endif
 
-#define FLASH_TARGET_OFFSET \
-  (1792 * 1024)  //++ Starting Flash Storage location after 1.8MB ( of the 2MB )
 const uint8_t *flash_target_contents =
     (const uint8_t *)(XIP_BASE +
                       FLASH_TARGET_OFFSET);  //++ Pointer pointing at the Flash

@@ -1,16 +1,16 @@
 typedef struct Output {
-  uint16_t mode : 4;
-  uint16_t quantization : 4;
-  uint16_t clock_division : 4;
-  uint16_t lfo_waveform : 4;
+  uint8_t mode;
+  uint8_t quantization;
   float min_voltage;
   float max_voltage;
   float slew_time;
   uint8_t midi_channel;
   uint8_t midi_cc;
   float clock_tempo;
+  uint8_t clock_division;
   float lfo_period;
   float lfo_depth;
+  uint8_t lfo_waveform;
 } Output;
 
 typedef struct Scene {
@@ -164,22 +164,47 @@ void Scene_update_with_sysex(uint8_t *buffer) {
   }
 
   if (did_update) {
-    printf("scene %d output %d %s to %f\n", scene_num, output_num, param, val);
-    // // erase sector
-    // pico_flash_erase();
-    // // write data
-    // uint8_t flash_data[FLASH_PAGE_SIZE];
-    // for (int i = 0; i < 8; i++) {
-    //   Scene_marshal(&scenes[i], flash_data);
-    //   pico_flash_write(flash_data, i);
-    // }
+    printf("scene %d output %d %s to %f (%d)\n", scene_num, output_num, param,
+           val, sizeof(Scene));
+    pico_flash_erase(scene_num);
+
+    uint8_t flash_data[FLASH_PAGE_SIZE * 2];  // 512 bytes
+    // copy each output to the flash data
+    for (int i = 0; i < 8; i++) {
+      memcpy(flash_data + i * sizeof(Output), &scenes[scene_num].output[i],
+             sizeof(Output));
+    }
+    uint32_t interrupts = save_and_disable_interrupts();
+    flash_range_program(FLASH_TARGET_OFFSET + scene_num * FLASH_PAGE_SIZE,
+                        flash_data, 2 * FLASH_PAGE_SIZE);
+    restore_interrupts(interrupts);
   }
 }
 
 void Scene_load_data() {
-  //   uint8_t flash_data[FLASH_PAGE_SIZE];
-  //   for (int i = 0; i < 8; i++) {
-  //     pico_flash_read(flash_data, FLASH_PAGE_SIZE, i);
-  //     memcpy(&scene[i], flash_data, sizeof(Scene));
-  //   }
+  for (size_t scene_num = 0; scene_num < 8; scene_num++) {
+    uint8_t flash_data[FLASH_PAGE_SIZE * 2];
+    pico_flash_read(flash_data, FLASH_PAGE_SIZE * 2, scene_num);
+    // copy each output from the flash data
+    for (int i = 0; i < 8; i++) {
+      memcpy(&scenes[scene_num].output[i], flash_data + i * sizeof(Output),
+             sizeof(Output));
+      if (scenes[scene_num].output[i].min_voltage < -5 ||
+          scenes[scene_num].output[i].min_voltage > 10) {
+        // reset it
+        scenes[scene_num].output[i].mode = 0;
+        scenes[scene_num].output[i].quantization = 0;
+        scenes[scene_num].output[i].min_voltage = 0;
+        scenes[scene_num].output[i].max_voltage = 5;
+        scenes[scene_num].output[i].slew_time = 0;
+        scenes[scene_num].output[i].midi_channel = 0;
+        scenes[scene_num].output[i].midi_cc = 0;
+        scenes[scene_num].output[i].clock_tempo = 120;
+        scenes[scene_num].output[i].clock_division = 0;
+        scenes[scene_num].output[i].lfo_period = 0.5;
+        scenes[scene_num].output[i].lfo_depth = 0.5;
+        scenes[scene_num].output[i].lfo_waveform = 0;
+      }
+    }
+  }
 }

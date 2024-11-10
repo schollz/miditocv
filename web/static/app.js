@@ -1,7 +1,8 @@
-const { createApp, ref, computed, watch } = Vue;
+const { createApp, ref, computed, watch, onMounted } = Vue;
 var vm;
 let disableWatchers = false;
 let scenes_updated = [false, false, false, false, false, false, false, false];
+let last_time_of_message_received = 0;
 function addToMidiConsole(message) {
     console.log('MIDI message:', message);
 }
@@ -26,7 +27,7 @@ async function updateLocalScene(scene_num) {
             sysex_string = `${scene_num}_${output_num}_${param.replace(/_/g, '')}_-10.0`;
             console.log(`[sending_sysex] ${sysex_string}`);
             send_sysex(sysex_string);
-            await new Promise(resolve => setTimeout(resolve, 1));
+            await new Promise(resolve => setTimeout(resolve, 10));
             await Vue.nextTick();
         }
     }
@@ -37,16 +38,19 @@ function setupMidiInputListener() {
     if (window.inputMidiDevice) {
         window.inputMidiDevice.onmidimessage = (midiMessage) => {
             // check if sysex
+            // console.log(midiMessage.data);
             if (midiMessage.data[0] == 0xf0) {
                 // convert the sysex to string 
+                last_time_of_message_received = Date.now();
                 var sysex = "";
                 for (var i = 1; i < midiMessage.data.length - 1; i++) {
                     sysex += String.fromCharCode(midiMessage.data[i]);
                 }
                 fields = sysex.split(" ");
                 // see if it starts with version=
-                if (sysex.startsWith("version=")) {
-                    console.log(`[setupMidiInputListener] Device version: ${app.deviceVersion}`);
+                if (sysex.startsWith("v")) {
+                    console.log(`[version] ${sysex}`);
+                    return;
                 } else if (fields.length == 4) {
                     // check if field [3] is a parameter
                     console.log(`[fields] ${fields[0]} ${fields[1]} ${fields[2]} ${fields[3]}`);
@@ -71,7 +75,6 @@ function setupMidiInputListener() {
 }
 
 function setupMidi() {
-    console.log("Setting up MIDI");
     navigator.requestMIDIAccess({ sysex: true })
         .then((midiAccess) => {
             // Input setup
@@ -93,6 +96,7 @@ function setupMidi() {
                     window.yoctocoreDevice = output;
                     console.log("output device connected");
                     updateLocalScene(0);
+                    vm.device_connected = true;
                     break;
                 }
             }
@@ -139,7 +143,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // if chrome and on desktop
     if (window.chrome && window.chrome.app) {
         setupMidi();
+
+        setTimeout(() => {
+            setInterval(() => {
+                if (Date.now() - last_time_of_message_received > 317 * 2) {
+                    window.yoctocoreDevice && send_sysex("version0");
+                }
+                if (Date.now() - last_time_of_message_received > 317 * 4) {
+                    vm.device_connected = false;
+                    setupMidi();
+                }
+            }, 317);
+        }, 2000);
+
     }
+
 });
 
 const app = createApp({
@@ -168,6 +186,7 @@ const app = createApp({
         const selected_output = computed(() => {
             return scenes.value[current_scene.value].outputs[current_output.value];
         });
+        const device_connected = ref(false);
 
 
 
@@ -308,7 +327,7 @@ const app = createApp({
                         sysex_string = `${sceneIdx}_${outputIdx}_${prop.replace(/_/g, '')}_${val.toPrecision(4)}`;
                         console.log(`[sending_sysex] ${sysex_string}`);
                         send_sysex(sysex_string);
-                    }, 1000)
+                    }, 150)
                 );
             }
 
@@ -363,6 +382,7 @@ const app = createApp({
             select_scene,
             select_output,
             getButtonClass,
+            device_connected,
         };
     },
 });

@@ -220,8 +220,6 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
       send_text_as_sysex("command=reset");
       sleep_ms(10);
       reset_usb_boot(0, 0);
-    } else if (status == 176 && channel == 0 && note == 1) {
-      send_text_as_sysex("version=v6.2.1");
     }
   }
 }

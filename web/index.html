@@ -15,6 +15,15 @@
 
 <body>
   <div id="app" class="app">
+    <h1>yoctocore</h1>
+    <h2>Control Panel</h2>
+    <!-- check if device connected -->
+    <div v-if="!device_connected">
+      <h3>Device not connected</h3>
+    </div>
+    <div v-else>
+      <h3>Device connected</h3>
+    </div>
     <!-- Scene Selection Dropdown -->
     <div class="dropdown">
       <label for="scene-select">Select Scene:</label>

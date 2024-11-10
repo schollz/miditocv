@@ -5,8 +5,6 @@
 #include "hardware/sync.h"
 #include "pico/stdlib.h"
 
-#define FLASH_TARGET_OFFSET (1792 * 1024)
-
 typedef struct {
   int32_t A;
   int32_t B;
@@ -32,9 +30,10 @@ void pico_flash_read(uint8_t *buffer, size_t len, size_t offset) {
   }
 }
 
-void pico_flash_erase() {
+void pico_flash_erase(uint8_t offset) {
   uint32_t interrupts = save_and_disable_interrupts();
-  flash_range_erase(FLASH_TARGET_OFFSET, FLASH_SECTOR_SIZE);
+  flash_range_erase(FLASH_TARGET_OFFSET + (offset * FLASH_SECTOR_SIZE),
+                    FLASH_SECTOR_SIZE);
   restore_interrupts(interrupts);
 }
 
@@ -74,7 +73,7 @@ void flash_mem_test() {
   }
 
   // erase sector
-  pico_flash_erase();
+  pico_flash_erase(0);
 
   // write data
   for (int i = 0; i < 4; i++) {
