@@ -49,11 +49,18 @@ function setupMidiInputListener() {
                 fields = sysex.split(" ");
                 // see if it starts with version=
                 if (sysex.startsWith("v")) {
-                    console.log(`[version] ${sysex}`);
+                    //console.log(`[version] ${sysex}`);
                     return;
+                } else if (sysex.startsWith("scene")) {
+                    // extract number from string
+                    console.log(`[sysex_receieved] ${sysex}`);
+                    let scene_num = Number(sysex.match(/\d+/)[0]);
+                    // update the scene
+                    vm.current_scene = scene_num;
+                    updateLocalScene(scene_num);
                 } else if (fields.length == 4) {
                     // check if field [3] is a parameter
-                    console.log(`[fields] ${fields[0]} ${fields[1]} ${fields[2]} ${fields[3]}`);
+                    console.log(`[sysex_receieved] ${fields[0]} ${fields[1]} ${fields[2]} ${fields[3]}`);
                     let scene_num = Number(fields[0]);
                     let output_num = Number(fields[1]);
                     if (vm.scenes[scene_num] && vm.scenes[scene_num].outputs[output_num]) {
@@ -95,7 +102,9 @@ function setupMidi() {
                 if (output.name.includes("yoctocore") || output.name.includes("zeptocore") || output.name.includes("ectocore")) {
                     window.yoctocoreDevice = output;
                     console.log("output device connected");
-                    updateLocalScene(0);
+                    sysex_string = `0_0_scene_-10.0`;
+                    console.log(`[sending_sysex] ${sysex_string}`);
+                    send_sysex(sysex_string);
                     vm.device_connected = true;
                     break;
                 }
@@ -130,7 +139,7 @@ function send_sysex(str) {
         // Send the SysEx message
         try {
             window.yoctocoreDevice.send(sysex);
-            //          console.log("SysEx message sent:", sysex);
+            // console.log("SysEx message sent:", sysex);
         } catch (error) {
             console.error("Failed to send SysEx message:", error);
         }
@@ -259,7 +268,12 @@ const app = createApp({
         watch(
             () => current_scene.value,
             (newScene) => {
+                // send sysex to update the scene
                 updateLocalScene(newScene);
+                // update the scene on the device
+                sysex_string = `0_0_scene_${newScene}.0`;
+                console.log(`[sending_sysex] ${sysex_string}`);
+                send_sysex(sysex_string);
             }
         );
 
@@ -283,14 +297,14 @@ const app = createApp({
             }
         )
 
-        // Watcher for mode changes to update default values
-        watch(
-            () => selected_output.value.mode,
-            (newMode) => {
-                const modeDefaults = defaultValues[newMode] || {};
-                Object.assign(selected_output.value, modeDefaults);
-            }
-        );
+        // // Watcher for mode changes to update default values
+        // watch(
+        //     () => selected_output.value.mode,
+        //     (newMode) => {
+        //         const modeDefaults = defaultValues[newMode] || {};
+        //         Object.assign(selected_output.value, modeDefaults);
+        //     }
+        // );
 
         // Debounce function
         function debounce(fn, delay) {

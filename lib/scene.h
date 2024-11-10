@@ -19,6 +19,12 @@ typedef struct Scene {
 
 Scene scenes[8];
 
+typedef struct StateData {
+  uint8_t scene;
+} StateData;
+
+StateData state;
+
 void Scene_marshal(const Scene *scene, uint8_t *buffer) {
   for (int i = 0; i < 8; i++) {
     memcpy(buffer + i * sizeof(Output), &scene[i].output, sizeof(Output));
@@ -107,6 +113,9 @@ void Scene_update_with_sysex(uint8_t *buffer) {
     } else if (strcmp(param, "lfodepth") == 0) {
       printf("%d %d lfo_depth %2.3f\n", scene_num, output_num,
              scenes[scene_num].output[output_num].lfo_depth);
+      // state data
+    } else if (strcmp(param, "scene") == 0) {
+      printf("scene%d\n", state.scene);
     } else {
       printf("Unknown parameter: %s\n", param);
     }
@@ -116,6 +125,7 @@ void Scene_update_with_sysex(uint8_t *buffer) {
 
   // Update the appropriate field based on the parameter name
   bool did_update = false;
+  bool did_update_state = false;
   if (strcmp(param, "mode") == 0) {
     scenes[scene_num].output[output_num].mode = (uint8_t)val;
     did_update = true;
@@ -159,6 +169,10 @@ void Scene_update_with_sysex(uint8_t *buffer) {
     val = util_clamp(val, 0.0f, 1.0f);
     scenes[scene_num].output[output_num].lfo_depth = val;
     did_update = true;
+    // state data
+  } else if (strcmp(param, "scene") == 0) {
+    state.scene = (uint8_t)val;
+    did_update_state = true;
   } else {
     printf("Unknown parameter: %s\n", param);
   }
@@ -167,7 +181,6 @@ void Scene_update_with_sysex(uint8_t *buffer) {
     printf("scene %d output %d %s to %f (%d)\n", scene_num, output_num, param,
            val, sizeof(Scene));
     pico_flash_erase(scene_num);
-
     uint8_t flash_data[FLASH_PAGE_SIZE * 2];  // 512 bytes
     // copy each output to the flash data
     for (int i = 0; i < 8; i++) {
@@ -179,9 +192,28 @@ void Scene_update_with_sysex(uint8_t *buffer) {
                         flash_data, 2 * FLASH_PAGE_SIZE);
     restore_interrupts(interrupts);
   }
+  if (did_update_state) {
+    printf("state scene to %d\n", state.scene);
+    pico_flash_erase(8);
+
+    uint8_t flash_data[FLASH_PAGE_SIZE];  // 256 bytes
+    memcpy(flash_data, &state, sizeof(StateData));
+    uint32_t interrupts = save_and_disable_interrupts();
+    flash_range_program(FLASH_TARGET_OFFSET + 8 * FLASH_PAGE_SIZE, flash_data,
+                        FLASH_PAGE_SIZE);
+    restore_interrupts(interrupts);
+  }
 }
 
 void Scene_load_data() {
+  // load state data
+  uint8_t flash_data[FLASH_PAGE_SIZE];
+  pico_flash_read(flash_data, FLASH_PAGE_SIZE, 8);
+  memcpy(&state, flash_data, sizeof(StateData));
+  if (state.scene < 0 || state.scene >= 8) {
+    state.scene = 0;
+  }
+
   for (size_t scene_num = 0; scene_num < 8; scene_num++) {
     uint8_t flash_data[FLASH_PAGE_SIZE * 2];
     pico_flash_read(flash_data, FLASH_PAGE_SIZE * 2, scene_num);
@@ -190,7 +222,8 @@ void Scene_load_data() {
       memcpy(&scenes[scene_num].output[i], flash_data + i * sizeof(Output),
              sizeof(Output));
       if (scenes[scene_num].output[i].min_voltage < -5 ||
-          scenes[scene_num].output[i].min_voltage > 10) {
+          scenes[scene_num].output[i].min_voltage > 10 ||
+          scenes[scene_num].output[i].mode > 6) {
         // reset it
         scenes[scene_num].output[i].mode = 0;
         scenes[scene_num].output[i].quantization = 0;

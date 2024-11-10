@@ -40,7 +40,7 @@ bool usb_midi_present = false;
 static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #define DURATION_HOLD 500
 #define DURATION_HOLD_LONG 1250
-#define FLASH_TARGET_OFFSET (6 * 256 * 1024)
+#define FLASH_TARGET_OFFSET (5 * 256 * 1024)
 
 //
 #include "ff.h" /* Obtains integer types */
