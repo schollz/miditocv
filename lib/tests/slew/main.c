@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include "../../slew.h"
@@ -15,13 +16,16 @@ int main() {
   Slew_init(&slew, 2000, 0);
 
   // Generate and write the triangle wave data
-  for (float ct = 0; ct < 12000; ct += 1) {
+  uint32_t dt = 1;
+  for (uint32_t ct = 0; ct < 12000; ct += dt) {
     if (ct == 1000) {
       Slew_set_target(&slew, 1);
     } else if (ct == 1501) {
       Slew_set_target(&slew, 10);
     } else if (ct == 5000) {
       Slew_set_target(&slew, 0.45);
+    } else if (ct == 6000) {
+      dt = 1;
     } else if (ct == 7000) {
       Slew_set_target(&slew, 11.34);
     } else if (ct == 9000) {
@@ -30,7 +34,7 @@ int main() {
       Slew_set_target(&slew, 4.0);
     }
     float value = Slew_process(&slew, ct);
-    fprintf(file, "%f,%f\n", ct, value);
+    fprintf(file, "%f,%f\n", (float)ct / 1000.0f, value);
   }
 
   fclose(file);
