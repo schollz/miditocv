@@ -180,14 +180,12 @@ void Scene_update_with_sysex(uint8_t *buffer) {
   }
 
   if (did_update) {
-    scene_dirty[scene_num] = true;
     printf("scene %d output %d %s to %f (%d)\n", scene_num, output_num, param,
            val, sizeof(Scene));
     debounce_scene_save = to_ms_since_boot(get_absolute_time());
   }
   if (did_update_state) {
     printf("state scene to %d\n", state.scene);
-    scene_dirty[8] = true;
     debounce_scene_save = to_ms_since_boot(get_absolute_time());
   }
 }
@@ -196,49 +194,42 @@ void Scene_save_data() {
   if (debounce_scene_save == 0) {
     return;
   }
-  if (to_ms_since_boot(get_absolute_time()) - debounce_scene_save < 1000) {
+  if (to_ms_since_boot(get_absolute_time()) - debounce_scene_save < 3000) {
     return;
   }
-  printf("saving data\n");
+  printf("saving data(%d) (%d) (%d)\n", FLASH_PAGE_SIZE, FLASH_SECTOR_SIZE,
+         8 * sizeof(Output));
   debounce_scene_save = 0;
-  // flash_range_erase(FLASH_TARGET_OFFSET + (0 * FLASH_SECTOR_SIZE),
-  //                   FLASH_SECTOR_SIZE);
-  // flash_range_erase(FLASH_TARGET_OFFSET + (1 * FLASH_SECTOR_SIZE),
-  //                   FLASH_SECTOR_SIZE);
+  uint32_t interrupts = save_and_disable_interrupts();
+  flash_range_erase(FLASH_TARGET_OFFSET, FLASH_SECTOR_SIZE);
+  flash_range_erase(FLASH_TARGET_OFFSET + FLASH_SECTOR_SIZE, FLASH_SECTOR_SIZE);
 
-  if (scene_dirty[8] || true) {
-    // save state data
-    uint8_t flash_data[FLASH_PAGE_SIZE];
-    memcpy(flash_data, &state, sizeof(StateData));
-    uint32_t interrupts = save_and_disable_interrupts();
-    flash_range_program(FLASH_TARGET_OFFSET + 8 * FLASH_PAGE_SIZE, flash_data,
-                        FLASH_PAGE_SIZE);
-    restore_interrupts(interrupts);
-    scene_dirty[8] = false;
-  }
+  // save state data
+  uint8_t flash_data[FLASH_PAGE_SIZE];
+  memcpy(flash_data, &state, sizeof(StateData));
+  flash_range_program(FLASH_TARGET_OFFSET + 8 * FLASH_PAGE_SIZE * 2, flash_data,
+                      FLASH_PAGE_SIZE);
 
   for (size_t scene_num = 0; scene_num < 8; scene_num++) {
-    // if (!scene_dirty[scene_num]) {
-    //   continue;
-    // }
-    uint8_t flash_data[FLASH_PAGE_SIZE * 2];
+    uint8_t flash_data2[FLASH_PAGE_SIZE * 2];
     // copy each output to the flash data
     for (int i = 0; i < 8; i++) {
-      memcpy(flash_data + i * sizeof(Output), &scenes[scene_num].output[i],
+      memcpy(flash_data2 + i * sizeof(Output), &scenes[scene_num].output[i],
              sizeof(Output));
     }
-    uint32_t interrupts = save_and_disable_interrupts();
-    flash_range_program(FLASH_TARGET_OFFSET + scene_num * FLASH_PAGE_SIZE,
-                        flash_data, 2 * FLASH_PAGE_SIZE);
-    restore_interrupts(interrupts);
-    scene_dirty[scene_num] = false;
+    flash_range_program(FLASH_TARGET_OFFSET + scene_num * FLASH_PAGE_SIZE * 2,
+                        flash_data2, 2 * FLASH_PAGE_SIZE);
   }
+  restore_interrupts(interrupts);
 }
-
+const uint8_t *flash_target_contents_data =
+    (const uint8_t *)(XIP_BASE + FLASH_TARGET_OFFSET);
 void Scene_load_data() {
   // load state data
   uint8_t flash_data[FLASH_PAGE_SIZE];
-  pico_flash_read(flash_data, FLASH_PAGE_SIZE, 8);
+  for (size_t i = 0; i < FLASH_PAGE_SIZE; i++) {
+    flash_data[i] = flash_target_contents_data[i + 8 * FLASH_PAGE_SIZE * 2];
+  }
   memcpy(&state, flash_data, sizeof(StateData));
   if (state.scene < 0 || state.scene >= 8) {
     state.scene = 0;
@@ -246,28 +237,31 @@ void Scene_load_data() {
 
   for (size_t scene_num = 0; scene_num < 8; scene_num++) {
     uint8_t flash_data[FLASH_PAGE_SIZE * 2];
-    pico_flash_read(flash_data, FLASH_PAGE_SIZE * 2, scene_num);
+    for (size_t i = 0; i < FLASH_PAGE_SIZE * 2; i++) {
+      flash_data[i] =
+          flash_target_contents_data[i + scene_num * FLASH_PAGE_SIZE * 2];
+    }
     // copy each output from the flash data
     for (int i = 0; i < 8; i++) {
       memcpy(&scenes[scene_num].output[i], flash_data + i * sizeof(Output),
              sizeof(Output));
-      if (scenes[scene_num].output[i].min_voltage < -5 ||
-          scenes[scene_num].output[i].min_voltage > 10 ||
-          scenes[scene_num].output[i].mode > 6) {
-        // reset it
-        scenes[scene_num].output[i].mode = 0;
-        scenes[scene_num].output[i].quantization = 0;
-        scenes[scene_num].output[i].min_voltage = 0;
-        scenes[scene_num].output[i].max_voltage = 5;
-        scenes[scene_num].output[i].slew_time = 0;
-        scenes[scene_num].output[i].midi_channel = 0;
-        scenes[scene_num].output[i].midi_cc = 0;
-        scenes[scene_num].output[i].clock_tempo = 120;
-        scenes[scene_num].output[i].clock_division = 0;
-        scenes[scene_num].output[i].lfo_period = 0.5;
-        scenes[scene_num].output[i].lfo_depth = 0.5;
-        scenes[scene_num].output[i].lfo_waveform = 0;
-      }
+      // if (scenes[scene_num].output[i].min_voltage < -5 ||
+      //     scenes[scene_num].output[i].min_voltage > 10 ||
+      //     scenes[scene_num].output[i].mode > 6) {
+      //   // reset it
+      //   scenes[scene_num].output[i].mode = 0;
+      //   scenes[scene_num].output[i].quantization = 0;
+      //   scenes[scene_num].output[i].min_voltage = 0;
+      //   scenes[scene_num].output[i].max_voltage = 5;
+      //   scenes[scene_num].output[i].slew_time = 0;
+      //   scenes[scene_num].output[i].midi_channel = 0;
+      //   scenes[scene_num].output[i].midi_cc = 0;
+      //   scenes[scene_num].output[i].clock_tempo = 120;
+      //   scenes[scene_num].output[i].clock_division = 0;
+      //   scenes[scene_num].output[i].lfo_period = 0.5;
+      //   scenes[scene_num].output[i].lfo_depth = 0.5;
+      //   scenes[scene_num].output[i].lfo_waveform = 0;
+      // }
     }
   }
 }
