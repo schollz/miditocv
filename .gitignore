@@ -12,6 +12,8 @@ build/
 
 # Linker output
 *.ilk
+main
+*.csv
 *.map
 *.exp
 
