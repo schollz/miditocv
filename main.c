@@ -61,6 +61,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/memusage.h"
 #include "lib/pcg_basic.h"
 #include "lib/random.h"
+#include "lib/scene.h"
 #include "lib/sdcard.h"
 // globals
 float g_bpm = 120.0;
@@ -172,8 +173,8 @@ int main() {
     if (ct - ct_last_print > 1200) {
       ct_last_print = ct;
       uint32_t ct2 = to_ms_since_boot(get_absolute_time());
-      print_memory_usage();
-      flash_mem_test();
+      // print_memory_usage();
+      // flash_mem_test();
     }
 
     // // read knobs

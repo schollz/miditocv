@@ -6,13 +6,14 @@ GOVERSION = go1.21.11
 GOBIN = $(HOME)/go/bin
 GOINSTALLPATH = $(GOBIN)/$(GOVERSION)
 
-build: pico-extras
-	rm -rf build
-	mkdir build
-	cd build && cmake ..
+yoctocore: build pico-extras
 	make -C build -j$(NPROCS)
 	echo "build success"
 	cp build/*.uf2 yoctocore.uf2
+
+build:
+	mkdir -p build
+	cd build && cmake ..
 
 envs:
 	export PICO_EXTRAS_PATH=/home/zns/pico/pico-extras 
@@ -35,7 +36,7 @@ resetpico2:
 	-amidi -p $$(amidi -l | grep 'yoctocore\|zeptoboard\|ectocore' | awk '{print $$2}') -S "B00000"
 	sleep 0.1
 
-upload: resetpico2 changebaud dobuild
+upload: resetpico2 changebaud build
 	./dev/upload.sh 
 
 clean:

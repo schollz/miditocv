@@ -71,6 +71,7 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   if (get_sysex_param_float_value("hello", sysex, length, &val)) {
     printf("hello: %f\n", val);
   }
+  Scene_update_with_sysex(sysex);
 }
 
 void midi_note_on(int note, int velocity) {

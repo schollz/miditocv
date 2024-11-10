@@ -1,5 +1,102 @@
 const { createApp, ref, computed, watch } = Vue;
 
+function addToMidiConsole(message) {
+    console.log('MIDI message:', message);
+}
+function setupMidiInputListener() {
+    if (window.inputMidiDevice) {
+        window.inputMidiDevice.onmidimessage = (midiMessage) => {
+            // check if sysex
+            if (midiMessage.data[0] == 0xf0) {
+                // convert the sysex to string 
+                var sysex = "";
+                for (var i = 1; i < midiMessage.data.length - 1; i++) {
+                    sysex += String.fromCharCode(midiMessage.data[i]);
+                }
+                // see if it starts with version=
+                if (sysex.startsWith("version=")) {
+                    console.log(`[setupMidiInputListener] Device version: ${app.deviceVersion}`);
+                } else {
+                    addToMidiConsole(sysex);
+                }
+            } else {
+                addToMidiConsole(midiMessage.data);
+            }
+        };
+    }
+}
+
+function setupMidi() {
+    console.log("Setting up MIDI");
+    navigator.requestMIDIAccess({ sysex: true })
+        .then((midiAccess) => {
+            // Input setup
+            const inputs = midiAccess.inputs.values();
+            for (let input of inputs) {
+                if (input.name.includes("yoctocore") || input.name.includes("zeptocore") || input.name.includes("ectocore")) {
+                    window.inputMidiDevice = input;
+                    setupMidiInputListener();
+                    console.log("input device connected");
+                    break;
+                }
+            }
+
+            // Output setup
+            const outputs = midiAccess.outputs.values();
+            for (let output of outputs) {
+                // console.log(output.name);
+                if (output.name.includes("yoctocore") || output.name.includes("zeptocore") || output.name.includes("ectocore")) {
+                    window.yoctocoreDevice = output;
+                    console.log("output device connected");
+                    break;
+                }
+            }
+
+
+        })
+        .catch((error) => {
+            console.error("Could not access MIDI devices.", error);
+        });
+}
+
+
+
+function send_sysex(str) {
+    if (window.yoctocoreDevice) {
+        // Create a Uint8Array with start (0xF0) and end (0xF7) bytes
+        const sysex = new Uint8Array(str.length + 2);
+        sysex[0] = 0xF0;
+
+        // Fill the array with the string data, ensuring all bytes are 7-bit safe
+        for (let i = 0; i < str.length; i++) {
+            const charCode = str.charCodeAt(i);
+
+            // Ensure the character code is 7-bit (0x00 - 0x7F)
+            sysex[i + 1] = charCode & 0x7F;
+        }
+
+        // Set the end byte (0xF7)
+        sysex[str.length + 1] = 0xF7;
+
+        // Send the SysEx message
+        try {
+            window.yoctocoreDevice.send(sysex);
+            //          console.log("SysEx message sent:", sysex);
+        } catch (error) {
+            console.error("Failed to send SysEx message:", error);
+        }
+    } else {
+        console.warn("No MIDI device connected.");
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // if chrome and on desktop
+    if (window.chrome && window.chrome.app) {
+        setupMidi();
+    }
+});
+
 const app = createApp({
     setup() {
         // Initialize scenes and outputs
@@ -94,6 +191,26 @@ const app = createApp({
             },
         };
 
+        watch(
+            () => selected_output.value.max_voltage,
+            (newValue) => {
+                // If max_voltage exceeds 10, set it back to 10
+                if (newValue > 10) {
+                    selected_output.value.max_voltage = 10;
+                }
+            }
+        );
+
+        watch(
+            () => selected_output.value.min_voltage,
+            (newValue) => {
+                // If min_voltage exceeds -5, set it back to -5
+                if (newValue < -5) {
+                    selected_output.value.min_voltage = -5;
+                }
+            }
+        )
+
         // Watcher for mode changes to update default values
         watch(
             () => selected_output.value.mode,
@@ -124,12 +241,18 @@ const app = createApp({
         function logChange(sceneIndex, outputIndex, property, value) {
             const key = getDebounceKey(sceneIndex, outputIndex, property);
 
+            // return if value is empty
+            if (value === "") {
+                return;
+            }
+
             // Create a debounced logger if it doesn't exist
             if (!debounceMap.has(key)) {
                 debounceMap.set(
                     key,
                     debounce((sceneIdx, outputIdx, prop, val) => {
-                        console.log(`scene[${sceneIdx}].output[${outputIdx}].${prop} = ${val}`);
+                        console.log(`${sceneIdx} ${outputIdx} ${prop} ${val}`);
+                        send_sysex(`${sceneIdx}_${outputIdx}_${prop.replace(/_/g, '')}_${val}`);
                     }, 1000)
                 );
             }
@@ -152,20 +275,13 @@ const app = createApp({
                     scene.outputs.forEach((output, outputIndex) => {
                         const oldOutput = parseOld[sceneIndex]?.outputs[outputIndex];
 
-                        // Check for changes in "mode"
-                        if (output.mode !== oldOutput?.mode) {
-                            logChange(sceneIndex, outputIndex, 'mode', output.mode);
-                        }
+                        // Check for changes in each param
+                        Object.keys(output).forEach((param) => {
+                            if (output[param] !== oldOutput[param]) {
+                                logChange(sceneIndex, outputIndex, param, output[param]);
+                            }
+                        });
 
-                        // Check for changes in "min_voltage"
-                        if (output.min_voltage !== oldOutput?.min_voltage) {
-                            logChange(sceneIndex, outputIndex, 'min_voltage', output.min_voltage);
-                        }
-
-                        // Check for changes in "max_voltage"
-                        if (output.max_voltage !== oldOutput?.max_voltage) {
-                            logChange(sceneIndex, outputIndex, 'max_voltage', output.max_voltage);
-                        }
                     });
                 });
             },

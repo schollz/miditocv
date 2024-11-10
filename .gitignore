@@ -1,4 +1,6 @@
 # Prerequisites
+yoctocore.uf2
+web/*pem
 *.d
 pico-extras/
 build/
