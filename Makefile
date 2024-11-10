@@ -12,11 +12,7 @@ build: pico-extras
 	cd build && cmake ..
 	make -C build -j$(NPROCS)
 	echo "build success"
-
-yoctocore: build
-	cp yoctocore_compile_definitions.cmake target_compile_definitions.cmake
-	make -C build -j$(NPROCS)
-	mv build/*.uf2 yoctocore.uf2
+	cp build/*.uf2 yoctocore.uf2
 
 envs:
 	export PICO_EXTRAS_PATH=/home/zns/pico/pico-extras 
