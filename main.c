@@ -57,7 +57,6 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/adsr.h"
 #include "lib/dac.h"
 #include "lib/filterexp.h"
-#include "lib/flashmem.h"
 #include "lib/knob_change.h"
 #include "lib/mcp3208.h"
 #include "lib/memusage.h"
@@ -75,11 +74,6 @@ ADSR *adsr[8];
 #include "lib/midi_comm.h"
 #include "lib/midicallback.h"
 #endif
-
-const uint8_t *flash_target_contents =
-    (const uint8_t *)(XIP_BASE +
-                      FLASH_TARGET_OFFSET);  //++ Pointer pointing at the Flash
-                                             // Address Location
 
 int main() {
   // Set PLL_USB 96MHz

@@ -22,6 +22,7 @@ bool scene_dirty[9] = {false, false, false, false, false,
                        false, false, false, false};
 uint32_t debounce_scene_save = 0;
 typedef struct StateData {
+  uint32_t magic;
   uint8_t scene;
 } StateData;
 
@@ -245,23 +246,22 @@ void Scene_load_data() {
     for (int i = 0; i < 8; i++) {
       memcpy(&scenes[scene_num].output[i], flash_data + i * sizeof(Output),
              sizeof(Output));
-      // if (scenes[scene_num].output[i].min_voltage < -5 ||
-      //     scenes[scene_num].output[i].min_voltage > 10 ||
-      //     scenes[scene_num].output[i].mode > 6) {
-      //   // reset it
-      //   scenes[scene_num].output[i].mode = 0;
-      //   scenes[scene_num].output[i].quantization = 0;
-      //   scenes[scene_num].output[i].min_voltage = 0;
-      //   scenes[scene_num].output[i].max_voltage = 5;
-      //   scenes[scene_num].output[i].slew_time = 0;
-      //   scenes[scene_num].output[i].midi_channel = 0;
-      //   scenes[scene_num].output[i].midi_cc = 0;
-      //   scenes[scene_num].output[i].clock_tempo = 120;
-      //   scenes[scene_num].output[i].clock_division = 0;
-      //   scenes[scene_num].output[i].lfo_period = 0.5;
-      //   scenes[scene_num].output[i].lfo_depth = 0.5;
-      //   scenes[scene_num].output[i].lfo_waveform = 0;
-      // }
+      if (state.magic != 123456) {
+        // reset it
+        scenes[scene_num].output[i].mode = 0;
+        scenes[scene_num].output[i].quantization = 0;
+        scenes[scene_num].output[i].min_voltage = 0;
+        scenes[scene_num].output[i].max_voltage = 5;
+        scenes[scene_num].output[i].slew_time = 0;
+        scenes[scene_num].output[i].midi_channel = 0;
+        scenes[scene_num].output[i].midi_cc = 0;
+        scenes[scene_num].output[i].clock_tempo = 120;
+        scenes[scene_num].output[i].clock_division = 0;
+        scenes[scene_num].output[i].lfo_period = 0.5;
+        scenes[scene_num].output[i].lfo_depth = 0.5;
+        scenes[scene_num].output[i].lfo_waveform = 0;
+      }
     }
   }
+  state.magic = 123456;
 }
