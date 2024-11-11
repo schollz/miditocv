@@ -17,163 +17,80 @@ typedef struct {
   float max_voltage;
 } ClockState;
 
-// Global variables for the state of each timer
-ClockState clockpool_state0 = {.step = -1,
+// Define distinct ClockState variables for each clock
+ClockState clockpool_state0, clockpool_state1, clockpool_state2,
+    clockpool_state3;
+ClockState clockpool_state4, clockpool_state5, clockpool_state6,
+    clockpool_state7;
 
-                               .enabled = false,
-                               .division = 1.0,
-                               .bpm = 120.0,
-                               .min_voltage = 0.0,
-                               .max_voltage = 3.3};
-ClockState clockpool_state1 = {.step = -1,
+// Define distinct timers for each clock
+struct repeating_timer timer0, timer1, timer2, timer3, timer4, timer5, timer6,
+    timer7;
 
-                               .enabled = false,
-                               .division = 1.0,
-                               .bpm = 120.0,
-                               .min_voltage = 0.0,
-                               .max_voltage = 3.3};
-ClockState clockpool_state2 = {.step = -1,
+// Helper function to initialize a clock state
+void init_clock_state(ClockState *state) {
+  state->step = -1;
+  state->enabled = false;
+  state->division = 1.0;
+  state->bpm = 120.0;
+  state->min_voltage = 0.0;
+  state->max_voltage = 3.3;
+}
 
-                               .enabled = false,
-                               .division = 1.0,
-                               .bpm = 120.0,
-                               .min_voltage = 0.0,
-                               .max_voltage = 3.3};
-ClockState clockpool_state3 = {.step = -1,
+// Helper function to handle timer updates
+void update_clock_state(ClockState *state, int index) {
+  if (state->enabled) {
+    state->step++;
+    state->on = !state->on;
+    // TODO: Change voltage here
+    printf("[%d] %lld %d %d\n", index, time_us_64(), state->step, state->on);
+  }
+}
 
-                               .enabled = false,
-                               .division = 1.0,
-                               .bpm = 120.0,
-                               .min_voltage = 0.0,
-                               .max_voltage = 3.3};
-ClockState clockpool_state4 = {.step = -1,
-
-                               .enabled = false,
-                               .division = 1.0,
-                               .bpm = 120.0,
-                               .min_voltage = 0.0,
-                               .max_voltage = 3.3};
-ClockState clockpool_state5 = {.step = -1,
-
-                               .enabled = false,
-                               .division = 1.0,
-                               .bpm = 120.0,
-                               .min_voltage = 0.0,
-                               .max_voltage = 3.3};
-ClockState clockpool_state6 = {.step = -1,
-
-                               .enabled = false,
-                               .division = 1.0,
-                               .bpm = 120.0,
-                               .min_voltage = 0.0,
-                               .max_voltage = 3.3};
-ClockState clockpool_state7 = {.step = -1,
-
-                               .enabled = false,
-                               .division = 1.0,
-                               .bpm = 120.0,
-                               .min_voltage = 0.0,
-                               .max_voltage = 3.3};
-
-struct repeating_timer timer0;
-struct repeating_timer timer1;
-struct repeating_timer timer2;
-struct repeating_timer timer3;
-struct repeating_timer timer4;
-struct repeating_timer timer5;
-struct repeating_timer timer6;
-struct repeating_timer timer7;
-
-// Callback functions for each timer
+// Timer callback functions for each clock
 bool repeating_timer_callback0(struct repeating_timer *t) {
-  if (clockpool_state0.enabled) {
-    clockpool_state0.step++;
-    clockpool_state0.on = !clockpool_state0.on;
-    // TODO change voltage here
-    printf("[0] %lld %d %d\n", time_us_64(), clockpool_state0.step,
-           clockpool_state0.on);
-  }
+  update_clock_state(&clockpool_state0, 0);
   return true;
 }
-
 bool repeating_timer_callback1(struct repeating_timer *t) {
-  if (clockpool_state1.enabled) {
-    clockpool_state1.step++;
-    clockpool_state1.on = !clockpool_state1.on;
-    // TODO change voltage here
-    printf("[1] %lld %d %d\n", time_us_64(), clockpool_state1.step,
-           clockpool_state1.on);
-  }
+  update_clock_state(&clockpool_state1, 1);
   return true;
 }
-
 bool repeating_timer_callback2(struct repeating_timer *t) {
-  if (clockpool_state2.enabled) {
-    clockpool_state2.step++;
-    clockpool_state2.on = !clockpool_state2.on;
-    // TODO change voltage here
-    printf("[2] %lld %d %d\n", time_us_64(), clockpool_state2.step,
-           clockpool_state2.on);
-  }
+  update_clock_state(&clockpool_state2, 2);
   return true;
 }
-
 bool repeating_timer_callback3(struct repeating_timer *t) {
-  if (clockpool_state3.enabled) {
-    clockpool_state3.step++;
-    clockpool_state3.on = !clockpool_state3.on;
-    // TODO change voltage here
-    printf("[3] %lld %d %d\n", time_us_64(), clockpool_state3.step,
-           clockpool_state3.on);
-  }
+  update_clock_state(&clockpool_state3, 3);
   return true;
 }
-
 bool repeating_timer_callback4(struct repeating_timer *t) {
-  if (clockpool_state4.enabled) {
-    clockpool_state4.step++;
-    clockpool_state4.on = !clockpool_state4.on;
-    // TODO change voltage here
-    printf("[4] %lld %d %d\n", time_us_64(), clockpool_state4.step,
-           clockpool_state4.on);
-  }
+  update_clock_state(&clockpool_state4, 4);
   return true;
 }
-
 bool repeating_timer_callback5(struct repeating_timer *t) {
-  if (clockpool_state5.enabled) {
-    clockpool_state5.step++;
-    clockpool_state5.on = !clockpool_state5.on;
-    // TODO change voltage here
-    printf("[5] %lld %d %d\n", time_us_64(), clockpool_state5.step,
-           clockpool_state5.on);
-  }
+  update_clock_state(&clockpool_state5, 5);
   return true;
 }
-
 bool repeating_timer_callback6(struct repeating_timer *t) {
-  if (clockpool_state6.enabled) {
-    clockpool_state6.step++;
-    clockpool_state6.on = !clockpool_state6.on;
-    // TODO change voltage here
-    printf("[6] %lld %d %d\n", time_us_64(), clockpool_state6.step,
-           clockpool_state6.on);
-  }
+  update_clock_state(&clockpool_state6, 6);
   return true;
 }
-
 bool repeating_timer_callback7(struct repeating_timer *t) {
-  if (clockpool_state7.enabled) {
-    clockpool_state7.step++;
-    clockpool_state7.on = !clockpool_state7.on;
-    // TODO change voltage here
-    printf("[7] %lld %d %d\n", time_us_64(), clockpool_state7.step,
-           clockpool_state7.on);
-  }
+  update_clock_state(&clockpool_state7, 7);
   return true;
 }
 
 void ClockPool_init() {
+  init_clock_state(&clockpool_state0);
+  init_clock_state(&clockpool_state1);
+  init_clock_state(&clockpool_state2);
+  init_clock_state(&clockpool_state3);
+  init_clock_state(&clockpool_state4);
+  init_clock_state(&clockpool_state5);
+  init_clock_state(&clockpool_state6);
+  init_clock_state(&clockpool_state7);
+
   add_repeating_timer_ms(1000, repeating_timer_callback0, NULL, &timer0);
   add_repeating_timer_ms(1000, repeating_timer_callback1, NULL, &timer1);
   add_repeating_timer_ms(1000, repeating_timer_callback2, NULL, &timer2);
@@ -183,7 +100,6 @@ void ClockPool_init() {
   add_repeating_timer_ms(1000, repeating_timer_callback6, NULL, &timer6);
   add_repeating_timer_ms(1000, repeating_timer_callback7, NULL, &timer7);
 }
-
 void ClockPool_enable(int index, bool enable) {
   switch (index) {
     case 0:
@@ -210,154 +126,76 @@ void ClockPool_enable(int index, bool enable) {
     case 7:
       clockpool_state7.enabled = enable;
       break;
+    default:
+      printf("Invalid index: %d\n", index);
+      break;
   }
 }
 
 // Reset a specific clock
 void ClockPool_reset_clock(int index, float bpm, float division,
                            float min_voltage, float max_voltage) {
+  ClockState *state;
+  struct repeating_timer *timer;
+  bool (*callback)(struct repeating_timer *);
+
   switch (index) {
     case 0:
-      cancel_repeating_timer(&timer0);
-      clockpool_state0.step = 0;
-      clockpool_state0.division = division;
-      clockpool_state0.bpm = bpm;
-      clockpool_state0.min_voltage = min_voltage;
-      clockpool_state0.max_voltage = max_voltage;
-      clockpool_state0.on = true;
-      if (clockpool_state0.enabled) {
-        // TODO: Change voltage here
-        printf("[0] %lld %d %d\n", time_us_64(), clockpool_state0.step,
-               clockpool_state0.on);
-      }
-      add_repeating_timer_ms(
-          roundf((30000.0f / clockpool_state0.bpm) / clockpool_state0.division),
-          repeating_timer_callback0, NULL, &timer0);
+      state = &clockpool_state0;
+      timer = &timer0;
+      callback = repeating_timer_callback0;
       break;
-
     case 1:
-      cancel_repeating_timer(&timer1);
-      clockpool_state1.step = 0;
-      clockpool_state1.division = division;
-      clockpool_state1.bpm = bpm;
-      clockpool_state1.min_voltage = min_voltage;
-      clockpool_state1.max_voltage = max_voltage;
-      clockpool_state1.on = true;
-      if (clockpool_state1.enabled) {
-        printf("[1] %lld %d %d\n", time_us_64(), clockpool_state1.step,
-               clockpool_state1.on);
-      }
-      add_repeating_timer_ms(
-          roundf((30000.0f / clockpool_state1.bpm) / clockpool_state1.division),
-          repeating_timer_callback1, NULL, &timer1);
+      state = &clockpool_state1;
+      timer = &timer1;
+      callback = repeating_timer_callback1;
       break;
-
     case 2:
-      cancel_repeating_timer(&timer2);
-      clockpool_state2.step = 0;
-      clockpool_state2.division = division;
-      clockpool_state2.bpm = bpm;
-      clockpool_state2.min_voltage = min_voltage;
-      clockpool_state2.max_voltage = max_voltage;
-      clockpool_state2.on = true;
-      if (clockpool_state2.enabled) {
-        printf("[2] %lld %d %d\n", time_us_64(), clockpool_state2.step,
-               clockpool_state2.on);
-      }
-      add_repeating_timer_ms(
-          roundf((30000.0f / clockpool_state2.bpm) / clockpool_state2.division),
-          repeating_timer_callback2, NULL, &timer2);
+      state = &clockpool_state2;
+      timer = &timer2;
+      callback = repeating_timer_callback2;
       break;
-
     case 3:
-      cancel_repeating_timer(&timer3);
-      clockpool_state3.step = 0;
-      clockpool_state3.division = division;
-      clockpool_state3.bpm = bpm;
-      clockpool_state3.min_voltage = min_voltage;
-      clockpool_state3.max_voltage = max_voltage;
-      clockpool_state3.on = true;
-      if (clockpool_state3.enabled) {
-        printf("[3] %lld %d %d\n", time_us_64(), clockpool_state3.step,
-               clockpool_state3.on);
-      }
-      add_repeating_timer_ms(
-          roundf((30000.0f / clockpool_state3.bpm) / clockpool_state3.division),
-          repeating_timer_callback3, NULL, &timer3);
+      state = &clockpool_state3;
+      timer = &timer3;
+      callback = repeating_timer_callback3;
       break;
-
     case 4:
-      cancel_repeating_timer(&timer4);
-      clockpool_state4.step = 0;
-      clockpool_state4.division = division;
-      clockpool_state4.bpm = bpm;
-      clockpool_state4.min_voltage = min_voltage;
-      clockpool_state4.max_voltage = max_voltage;
-      clockpool_state4.on = true;
-      if (clockpool_state4.enabled) {
-        printf("[4] %lld %d %d\n", time_us_64(), clockpool_state4.step,
-               clockpool_state4.on);
-      }
-      add_repeating_timer_ms(
-          roundf((30000.0f / clockpool_state4.bpm) / clockpool_state4.division),
-          repeating_timer_callback4, NULL, &timer4);
+      state = &clockpool_state4;
+      timer = &timer4;
+      callback = repeating_timer_callback4;
       break;
-
     case 5:
-      cancel_repeating_timer(&timer5);
-      clockpool_state5.step = 0;
-      clockpool_state5.division = division;
-      clockpool_state5.bpm = bpm;
-      clockpool_state5.min_voltage = min_voltage;
-      clockpool_state5.max_voltage = max_voltage;
-      clockpool_state5.on = true;
-      if (clockpool_state5.enabled) {
-        printf("[5] %lld %d %d\n", time_us_64(), clockpool_state5.step,
-               clockpool_state5.on);
-      }
-      add_repeating_timer_ms(
-          roundf((30000.0f / clockpool_state5.bpm) / clockpool_state5.division),
-          repeating_timer_callback5, NULL, &timer5);
+      state = &clockpool_state5;
+      timer = &timer5;
+      callback = repeating_timer_callback5;
       break;
-
     case 6:
-      cancel_repeating_timer(&timer6);
-      clockpool_state6.step = 0;
-      clockpool_state6.division = division;
-      clockpool_state6.bpm = bpm;
-      clockpool_state6.min_voltage = min_voltage;
-      clockpool_state6.max_voltage = max_voltage;
-      clockpool_state6.on = true;
-      if (clockpool_state6.enabled) {
-        printf("[6] %lld %d %d\n", time_us_64(), clockpool_state6.step,
-               clockpool_state6.on);
-      }
-      add_repeating_timer_ms(
-          roundf((30000.0f / clockpool_state6.bpm) / clockpool_state6.division),
-          repeating_timer_callback6, NULL, &timer6);
+      state = &clockpool_state6;
+      timer = &timer6;
+      callback = repeating_timer_callback6;
       break;
-
     case 7:
-      cancel_repeating_timer(&timer7);
-      clockpool_state7.step = 0;
-      clockpool_state7.division = division;
-      clockpool_state7.bpm = bpm;
-      clockpool_state7.min_voltage = min_voltage;
-      clockpool_state7.max_voltage = max_voltage;
-      clockpool_state7.on = true;
-      if (clockpool_state7.enabled) {
-        printf("[7] %lld %d %d\n", time_us_64(), clockpool_state7.step,
-               clockpool_state7.on);
-      }
-      add_repeating_timer_ms(
-          roundf((30000.0f / clockpool_state7.bpm) / clockpool_state7.division),
-          repeating_timer_callback7, NULL, &timer7);
+      state = &clockpool_state7;
+      timer = &timer7;
+      callback = repeating_timer_callback7;
       break;
-
     default:
       printf("Invalid index: %d\n", index);
-      break;
+      return;
   }
+
+  cancel_repeating_timer(timer);
+  state->step = -1;
+  state->division = division;
+  state->bpm = bpm;
+  state->min_voltage = min_voltage;
+  state->max_voltage = max_voltage;
+  state->on = false;
+
+  update_clock_state(state, index);
+  int interval_ms = roundf((30000.0f / bpm) / division);
+  add_repeating_timer_ms(interval_ms, callback, NULL, timer);
 }
 
 #endif

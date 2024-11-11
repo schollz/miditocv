@@ -143,18 +143,15 @@ int main() {
 
   // clock pool
   ClockPool_init();
-  ClockPool_enable(1, true);
-  ClockPool_reset_clock(1, 150, 1, 0, 5.0);
+  ClockPool_enable(0, true);
+  // ClockPool_reset_clock(1, 150, 1, 0, 5.0);
 
   // // initialize MCP3208
   // MCP3208 *mcp3208 =
   //     MCP3208_malloc(spi0, PIN_SPI_CSN, PIN_SPI_CLK, PIN_SPI_RX, PIN_SPI_TX);
 
   // // initialize WS2812
-  // ws2812 = WS2812_new(WS2812_PIN, pio0, WS2812_SM, WS2812_NUM_LEDS);
-  // WS2812_set_brightness(ws2812, 50);
-  // for (int i = 0; i < WS2812_NUM_LEDS; i++) {
-  //   WS2812_fill(ws2812, i, 150, 0, 255);
+  // ws2812 = WS281260s2812, i, 150, 0, 255);
   // }
   // WS2812_show(ws2812);
 
@@ -187,7 +184,7 @@ int main() {
       //  flash_mem_test();
       printf("time: %lld\n", time_us_64());
       ClockPool_enable(0, true);
-      ClockPool_reset_clock(0, 60, 1, 0, 5.0);
+      ClockPool_reset_clock(0, 70, 1, 0, 5.0);
     }
     // // read knobs
     // for (uint8_t i = 0; i < 8; i++) {
