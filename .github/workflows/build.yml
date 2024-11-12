@@ -35,4 +35,4 @@ jobs:
         run: echo "PICO_SDK_PATH=$GITHUB_WORKSPACE/pico-sdk" >> $GITHUB_ENV
       - name: Build yoctocore
         run: |
-          make build
+          make yoctocore
