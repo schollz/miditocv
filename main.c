@@ -55,7 +55,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 //
 #include "lib/WS2812.h"
 #include "lib/adsr.h"
-#include "lib/clockpool.h"
+#include "lib/clockout.h"
 #include "lib/dac.h"
 #include "lib/filterexp.h"
 #include "lib/knob_change.h"
@@ -77,11 +77,7 @@ ADSR *adsr[8];
 #endif
 
 void clockout_callback(bool on) {
-  if (on) {
-    printf("Clockout on\n");
-  } else {
-    printf("Clockout off\n");
-  }
+  printf("clockout %d %d\n", on, to_ms_since_boot(get_absolute_time()));
 }
 
 int main() {
@@ -146,6 +142,11 @@ int main() {
   // ClockPool_enable(0, true);
   // ClockPool_reset_clock(1, 150, 1, 0, 5.0);
 
+  // clock out
+  Clockout clockout;
+  Clockout_init(&clockout, 250, 3, clockout_callback);
+  Clockout_start(&clockout, to_ms_since_boot(get_absolute_time()));
+
   // // initialize MCP3208
   // MCP3208 *mcp3208 =
   //     MCP3208_malloc(spi0, PIN_SPI_CSN, PIN_SPI_CLK, PIN_SPI_RX, PIN_SPI_TX);
@@ -178,7 +179,7 @@ int main() {
 #endif
 
     ct = to_ms_since_boot(get_absolute_time());
-    if (ct - ct_last_print > 5000) {
+    if (ct - ct_last_print > 1000) {
       ct_last_print = ct;
       print_memory_usage();
       //  flash_mem_test();
@@ -200,7 +201,8 @@ int main() {
     Scene_save_data();
 
     // check whether any clock changed
+    Clockout_process(&clockout, (float)ct);
 
-    sleep_ms(1);
+    // sleep_ms(random_integer_in_range(1, 10));
   }
 }

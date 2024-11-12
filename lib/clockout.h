@@ -18,14 +18,18 @@ float self_divisions[CLOCKOUT_NUM_DIVISIONS] = {
 typedef struct Clockout {
   float bpm;
   uint8_t division;
-  uint32_t next_pulse_difference;
-  uint32_t last_pulse_time;
+  float next_time;
+  float time_diff;
   bool on;
   callback_bool pulse_callback;
 } Clockout;
 
 // Function to set BPM
 void Clockout_set_bpm(Clockout *self, float bpm) { self->bpm = bpm; }
+
+void Clockout_compute_time_diff(Clockout *self) {
+  self->time_diff = 30000.0f / (self->bpm * self_divisions[self->division]);
+}
 
 // Function to set the division, ensuring it is within valid range
 void Clockout_set_division(Clockout *self, uint8_t division) {
@@ -41,50 +45,41 @@ void Clockout_init(Clockout *self, float bpm, uint8_t division,
   self->division = 0;
   self->on = false;
   self->pulse_callback = pulse_callback;
-  self->next_pulse_difference = 0;
+  self->next_time = 0;
   Clockout_set_division(self, division);
-}
-
-// Function to calculate the next pulse difference
-void Clockout_set_next_pulse_difference(Clockout *self, int32_t error) {
-  self->next_pulse_difference =
-      (uint32_t)(roundf(30000.0f /
-                        (self->bpm * self_divisions[self->division])) -
-                 error);
+  Clockout_compute_time_diff(self);
 }
 
 // Function to reset the Clockout state
-void Clockout_reset(Clockout *self, uint32_t current_time) {
-  self->on = false;
-  self->last_pulse_time = current_time;
-  Clockout_set_next_pulse_difference(self, 0);
+void Clockout_reset(Clockout *self, float current_time) {
+  self->on = true;
+  self->next_time = current_time + self->time_diff;
+  if (self->pulse_callback != NULL) {
+    self->pulse_callback(self->on);
+  }
 }
 
 // Function to stop the Clockout
-void Clockout_stop(Clockout *self) { self->next_pulse_difference = 0; }
+void Clockout_stop(Clockout *self) { self->next_time = 0; }
 
 // Function to start the Clockout
-void Clockout_start(Clockout *self, uint32_t current_time) {
+void Clockout_start(Clockout *self, float current_time) {
   Clockout_reset(self, current_time);
 }
 
 // Main processing function for generating clock pulses
-void Clockout_process(Clockout *self, uint32_t current_time) {
-  if (self->next_pulse_difference == 0) {
+void Clockout_process(Clockout *self, float current_time) {
+  if (self->next_time == 0) {
     return;
   }
 
   // Calculate the time difference, considering possible overflow
-  uint32_t time_diff = current_time - self->last_pulse_time;
-
-  if (time_diff >= self->next_pulse_difference) {
+  if (current_time >= self->next_time) {
     self->on = !self->on;
-    int32_t error = (int32_t)(time_diff - self->next_pulse_difference);
-    Clockout_set_next_pulse_difference(self, error);
+    self->next_time += self->time_diff;
     if (self->pulse_callback != NULL) {
       self->pulse_callback(self->on);
     }
-    self->last_pulse_time = current_time;
   }
 }
 
