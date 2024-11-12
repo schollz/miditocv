@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "pico/multicore.h"
 #include "pico/stdlib.h"
-
 // Define a struct to hold the step and a change flag
 typedef struct {
   int step;
@@ -81,25 +81,34 @@ bool repeating_timer_callback7(struct repeating_timer *t) {
   return true;
 }
 
-void ClockPool_init() {
-  init_clock_state(&clockpool_state0);
-  init_clock_state(&clockpool_state1);
-  init_clock_state(&clockpool_state2);
-  init_clock_state(&clockpool_state3);
-  init_clock_state(&clockpool_state4);
-  init_clock_state(&clockpool_state5);
-  init_clock_state(&clockpool_state6);
-  init_clock_state(&clockpool_state7);
+void ClockPool_init_() {
+  // init_clock_state(&clockpool_state0);
+  //  init_clock_state(&clockpool_state1);
+  //  init_clock_state(&clockpool_state2);
+  //  init_clock_state(&clockpool_state3);
+  //  init_clock_state(&clockpool_state4);
+  //  init_clock_state(&clockpool_state5);
+  //  init_clock_state(&clockpool_state6);
+  //  init_clock_state(&clockpool_state7);
 
-  add_repeating_timer_ms(1000, repeating_timer_callback0, NULL, &timer0);
-  add_repeating_timer_ms(1000, repeating_timer_callback1, NULL, &timer1);
-  add_repeating_timer_ms(1000, repeating_timer_callback2, NULL, &timer2);
-  add_repeating_timer_ms(1000, repeating_timer_callback3, NULL, &timer3);
-  add_repeating_timer_ms(1000, repeating_timer_callback4, NULL, &timer4);
-  add_repeating_timer_ms(1000, repeating_timer_callback5, NULL, &timer5);
-  add_repeating_timer_ms(1000, repeating_timer_callback6, NULL, &timer6);
-  add_repeating_timer_ms(1000, repeating_timer_callback7, NULL, &timer7);
+  // add_repeating_timer_ms(1000, repeating_timer_callback0, NULL, &timer0);
+  //  add_repeating_timer_ms(1000, repeating_timer_callback1, NULL, &timer1);
+  //  add_repeating_timer_ms(1000, repeating_timer_callback2, NULL, &timer2);
+  //  add_repeating_timer_ms(1000, repeating_timer_callback3, NULL, &timer3);
+  //  add_repeating_timer_ms(1000, repeating_timer_callback4, NULL, &timer4);
+  //  add_repeating_timer_ms(1000, repeating_timer_callback5, NULL, &timer5);
+  //  add_repeating_timer_ms(1000, repeating_timer_callback6, NULL, &timer6);
+  //  add_repeating_timer_ms(1000, repeating_timer_callback7, NULL, &timer7);
+
+  // Core 1 main loop
+  while (1) {
+    // Perform any additional tasks needed on core 1
+    tight_loop_contents();  // Prevent the core from idling
+  }
 }
+
+void ClockPool_init() { multicore_launch_core1(ClockPool_init_); }
+
 void ClockPool_enable(int index, bool enable) {
   switch (index) {
     case 0:

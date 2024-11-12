@@ -131,7 +131,7 @@ int main() {
 #endif
 
   // // load the Scene data
-  // Scene_load_data();
+  Scene_load_data();
 
   // Implicitly called by disk_initialize,
   // but called here to set up the GPIOs
@@ -141,9 +141,9 @@ int main() {
   // initialize random library
   random_initialize();
 
-  // clock pool
-  ClockPool_init();
-  ClockPool_enable(0, true);
+  // // clock pool
+  // ClockPool_init();
+  // ClockPool_enable(0, true);
   // ClockPool_reset_clock(1, 150, 1, 0, 5.0);
 
   // // initialize MCP3208
@@ -183,8 +183,8 @@ int main() {
       print_memory_usage();
       //  flash_mem_test();
       printf("time: %lld\n", time_us_64());
-      ClockPool_enable(0, true);
-      ClockPool_reset_clock(0, 70, 1, 0, 5.0);
+      // ClockPool_enable(0, true);
+      // ClockPool_reset_clock(0, 70, 1, 0, 5.0);
     }
     // // read knobs
     // for (uint8_t i = 0; i < 8; i++) {
@@ -197,10 +197,10 @@ int main() {
     //   printf("BPM: %f\n", g_bpm);
     // }
 
-    // Scene_save_data();
+    Scene_save_data();
 
     // check whether any clock changed
 
-    sleep_us(1);
+    sleep_ms(1);
   }
 }
