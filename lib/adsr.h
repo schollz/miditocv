@@ -2,6 +2,10 @@
 #ifndef ADSR_LIB
 #define ADSR_LIB 1
 
+#include <math.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 enum envState { env_idle = 0, env_attack, env_decay, env_sustain, env_release };
 
 typedef struct ADSR {
@@ -15,13 +19,14 @@ typedef struct ADSR {
   float level_start;
   float start_time;
   float shape;
+  float level_min;
+  float level_max;
   int32_t state;
   bool gate;
 } ADSR;
 
-ADSR *ADSR_malloc(float attack, float decay, float sustain, float release,
-                  float shape) {
-  ADSR *adsr = (ADSR *)malloc(sizeof(ADSR));
+void ADSR_init(ADSR *adsr, float attack, float decay, float sustain,
+               float release, float shape) {
   adsr->attack = attack;
   adsr->level_attack = 0;
   adsr->decay = decay;
@@ -31,12 +36,16 @@ ADSR *ADSR_malloc(float attack, float decay, float sustain, float release,
   adsr->level = 0;
   adsr->level_start = 0;
   adsr->start_time = 0;
+  adsr->level_min = 0;
+  adsr->level_max = 1.0f;
   adsr->gate = false;
   adsr->shape = shape;
-  return adsr;
 }
 
-void ADSR_free(ADSR *adsr) { free(adsr); }
+void ADSR_set_levels(ADSR *adsr, float level_min, float level_max) {
+  adsr->level_min = level_min;
+  adsr->level_max = level_max;
+}
 
 void ADSR_gate(ADSR *adsr, bool gate, uint32_t current_time_ms) {
   if (adsr->gate == gate) {
@@ -51,7 +60,17 @@ void ADSR_gate(ADSR *adsr, bool gate, uint32_t current_time_ms) {
   }
 }
 
-void ADSR_process(ADSR *adsr, float current_time_ms) {
+void ADSR_set_shape(ADSR *adsr, float shape) { adsr->shape = shape; }
+
+void ADSR_set_attack(ADSR *adsr, float attack) { adsr->attack = attack; }
+
+void ADSR_set_decay(ADSR *adsr, float decay) { adsr->decay = decay; }
+
+void ADSR_set_sustain(ADSR *adsr, float sustain) { adsr->sustain = sustain; }
+
+void ADSR_set_release(ADSR *adsr, float release) { adsr->release = release; }
+
+float ADSR_process(ADSR *adsr, float current_time_ms) {
   if (adsr->state == env_attack) {
     int32_t elapsed = current_time_ms - adsr->start_time;
     float curve_shape = adsr->attack / adsr->shape;
@@ -62,7 +81,7 @@ void ADSR_process(ADSR *adsr, float current_time_ms) {
     adsr->level_release = adsr->level;
     if (elapsed >= adsr->attack) {
       adsr->state = env_decay;
-      adsr->start_time = adsr->attack;
+      adsr->start_time = current_time_ms;
     }
   }
 
@@ -93,6 +112,9 @@ void ADSR_process(ADSR *adsr, float current_time_ms) {
       adsr->level = adsr->level_release * exp(-1.0 * (elapsed / curve_shape));
     }
   }
+
+  // scale the level to the range [level_min, level_max]
+  return adsr->level_min + (adsr->level_max - adsr->level_min) * adsr->level;
 }
 
 #endif

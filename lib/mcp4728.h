@@ -37,11 +37,8 @@ void MCP4728_update(MCP4728 *self) {
   }
 }
 
-void MCP4728_free(MCP4728 *self) { free(self); }
-
-MCP4728 *MCP4728_malloc(i2c_inst_t *i2c, bool use_internal_ref,
-                        float external_voltage) {
-  MCP4728 *self = (MCP4728 *)malloc(sizeof(MCP4728));
+void MCP4728_init(MCP4728 *self, i2c_inst_t *i2c, bool use_internal_ref,
+                  float external_voltage) {
   self->i2c = i2c;
   self->address = MCP4728_ADDRESS;
   self->use_internal_ref = use_internal_ref;
@@ -78,7 +75,6 @@ MCP4728 *MCP4728_malloc(i2c_inst_t *i2c, bool use_internal_ref,
   }
 
   MCP4728_update(self);
-  return self;
 }
 
 void MCP4728_set_voltage(MCP4728 *self, uint8_t ch, float voltage) {

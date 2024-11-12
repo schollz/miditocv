@@ -55,7 +55,6 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 //
 #include "lib/WS2812.h"
 #include "lib/adsr.h"
-#include "lib/clockout.h"
 #include "lib/dac.h"
 #include "lib/filterexp.h"
 #include "lib/knob_change.h"
@@ -65,20 +64,17 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/random.h"
 #include "lib/scene.h"
 #include "lib/sdcard.h"
+#include "lib/simpletimer.h"
 // globals
 float g_bpm = 120.0;
-DAC *dac;
-WS2812 *ws2812;
-ADSR *adsr[8];
+DAC dac;
+WS2812 ws2812;
+ADSR adsr[8];
 
 #ifdef INCLUDE_MIDI
 #include "lib/midi_comm.h"
 #include "lib/midicallback.h"
 #endif
-
-void clockout_callback(bool on) {
-  printf("clockout %d %d\n", on, to_ms_since_boot(get_absolute_time()));
-}
 
 int main() {
   // Set PLL_USB 96MHz
@@ -137,16 +133,6 @@ int main() {
   // initialize random library
   random_initialize();
 
-  // // clock pool
-  // ClockPool_init();
-  // ClockPool_enable(0, true);
-  // ClockPool_reset_clock(1, 150, 1, 0, 5.0);
-
-  // clock out
-  Clockout clockout;
-  Clockout_init(&clockout, 250, 3, clockout_callback);
-  Clockout_start(&clockout, to_ms_since_boot(get_absolute_time()));
-
   // // initialize MCP3208
   // MCP3208 *mcp3208 =
   //     MCP3208_malloc(spi0, PIN_SPI_CSN, PIN_SPI_CLK, PIN_SPI_RX, PIN_SPI_TX);
@@ -199,10 +185,6 @@ int main() {
     // }
 
     Scene_save_data();
-
-    // check whether any clock changed
-    Clockout_process(&clockout, (float)ct);
-
     // sleep_ms(random_integer_in_range(1, 10));
   }
 }
