@@ -69,12 +69,23 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 float g_bpm = 120.0;
 DAC dac;
 WS2812 ws2812;
-ADSR adsr[8];
+ADSR pool_adsr[8];
+SimpleTimer pool_timer[16];
+KnobChange pool_knobs[8];
+MCP3208 mcp3208;
 
 #ifdef INCLUDE_MIDI
 #include "lib/midi_comm.h"
 #include "lib/midicallback.h"
 #endif
+
+void timer_callback_outputs(bool on, int user_data) {
+  printf("[timer_callback_outputs]: %d %d\n", on, user_data);
+}
+
+void timer_callback_sample_knob(bool on, int user_data) {
+  // TODO: sample the knobs
+}
 
 int main() {
   // Set PLL_USB 96MHz
@@ -133,9 +144,23 @@ int main() {
   // initialize random library
   random_initialize();
 
+  // initialize knobs
+  for (uint8_t i = 0; i < 8; i++) {
+    KnobChange_init(&pool_knobs[i], 10);
+  }
+
+  // initialize timers
+  // first 8 timers are for each output and disabled by default
+  for (uint8_t i = 0; i < 8; i++) {
+    // TODO: setup callbacks
+    SimpleTimer_init(&pool_timer[i], g_bpm, 4, 0, timer_callback_outputs, i);
+  }
+  // setup a timer at 5 milliseconds to sample the knobs
+  SimpleTimer_init(&pool_timer[8], 600, 4, 0, timer_callback_sample_knob, 0);
+
   // // initialize MCP3208
-  // MCP3208 *mcp3208 =
-  //     MCP3208_malloc(spi0, PIN_SPI_CSN, PIN_SPI_CLK, PIN_SPI_RX, PIN_SPI_TX);
+  // MCP3208_init(&mcp3208, spi0, PIN_SPI_CSN, PIN_SPI_CLK, PIN_SPI_RX,
+  //              PIN_SPI_TX);
 
   // // initialize WS2812
   // ws2812 = WS281260s2812, i, 150, 0, 255);

@@ -26,6 +26,11 @@
 #define LIB_MCP3208_H 1
 
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "hardware/spi.h"
+#include "pico/stdlib.h"
 
 typedef struct MCP3208 {
   uint8_t cs_pin;
@@ -37,11 +42,8 @@ typedef struct MCP3208 {
   uint8_t *data;
 } MCP3208;
 
-void MCP3208_free(MCP3208 *self) { free(self); }
-
-MCP3208 *MCP3208_malloc(spi_inst_t *spi, uint8_t cs_pin, uint8_t sck_pin,
-                        uint8_t mosi_pin, uint8_t miso_pin) {
-  MCP3208 *self = (MCP3208 *)malloc(sizeof(MCP3208));
+void MCP3208_init(MCP3208 *self, spi_inst_t *spi, uint8_t cs_pin,
+                  uint8_t sck_pin, uint8_t mosi_pin, uint8_t miso_pin) {
   self->cs_pin = cs_pin;
   self->sck_pin = sck_pin;
   self->mosi_pin = mosi_pin;
@@ -65,8 +67,6 @@ MCP3208 *MCP3208_malloc(spi_inst_t *spi, uint8_t cs_pin, uint8_t sck_pin,
   gpio_set_function(self->sck_pin, GPIO_FUNC_SPI);
   gpio_set_function(self->mosi_pin, GPIO_FUNC_SPI);
   gpio_set_function(self->miso_pin, GPIO_FUNC_SPI);
-
-  return self;
 }
 
 uint16_t MCP3208_read(MCP3208 *self, uint8_t channel, bool differential) {
