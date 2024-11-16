@@ -18,7 +18,20 @@
     <h1>yoctocore</h1>
     <h2>Control Panel</h2>
     <!-- check if device connected -->
-    <div v-if="!device_connected">
+    <div>
+      <h3>MIDI routing</h3>
+    </div>
+    <div class="row" style="padding-bottom:1em;">
+      <!-- Buttons for pass through -->
+      <div class="col col-3" v-for="(isActive, inputName) in midi_input_active" :key="inputName">
+        <button :class="{ active: isActive, inactive: !isActive }" @click="toggleActivation(inputName)"
+          style="font-size:0.9em;">
+          {{ inputName }} {{ isActive ? 'Active' : 'Inactive' }}
+          {{ midi_input_last_message[inputName] }}
+        </button>
+      </div>
+    </div>
+    <div v-if=" !device_connected">
       <h3>Device not connected</h3>
     </div>
     <div v-else>

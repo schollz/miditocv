@@ -1,8 +1,10 @@
-const { createApp, ref, computed, watch, onMounted } = Vue;
+const { createApp, ref, computed, watch, onMounted, reactive } = Vue;
 var vm;
+
 let disableWatchers = false;
 let scenes_updated = [false, false, false, false, false, false, false, false];
 let last_time_of_message_received = 0;
+var midiInputs = {};
 function addToMidiConsole(message) {
     console.log('MIDI message:', message);
 }
@@ -46,6 +48,9 @@ async function updateWithoutWatcher(scene_num, output_num, param, value) {
 
 async function updateLocalScene(scene_num) {
     if (scenes_updated[scene_num]) {
+        return;
+    }
+    if (!window.inputMidiDevice) {
         return;
     }
     scenes_updated[scene_num] = true;
@@ -120,6 +125,7 @@ function setupMidiInputListener() {
     }
 }
 
+
 function setupMidi() {
     navigator.requestMIDIAccess({ sysex: true })
         .then((midiAccess) => {
@@ -131,6 +137,30 @@ function setupMidi() {
                     setupMidiInputListener();
                     console.log("input device connected");
                     break;
+                } else {
+                    // add to midiInputDict if not already present
+                    // check if input.name in midi_input_active
+                    if (vm.midi_input_active[input.name] === undefined) {
+                        console.log(`detecting input device: ${input.name}`);
+                        midiInputs[input.name] = input;
+                        vm.midi_input_active[input.name] = false;
+                        vm.midi_input_last_message[input.name] = "";
+                        input.onmidimessage = (midiMessage) => {
+                            console.log(`[${input.name}]`, midiMessage);
+                            // convert the data to hex string
+                            let hexString = "";
+                            for (let i = 0; i < midiMessage.data.length; i++) {
+                                hexString += midiMessage.data[i].toString(16).padStart(2, '0');
+                            }
+                            vm.midi_input_last_message[input.name] = hexString;
+                            // pass through to yoctocore if it is setup
+                            if (window.yoctocoreDevice) {
+                                window.yoctocoreDevice.send(midiMessage.data);
+                            }
+
+                        };
+                    }
+
                 }
             }
 
@@ -235,8 +265,14 @@ const app = createApp({
             return scenes.value[current_scene.value].outputs[current_output.value];
         });
         const device_connected = ref(false);
+        const midi_input_active = ref({});
+        const midi_input_last_message = ref({});
 
-
+        function toggleActivation(inputName) {
+            console.log(`Toggling activation for ${inputName}`);
+            midi_input_active.value[inputName] = !midi_input_active.value[inputName];
+            console.log(`Activated: ${midi_input_active.value[inputName]}`);
+        }
 
         function getButtonClass(mode) {
             mode = Number(mode);
@@ -436,6 +472,9 @@ const app = createApp({
             select_output,
             getButtonClass,
             device_connected,
+            midi_input_active,
+            midi_input_last_message,
+            toggleActivation,
         };
     },
 });
