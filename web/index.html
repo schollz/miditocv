@@ -61,37 +61,37 @@
     }
 
     .mode-manual {
-      background-color: #f0f0f0;
-      color: gray;
-    }
-
-    .mode-midi-pitch {
-      background-color: #ffadad;
+      background-color: #fff;
       color: black;
     }
 
-    .mode-midi-envelope {
+    .mode-midi-pitch {
       background-color: #ffd6a5;
       color: black;
     }
 
-    .mode-midi-cc {
+    .mode-midi-envelope {
       background-color: #fdffb6;
       color: black;
     }
 
-    .mode-midi-clock {
+    .mode-midi-cc {
       background-color: #caffbf;
       color: black;
     }
 
-    .mode-clock {
+    .mode-midi-clock {
       background-color: #9bf6ff;
       color: black;
     }
 
-    .mode-lfo {
+    .mode-clock {
       background-color: #a0c4ff;
+      color: black;
+    }
+
+    .mode-lfo {
+      background-color: #bdb2ff;
       color: black;
     }
 
@@ -142,12 +142,14 @@
     <!-- Output Selection Buttons -->
     <!-- label for button row -->
     <h3>Outputs</h3>
-    <div class="button-row">
-      <button v-for="(output, index) in scenes[current_scene].outputs" :key="index"
-        :class="[current_output !== index && 'inactive', current_output === index && 'active', getButtonClass(output.mode)]"
-        @click="select_output(index)">
-        {{ index + 1 }}
-      </button>
+    <div class="button-row row">
+      <div class="col col-1" v-for="(output, index) in scenes[current_scene].outputs" :key="index">
+        <button
+          :class="[current_output !== index && 'inactive', current_output === index && 'active', getButtonClass(output.mode)]"
+          @click="select_output(index)">
+          {{ index + 1 }}
+        </button>
+      </div>
     </div>
 
     <!-- Output Details -->
@@ -224,7 +226,53 @@
           </label>
         </div>
         <div class="col col-9">
-          <input id="midi-channel" type="number" v-model.number="selected_output.midi_channel" min="0" max="16" />
+          <select id="midi-channel" v-model="selected_output.midi_channel">
+            <option value=0>Any</option>
+            <option value=1>Channel 1</option>
+            <option value=2>Channel 2</option>
+            <option value=3>Channel 3</option>
+            <option value=4>Channel 4</option>
+            <option value=5>Channel 5</option>
+            <option value=6>Channel 6</option>
+            <option value=7>Channel 7</option>
+            <option value=8>Channel 8</option>
+            <option value=9>Channel 9</option>
+            <option value=10>Channel 10</option>
+            <option value=11>Channel 11</option>
+            <option value=12>Channel 12</option>
+            <option value=13>Channel 13</option>
+            <option value=14>Channel 14</option>
+            <option value=15>Channel 15</option>
+            <option value=16>Channel 16</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" v-if="[1,2,3,4].includes(Number(selected_output.mode))">
+        <div class="col col-3 fr">
+          <label for="midi-priority-channel">
+            MIDI Priority Channel:
+          </label>
+        </div>
+        <div class="col col-9">
+          <select id="midi-priority-channel" v-model="selected_output.midi_priority_channel">
+            <option value=0>None</option>
+            <option value=1>Channel 1</option>
+            <option value=2>Channel 2</option>
+            <option value=3>Channel 3</option>
+            <option value=4>Channel 4</option>
+            <option value=5>Channel 5</option>
+            <option value=6>Channel 6</option>
+            <option value=7>Channel 7</option>
+            <option value=8>Channel 8</option>
+            <option value=9>Channel 9</option>
+            <option value=10>Channel 10</option>
+            <option value=11>Channel 11</option>
+            <option value=12>Channel 12</option>
+            <option value=13>Channel 13</option>
+            <option value=14>Channel 14</option>
+            <option value=15>Channel 15</option>
+            <option value=16>Channel 16</option>
+          </select>
         </div>
       </div>
 

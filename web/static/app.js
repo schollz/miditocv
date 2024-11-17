@@ -262,6 +262,7 @@ const app = createApp({
                     slew_time: 0,
                     quantization: 0,
                     midi_channel: 0,
+                    midi_priority_channel: 0,
                     midi_cc: 0,
                     clock_tempo: 120,
                     clock_division: 1,
@@ -321,14 +322,17 @@ const app = createApp({
                 slew_time: 0,
                 quantization: 1,
                 midi_channel: 0,
+                midi_priority_channel: 0,
             },
             2: {
                 min_voltage: 0,
                 max_voltage: 10,
                 midi_channel: 0,
+                midi_priority_channel: 0,
             },
             3: {
                 midi_channel: 0,
+                midi_priority_channel: 0,
                 midi_cc: 0,
             },
             4: {
