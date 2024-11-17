@@ -5,6 +5,7 @@ typedef struct Output {
   float max_voltage;
   float slew_time;
   uint8_t midi_channel;
+  uint8_t midi_priority_channel;
   uint8_t midi_cc;
   float clock_tempo;
   uint8_t clock_division;
@@ -98,6 +99,9 @@ void Scene_update_with_sysex(uint8_t *buffer) {
     } else if (strcmp(param, "midichannel") == 0) {
       printf("%d %d midi_channel %d\n", scene_num, output_num,
              scenes[scene_num].output[output_num].midi_channel);
+    } else if (strcmp(param, "midiprioritychannel") == 0) {
+      printf("%d %d midi_priority_channel %d\n", scene_num, output_num,
+             scenes[scene_num].output[output_num].midi_priority_channel);
     } else if (strcmp(param, "midicc") == 0) {
       printf("%d %d midi_cc %d\n", scene_num, output_num,
              scenes[scene_num].output[output_num].midi_cc);
@@ -149,6 +153,10 @@ void Scene_update_with_sysex(uint8_t *buffer) {
   } else if (strcmp(param, "midichannel") == 0) {
     val = util_clamp(val, 0.0f, 16.0f);
     scenes[scene_num].output[output_num].midi_channel = (uint8_t)val;
+    did_update = true;
+  } else if (strcmp(param, "midiprioritychannel") == 0) {
+    val = util_clamp(val, 0.0f, 16.0f);
+    scenes[scene_num].output[output_num].midi_priority_channel = (uint8_t)val;
     did_update = true;
   } else if (strcmp(param, "midicc") == 0) {
     val = util_clamp(val, 0.0f, 127.0f);
@@ -254,6 +262,7 @@ void Scene_load_data() {
         scenes[scene_num].output[i].max_voltage = 5;
         scenes[scene_num].output[i].slew_time = 0;
         scenes[scene_num].output[i].midi_channel = 0;
+        scenes[scene_num].output[i].midi_priority_channel = 0;
         scenes[scene_num].output[i].midi_cc = 0;
         scenes[scene_num].output[i].clock_tempo = 120;
         scenes[scene_num].output[i].clock_division = 0;
