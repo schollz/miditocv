@@ -3,13 +3,104 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>yoctocore</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <link rel="stylesheet" href="/static/tiny-brutalism.css">
-  <link rel="stylesheet" href="/static/style.css">
   <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 1em;
+    }
 
+
+    .inactive {
+      color: gray;
+      background-color: #f0f0f0;
+    }
+
+    .fr {
+      display: flex;
+      justify-content: flex-end;
+      text-align: right;
+    }
+
+    .center {
+      display: flex;
+      justify-content: center;
+      text-align: center;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .active {
+      font-weight: bold;
+      /* add a shdwo to the top + left */
+      box-shadow: -12px -12px 0 #000;
+
+    }
+
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .output-details {
+      margin-top: 20px;
+    }
+
+    .mode-manual {
+      background-color: #f0f0f0;
+      color: gray;
+    }
+
+    .mode-midi-pitch {
+      background-color: #ffadad;
+      color: black;
+    }
+
+    .mode-midi-envelope {
+      background-color: #ffd6a5;
+      color: black;
+    }
+
+    .mode-midi-cc {
+      background-color: #fdffb6;
+      color: black;
+    }
+
+    .mode-midi-clock {
+      background-color: #caffbf;
+      color: black;
+    }
+
+    .mode-clock {
+      background-color: #9bf6ff;
+      color: black;
+    }
+
+    .mode-lfo {
+      background-color: #a0c4ff;
+      color: black;
+    }
+
+    #app {
+      border: solid #000;
+      background: #ff;
+      padding: 2em;
+      box-shadow: 8px 8px 0px #000000;
+    }
   </style>
 </head>
 

@@ -131,7 +131,11 @@ function setupMidi() {
         .then((midiAccess) => {
             // Input setup
             const inputs = midiAccess.inputs.values();
+            // current inputs
+            let current_inputs = Object.keys(midiInputs);
+            let new_inputs = [];
             for (let input of inputs) {
+                new_inputs.push(input.name);
                 if (input.name.includes("yoctocore") || input.name.includes("zeptocore") || input.name.includes("ectocore")) {
                     window.inputMidiDevice = input;
                     setupMidiInputListener();
@@ -157,10 +161,18 @@ function setupMidi() {
                             if (window.yoctocoreDevice) {
                                 window.yoctocoreDevice.send(midiMessage.data);
                             }
-
                         };
                     }
 
+                }
+            }
+            // check to see if any of the current_inputs are not in new_inputs
+            for (let input_num = 0; input_num < current_inputs.length; input_num++) {
+                if (!new_inputs.includes(current_inputs[input_num])) {
+                    console.log(`removing input device: ${current_inputs[input_num]}`);
+                    delete midiInputs[current_inputs[input_num]];
+                    delete vm.midi_input_active[current_inputs[input_num]];
+                    delete vm.midi_input_last_message[current_inputs[input_num]];
                 }
             }
 
