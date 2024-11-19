@@ -89,11 +89,14 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     WS2812_SM=2
     WS2812_NUM_LEDS=8
     
+    # constants
+    REFERENCE_5V=5.0
     # # settings
     # INCLUDE_MIDI=1
 
     # debugging
     DEBUG_MIDI=1
+    # DEBUG_VOLTAGE_CALIBRATION=1
 
     USBD_PID=0x1836
 )

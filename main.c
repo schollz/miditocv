@@ -192,7 +192,7 @@ int main() {
 
   // // initialize WS2812
   WS2812_init(&ws2812, WS2812_PIN, pio0, WS2812_SM, 8);
-  WS2812_set_brightness(&ws2812, 50);
+  WS2812_set_brightness(&ws2812, 70);
   for (uint8_t i = 0; i < 8; i++) {
     WS2812_fill(&ws2812, i, 255, 0, 255);
   }
@@ -214,8 +214,20 @@ int main() {
 
   // initialize dac
   DAC_init(&dac);
+#ifdef DEBUG_VOLTAGE_CALIBRATION
+  sleep_ms(5000);
+  printf("DAC calibration\n");
+  for (int8_t volts = -5; volts <= 10; volts++) {
+    for (uint8_t i = 0; i < 8; i++) {
+      DAC_set_voltage(&dac, i, volts);
+    }
+    DAC_update(&dac);
+    printf("calibration at %d\n", volts);
+    sleep_ms(5000);
+  }
+#endif
   for (uint8_t i = 0; i < 8; i++) {
-    DAC_set_voltage(&dac, i, 5.0);
+    DAC_set_voltage(&dac, i, 0);
   }
   DAC_update(&dac);
 
