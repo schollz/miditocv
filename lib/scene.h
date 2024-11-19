@@ -206,8 +206,7 @@ void Scene_save_data() {
   if (to_ms_since_boot(get_absolute_time()) - debounce_scene_save < 3000) {
     return;
   }
-  printf("saving data(%d) (%d) (%d)\n", FLASH_PAGE_SIZE, FLASH_SECTOR_SIZE,
-         8 * sizeof(Output));
+  uint64_t start_time_us = time_us_64();
   debounce_scene_save = 0;
   uint32_t interrupts = save_and_disable_interrupts();
   flash_range_erase(FLASH_TARGET_OFFSET, FLASH_SECTOR_SIZE);
@@ -230,7 +229,12 @@ void Scene_save_data() {
                         flash_data2, 2 * FLASH_PAGE_SIZE);
   }
   restore_interrupts(interrupts);
+
+  // printf("saving data(%d) (%d) (%d)\n", FLASH_PAGE_SIZE, FLASH_SECTOR_SIZE,
+  //        8 * sizeof(Output));
+  printf("saved data in %lld us\n", time_us_64() - start_time_us);
 }
+
 const uint8_t *flash_target_contents_data =
     (const uint8_t *)(XIP_BASE + FLASH_TARGET_OFFSET);
 void Scene_load_data() {

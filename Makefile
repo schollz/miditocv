@@ -23,7 +23,6 @@ pico-extras:
 	git clone https://github.com/raspberrypi/pico-extras.git pico-extras
 	cd pico-extras && git checkout sdk-1.5.1
 	cd pico-extras && git submodule update -i
-
 	
 changebaud:
 	-curl localhost:7083 
