@@ -199,6 +199,40 @@ void Scene_update_with_sysex(uint8_t *buffer) {
   }
 }
 
+void Scene_save_data_sdcard() {
+  if (debounce_scene_save == 0) {
+    return;
+  }
+  if (to_ms_since_boot(get_absolute_time()) - debounce_scene_save < 3000) {
+    return;
+  }
+  uint64_t start_time_us = time_us_64();
+  debounce_scene_save = 0;
+  FRESULT fr;
+  FIL file; /* File object */
+  char fname[32];
+
+  sprintf(fname, "savefile2");
+  fr = f_open(&file, fname, FA_WRITE | FA_CREATE_ALWAYS);
+  if (FR_OK != fr) {
+    printf("f_open error: %s (%d)\n", FRESULT_str(fr), fr);
+    return;
+  }
+  uint32_t total_bytes_written = 0;
+  for (uint8_t i = 0; i < 8; i++) {
+    UINT bw;
+    if (f_write(&file, &scenes[i], sizeof(Scene), &bw)) {
+      printf("problem writing scene %d\n", i);
+      return;
+    }
+    total_bytes_written += bw;
+  }
+
+  printf("[SaveFile] wrote %d bytes in %lld us\n", total_bytes_written,
+         time_us_64() - start_time_us);
+  f_close(&file);
+}
+
 void Scene_save_data() {
   if (debounce_scene_save == 0) {
     return;

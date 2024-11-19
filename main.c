@@ -248,6 +248,6 @@ int main() {
       }
     }
 
-    Scene_save_data();
+    Scene_save_data_sdcard();
   }
 }
