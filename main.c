@@ -85,6 +85,10 @@ void timer_callback_outputs(bool on, int user_data) {
 
 void timer_callback_sample_knob(bool on, int user_data) {
   // TODO: sample the knobs
+  for (uint8_t i = 0; i < 8; i++) {
+    uint16_t val = MCP3208_read(&mcp3208, i, false);
+    printf("Knob %d: %d\n", i, val);
+  }
 }
 
 int main() {
@@ -156,16 +160,19 @@ int main() {
     SimpleTimer_init(&pool_timer[i], g_bpm, 4, 0, timer_callback_outputs, i);
   }
   // setup a timer at 5 milliseconds to sample the knobs
-  SimpleTimer_init(&pool_timer[8], 600, 4, 0, timer_callback_sample_knob, 0);
+  SimpleTimer_init(&pool_timer[8], 60, 4, 0, timer_callback_sample_knob, 0);
 
-  // // initialize MCP3208
-  // MCP3208_init(&mcp3208, spi0, PIN_SPI_CSN, PIN_SPI_CLK, PIN_SPI_RX,
-  //              PIN_SPI_TX);
+  // initialize MCP3208
+  MCP3208_init(&mcp3208, spi0, PIN_SPI_CSN, PIN_SPI_CLK, PIN_SPI_RX,
+               PIN_SPI_TX);
 
   // // initialize WS2812
-  // ws2812 = WS281260s2812, i, 150, 0, 255);
-  // }
-  // WS2812_show(ws2812);
+  WS2812_init(&ws2812, WS2812_PIN, pio0, WS2812_SM, 8);
+  WS2812_set_brightness(&ws2812, 50);
+  for (uint8_t i = 0; i < 8; i++) {
+    WS2812_fill(&ws2812, i, 255, 0, 255);
+  }
+  WS2812_show(&ws2812);
 
   // // initialize SD card
   // printf("[main]: initializing sd card\n");
@@ -178,6 +185,13 @@ int main() {
   // } else {
   //   big_file_test("test.bin", 2, 0);  // perform read/write test
   // }
+
+  // initialize dac
+  DAC_init(&dac);
+  for (uint8_t i = 0; i < 8; i++) {
+    DAC_set_voltage(&dac, i, 5.0);
+  }
+  DAC_update(&dac);
 
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   uint32_t ct_last_print = ct;
@@ -197,17 +211,24 @@ int main() {
       printf("time: %lld\n", time_us_64());
       // ClockPool_enable(0, true);
       // ClockPool_reset_clock(0, 70, 1, 0, 5.0);
+      // read knobs
     }
-    // // read knobs
-    // for (uint8_t i = 0; i < 8; i++) {
-    //   uint16_t val = MCP3208_read(mcp3208, i, false);
-    //   printf("Knob %d: %d\n", i, val);
-    // }
 
     // if (ct > ct_next_bpm) {
     //   ct_next_bpm = ct + (60.0 / g_bpm * 1000);
     //   printf("BPM: %f\n", g_bpm);
     // }
+
+    // for (uint8_t i = 0; i < 16; i++) {
+    //   SimpleTimer_process(&pool_timer[i], ct);
+    // }
+
+    for (uint8_t i = 0; i < 8; i++) {
+      uint16_t val = MCP3208_read(&mcp3208, i, false);
+      WS2812_fill(&ws2812, i, val / 4, 0, 255 - val / 4);
+    }
+    WS2812_show(&ws2812);
+    sleep_ms(40);
 
     Scene_save_data();
     // sleep_ms(random_integer_in_range(1, 10));

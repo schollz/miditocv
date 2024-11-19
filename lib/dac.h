@@ -11,11 +11,12 @@ typedef struct DAC {
 } DAC;
 
 void DAC_init(DAC *self) {
-  MCP4728_init(&self->mcp4728[0], i2c0, true, 0);
-  MCP4728_init(&self->mcp4728[1], i2c1, true, 0);
+  MCP4728_init(&self->mcp4728[0], i2c0, false, 5.0);
+  MCP4728_init(&self->mcp4728[1], i2c1, false, 5.0);
 
   for (int i = 0; i < 8; i++) {
     self->voltages[i] = 0;
+    self->voltages_last[i] = -1;
   }
 }
 

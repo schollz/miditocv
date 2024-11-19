@@ -61,7 +61,7 @@ void MCP3208_init(MCP3208 *self, spi_inst_t *spi, uint8_t cs_pin,
   gpio_put(self->cs_pin, 1);
 
   // Initialize SPI port at 1 MHz
-  spi_init(spi1, 1000 * 1000);
+  spi_init(spi, 1000 * 1000);
 
   // Initialize SPI pins
   gpio_set_function(self->sck_pin, GPIO_FUNC_SPI);

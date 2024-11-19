@@ -44,9 +44,7 @@ typedef struct WS2812 {
   uint8_t num_leds;
 } WS2812;
 
-WS2812 *WS2812_new(uint pin, PIO pio, uint sm, uint8_t num_leds) {
-  WS2812 *ws;
-  ws = malloc(sizeof(WS2812));
+void WS2812_init(WS2812 *ws, uint pin, PIO pio, uint sm, uint8_t num_leds) {
   ws->num_leds = num_leds;
   ws->pin = pin;
   ws->pio = pio;
@@ -60,7 +58,6 @@ WS2812 *WS2812_new(uint pin, PIO pio, uint sm, uint8_t num_leds) {
   uint offset = pio_add_program(pio, &ws2812_program);
   uint bits = 24;
   ws2812_program_init(pio, sm, offset, pin, 800000, bits);
-  return ws;
 }
 
 void WS2812_set_brightness(WS2812 *ws, uint8_t brightness) {
