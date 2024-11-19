@@ -213,6 +213,7 @@ void Scene_save_data_sdcard() {
   char fname[32];
 
   sprintf(fname, "savefile2");
+  // f_open and overwrite if exists
   fr = f_open(&file, fname, FA_WRITE | FA_CREATE_ALWAYS);
   if (FR_OK != fr) {
     printf("f_open error: %s (%d)\n", FRESULT_str(fr), fr);
@@ -227,10 +228,9 @@ void Scene_save_data_sdcard() {
     }
     total_bytes_written += bw;
   }
-
+  f_close(&file);
   printf("[SaveFile] wrote %d bytes in %lld us\n", total_bytes_written,
          time_us_64() - start_time_us);
-  f_close(&file);
 }
 
 void Scene_save_data() {
@@ -267,6 +267,29 @@ void Scene_save_data() {
   // printf("saving data(%d) (%d) (%d)\n", FLASH_PAGE_SIZE, FLASH_SECTOR_SIZE,
   //        8 * sizeof(Output));
   printf("saved data in %lld us\n", time_us_64() - start_time_us);
+}
+
+void Scene_load_data_sdcard() {
+  FIL fil; /* File object */
+  char fname[32];
+  uint64_t start_time_us = time_us_64();
+  unsigned int bytes_read;
+  sprintf(fname, "savefile2");
+  if (f_open(&fil, fname, FA_READ)) {
+    printf("[SaveFile] no save file, skipping ");
+    return;
+  } else {
+    for (uint8_t i = 0; i < 8; i++) {
+      UINT br;
+      if (f_read(&fil, &scenes[i], sizeof(Scene), &br)) {
+        printf("[SaveFile] problem reading scene %d\n", i);
+      }
+      bytes_read += br;
+    }
+  }
+  f_close(&fil);
+  printf("read %d bytes in %lld us\n", bytes_read,
+         time_us_64() - start_time_us);
 }
 
 const uint8_t *flash_target_contents_data =

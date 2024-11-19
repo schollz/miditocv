@@ -83,15 +83,27 @@ uint8_t button_values[9] = {0, 0, 0, 0, 0, 0};
 #endif
 
 void timer_callback_outputs(bool on, int user_data) {
-  printf("[timer_callback_outputs]: %d %d\n", on, user_data);
+  // printf("[timer_callback_outputs]: %d %d\n", on, user_data);
 }
 
 void timer_callback_sample_knob(bool on, int user_data) {
-  // TODO: sample the knobs
+  char buf[128];
+  // clear the buffer
+  buf[0] = '\0';
   for (uint8_t i = 0; i < 8; i++) {
     uint16_t val = MCP3208_read(&mcp3208, i, false);
-    printf("Knob %d: %d\n", i, val);
+    KnobChange_update(&pool_knobs[i], val);
+    sprintf(buf, "%s%d ", buf, val);
   }
+  // printf("\n%s\n", buf);
+}
+
+void timer_callback_ws2812(bool on, int user_data) {
+  for (uint8_t i = 0; i < 8; i++) {
+    uint16_t val = pool_knobs[i].last;
+    WS2812_fill(&ws2812, i, val / 4, 0, 255 - val / 4);
+  }
+  WS2812_show(&ws2812);
 }
 
 int main() {
@@ -140,8 +152,8 @@ int main() {
   tusb_init();
 #endif
 
-  // // load the Scene data
-  Scene_load_data();
+  // // // load the Scene data
+  // Scene_load_data();
 
   // Implicitly called by disk_initialize,
   // but called here to set up the GPIOs
@@ -170,7 +182,9 @@ int main() {
     SimpleTimer_init(&pool_timer[i], g_bpm, 4, 0, timer_callback_outputs, i);
   }
   // setup a timer at 5 milliseconds to sample the knobs
-  SimpleTimer_init(&pool_timer[8], 60, 4, 0, timer_callback_sample_knob, 0);
+  SimpleTimer_init(&pool_timer[8], 60 * 15, 4, 0, timer_callback_sample_knob,
+                   0);
+  SimpleTimer_init(&pool_timer[9], 60 * 15, 4, 0, timer_callback_ws2812, 0);
 
   // initialize MCP3208
   MCP3208_init(&mcp3208, spi0, PIN_SPI_CSN, PIN_SPI_CLK, PIN_SPI_RX,
@@ -185,7 +199,7 @@ int main() {
   WS2812_show(&ws2812);
 
   // initialize SD card
-  sleep_ms(1000);
+  // sleep_ms(1000);
   printf("[main]: initializing sd card\n");
   for (uint8_t i = SDCARD_CMD_GPIO - 1; i < SDCARD_D0_GPIO + 5; i++) {
     gpio_pull_up(i);
@@ -194,7 +208,8 @@ int main() {
     sleep_ms(1000);
     printf("[main]: failed to mount sd card\n");
   } else {
-    big_file_test("test.bin", 2, 0);  // perform read/write test
+    // big_file_test("test.bin", 2, 0);  // perform read/write test
+    Scene_load_data_sdcard();
   }
 
   // initialize dac
@@ -207,6 +222,7 @@ int main() {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   uint32_t ct_last_print = ct;
   uint32_t ct_next_bpm = ct + (60.0 / g_bpm * 1000);
+  bool startup = false;
   while (true) {
 #ifdef INCLUDE_MIDI
     tud_task();
@@ -215,19 +231,21 @@ int main() {
 #endif
 
     ct = to_ms_since_boot(get_absolute_time());
-    if (ct - ct_last_print > 30) {
+    if (ct - ct_last_print > 1000) {
       ct_last_print = ct;
-      // print_memory_usage();
+      print_memory_usage();
       //   flash_mem_test();
       // printf("time: %lld\n", time_us_64());
       //  ClockPool_enable(0, true);
       //  ClockPool_reset_clock(0, 70, 1, 0, 5.0);
       //  read knobs
-      for (uint8_t i = 0; i < 8; i++) {
-        uint16_t val = MCP3208_read(&mcp3208, i, false);
-        WS2812_fill(&ws2812, i, val / 4, 0, 255 - val / 4);
+
+      if (!startup) {
+        startup = true;
+        printf("Startup complete\n");
+        SimpleTimer_start(&pool_timer[8], ct);
+        SimpleTimer_start(&pool_timer[9], ct);
       }
-      WS2812_show(&ws2812);
     }
 
     // if (ct > ct_next_bpm) {
@@ -235,9 +253,9 @@ int main() {
     //   printf("BPM: %f\n", g_bpm);
     // }
 
-    // for (uint8_t i = 0; i < 16; i++) {
-    //   SimpleTimer_process(&pool_timer[i], ct);
-    // }
+    for (uint8_t i = 0; i < 10; i++) {
+      SimpleTimer_process(&pool_timer[i], ct);
+    }
 
     // read buttons
     for (uint8_t i = 0; i < button_num; i++) {
