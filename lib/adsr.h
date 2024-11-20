@@ -19,8 +19,6 @@ typedef struct ADSR {
   float level_start;
   float start_time;
   float shape;
-  float level_min;
-  float level_max;
   int32_t state;
   bool gate;
 } ADSR;
@@ -36,15 +34,8 @@ void ADSR_init(ADSR *adsr, float attack, float decay, float sustain,
   adsr->level = 0;
   adsr->level_start = 0;
   adsr->start_time = 0;
-  adsr->level_min = 0;
-  adsr->level_max = 1.0f;
   adsr->gate = false;
   adsr->shape = shape;
-}
-
-void ADSR_set_levels(ADSR *adsr, float level_min, float level_max) {
-  adsr->level_min = level_min;
-  adsr->level_max = level_max;
 }
 
 void ADSR_gate(ADSR *adsr, bool gate, uint32_t current_time_ms) {
@@ -104,7 +95,7 @@ float ADSR_process(ADSR *adsr, float current_time_ms) {
   }
 
   // scale the level to the range [level_min, level_max]
-  return adsr->level_min + (adsr->level_max - adsr->level_min) * adsr->level;
+  return adsr->level;
 }
 
 #endif

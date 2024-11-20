@@ -283,6 +283,22 @@ int main() {
       if (val != button_values[i]) {
         printf("Button %d: %d\n", i, val);
         button_values[i] = val;
+        if (i < 8) {
+          // process button press
+          Out *out = &yocto.out[i];
+          Config *config = &yocto.config[yocto.i][i];
+          // check mode
+          switch (config->mode) {
+            case MODE_MANUAL:
+              break;
+            case MODE_ENVELOPE:
+              // trigger the envelope
+              ADSR_gate(&out->adsr, val, ct);
+              break;
+            default:
+              break;
+          }
+        }
       }
     }
 
@@ -304,11 +320,17 @@ int main() {
           float knob_val = (float)KnobChange_get(&pool_knobs[i]);
           if (knob_val != -1) {
             // change the set voltage
-            out->voltage_set = linlin(knob_val, 0.0f, 1023.0f, -5.0, 10.0);
+            out->voltage_set = linlin(knob_val, 0.0f, 1023.0f,
+                                      config->min_voltage, config->max_voltage);
           }
           // slew the voltage
           out->voltage_current = Slew_process(&out->slew, out->voltage_set, ct);
           break;
+        case MODE_ENVELOPE:
+          // set the value of the envelope
+          out->voltage_set = linlin(ADSR_process(&out->adsr, ct), 0.0f, 1.0f,
+                                    config->min_voltage, config->max_voltage);
+          out->voltage_current = out->voltage_set;
         default:
           break;
       }
