@@ -158,7 +158,6 @@ async function updateLocalScene(scene_num) {
                 }
             }
         }
-        break;
     }
     disableWatchers = false;
 }
@@ -275,7 +274,7 @@ function setupMidi() {
             const outputs = midiAccess.outputs.values();
             for (let output of outputs) {
                 // console.log(output.name);
-                if (output.name.includes("yoctocore") || output.name.includes("zeptocore") || output.name.includes("ectocore")) {
+                if (output.name.includes("yoctocore")) {
                     window.yoctocoreDevice = output;
                     console.log("output device connected");
                     sysex_string = `0_0_${hash_djb("scene")}`;
@@ -329,17 +328,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.chrome && window.chrome.app) {
         setupMidi();
 
-        // setTimeout(() => {
-        //     setInterval(() => {
-        //         if (Date.now() - last_time_of_message_received > 317 * 2) {
-        //             window.yoctocoreDevice && send_sysex("version0");
-        //         }
-        //         if (Date.now() - last_time_of_message_received > 317 * 4) {
-        //             vm.device_connected = false;
-        //             setupMidi();
-        //         }
-        //     }, 317);
-        // }, 2000);
+        setTimeout(() => {
+            setInterval(() => {
+                if (Date.now() - last_time_of_message_received > 317 * 2) {
+                    window.yoctocoreDevice && send_sysex("version0");
+                }
+                if (Date.now() - last_time_of_message_received > 317 * 4) {
+                    vm.device_connected = false;
+                    setupMidi();
+                }
+            }, 317);
+        }, 2000);
 
     }
 

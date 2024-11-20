@@ -174,8 +174,10 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       out->adsr.release = roundf(config->release * 1000);
       break;
     default:
+      return;
       break;
   }
+  self->debounce_save = to_ms_since_boot(get_absolute_time());
 }
 
 float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
@@ -230,6 +232,7 @@ bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
   if (current_time - self->debounce_save < 3000) {
     return false;
   }
+  self->debounce_save = 0;
   FRESULT fr;
   FIL file;
   UINT bw;
