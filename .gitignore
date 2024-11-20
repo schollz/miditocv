@@ -55,3 +55,5 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+lib/tests/spiral/data.txt
+lib/tests/spiral/out
