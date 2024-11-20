@@ -1,7 +1,12 @@
 #ifndef LIB_YOCTOCORE_H
 #define LIB_YOCTOCORE_H 1
 
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "adsr.h"
+#include "dac.h"
 #include "slew.h"
 
 #define MODE_MANUAL 0
@@ -51,7 +56,8 @@ typedef struct Config {
 } Config;
 
 typedef struct Out {
-  float voltage;
+  float voltage_set;
+  float voltage_current;
   ADSR adsr;
   Slew slew;
 } Out;
@@ -63,6 +69,8 @@ typedef struct Yoctocore {
   Config config[8][8];
   // 8 outputs
   Out out[8];
+  // debounces
+  uint32_t debounce_save;
 } Yoctocore;
 
 void Yoctocore_init(Yoctocore *self) {
@@ -92,8 +100,10 @@ void Yoctocore_init(Yoctocore *self) {
     // initialize adsr
     ADSR_init(&self->out[output].adsr, 0.1, 0.1, 0.5, 0.5, 0.5);
     // initialize voltage
-    self->out[output].voltage = 0;
+    self->out[output].voltage_current = 0;
+    self->out[output].voltage_set = 0;
   }
+  self->debounce_save = 0;
 }
 
 void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
@@ -161,3 +171,90 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       break;
   }
 }
+
+bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
+  if (self->debounce_save == 0) {
+    return false;
+  }
+  if (current_time - self->debounce_save < 3000) {
+    return false;
+  }
+  FRESULT fr;
+  FIL file;
+  UINT bw;
+  char fname[32];
+  sprintf(fname, "savefile");
+
+  fr = f_open(&file, fname, FA_WRITE | FA_CREATE_ALWAYS);
+  if (FR_OK != fr) {
+    printf("f_open error: %s (%d)\n", FRESULT_str(fr), fr);
+    return false;
+  }
+  uint32_t total_bytes_written = 0;
+
+  // write current index
+  fr = f_write(&file, &self->i, sizeof(uint8_t), &bw);
+  if (FR_OK != fr) {
+    printf("f_write error: %s (%d)\n", FRESULT_str(fr), fr);
+    return false;
+  }
+  // write each config of each scene
+  for (uint8_t scene = 0; scene < 8; scene++) {
+    for (uint8_t output = 0; output < 8; output++) {
+      fr = f_write(&file, &self->config[scene][output], sizeof(Config), &bw);
+      if (FR_OK != fr) {
+        printf("f_write error: %s (%d)\n", FRESULT_str(fr), fr);
+        return false;
+      }
+      total_bytes_written += bw;
+    }
+  }
+
+  fr = f_close(&file);
+  if (FR_OK != fr) {
+    printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
+    return false;
+  }
+  return true;
+}
+
+bool Yoctocore_load(Yoctocore *self) {
+  FRESULT fr;
+  FIL file;
+  UINT br;
+  char fname[32];
+  sprintf(fname, "savefile");
+
+  fr = f_open(&file, fname, FA_READ);
+  if (FR_OK != fr) {
+    printf("f_open error: %s (%d)\n", FRESULT_str(fr), fr);
+    return false;
+  }
+
+  // read current index
+  fr = f_read(&file, &self->i, sizeof(uint8_t), &br);
+  if (FR_OK != fr) {
+    printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
+    return false;
+  }
+
+  // read each config of each scene
+  for (uint8_t scene = 0; scene < 8; scene++) {
+    for (uint8_t output = 0; output < 8; output++) {
+      fr = f_read(&file, &self->config[scene][output], sizeof(Config), &br);
+      if (FR_OK != fr) {
+        printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
+        return false;
+      }
+    }
+  }
+
+  fr = f_close(&file);
+  if (FR_OK != fr) {
+    printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
+    return false;
+  }
+  return true;
+}
+
+#endif  // LIB_YOCTOCORE_H

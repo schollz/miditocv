@@ -40,11 +40,14 @@ float Slew_smootherstep(float t) {
   return t * t * t * (t * (t * 6 - 15) + 10);
 }
 
-float Slew_process(Slew *slew, uint32_t current_time) {
-  slew->current_time = current_time;
+float Slew_process(Slew *slew, float target_value, uint32_t current_time) {
   if (slew->duration == 0) {
-    return slew->current_value;
+    return target_value;
   }
+  if (slew->target_value != target_value) {
+    Slew_set_target(slew, target_value);
+  }
+  slew->current_time = current_time;
 
   uint32_t elapsed_time = current_time - slew->start_time;
 

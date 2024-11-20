@@ -27,10 +27,16 @@ int16_t KnobChange_update(KnobChange *self, int16_t val) {
   }
 
   int16_t diff = val - self->last;
-  if (diff > self->threshold || diff < -self->threshold || self->debounce) {
+  if (diff > self->threshold || diff < -self->threshold) {
     self->changed = 1;
     self->last = val;
-    self->debounce = 200;
+    self->debounce = 5;
+  } else if (self->debounce > 0) {
+    self->last = val;
+    self->changed = 1;
+  } else {
+    self->changed = 0;
+    return -1;
   }
 
   return self->last;

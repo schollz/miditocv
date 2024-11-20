@@ -27,7 +27,7 @@ void MCP4728_update(MCP4728 *self) {
   for (int i = 0; i < 4; i++) {
     uint16_t value =
         (uint16_t)round(self->voltage[i] * 4095.0 / self->voltage_reference);
-    printf("voltage[%d] = %f (%d)\n", i, self->voltage[i], value);
+    // printf("voltage[%d] = %f (%d)\n", i, self->voltage[i], value);
     data[i * 2] = 0b00000000 | (value >> 8);
     data[i * 2 + 1] = value & 0xff;
   }

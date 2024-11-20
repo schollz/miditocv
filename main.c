@@ -42,14 +42,6 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #define DURATION_HOLD_LONG 1250
 #define FLASH_TARGET_OFFSET (5 * 256 * 1024)
 
-#define MODE_MANUAL 0
-#define MODE_PITCH 1
-#define MODE_ENVELOPE 2
-#define MODE_CC 3
-#define MODE_MIDI_CLOCK 4
-#define MODE_CLOCK 5
-#define MODE_LFO 6
-
 //
 #include "ff.h" /* Obtains integer types */
 //
@@ -73,12 +65,11 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/scene.h"
 #include "lib/sdcard.h"
 #include "lib/simpletimer.h"
-#include "lib/slew.h"
-// globals
-float g_bpm = 120.0;
+#include "lib/yoctocore.h"
+
+Yoctocore yocto;
 DAC dac;
 WS2812 ws2812;
-ADSR pool_adsr[8];
 SimpleTimer pool_timer[16];
 KnobChange pool_knobs[8];
 MCP3208 mcp3208;
@@ -96,31 +87,26 @@ void timer_callback_outputs(bool on, int user_data) {
 }
 
 void timer_callback_sample_knob(bool on, int user_data) {
-  char buf[128];
-  // clear the buffer
-  buf[0] = '\0';
   for (uint8_t i = 0; i < 8; i++) {
-    uint16_t val = MCP3208_read(&mcp3208, i, false);
-    int16_t val_changed = KnobChange_update(&pool_knobs[i], val);
-    sprintf(buf, "%s%d ", buf, val);
-
-    if (val_changed != -1 &&
-        scenes[state.scene].output[i].mode == MODE_MANUAL) {
-      float voltage = linlin((float)val_changed, 0.0f, 1023.0f,
-                             scenes[state.scene].output[i].min_voltage,
-                             scenes[state.scene].output[i].max_voltage);
-      Slew_set_target(&scenes[state.scene].output_process[i].slew, voltage);
+    int16_t val_changed =
+        KnobChange_update(&pool_knobs[i], MCP3208_read(&mcp3208, i, false));
+    if (val_changed != -1) {
+      printf("Knob %d: %d\n", i, val_changed);
     }
   }
-  // printf("\n%s\n", buf);
 }
 
 void timer_callback_ws2812(bool on, int user_data) {
   for (uint8_t i = 0; i < 8; i++) {
-    uint16_t val = pool_knobs[i].last;
-    WS2812_fill(&ws2812, i, val / 4, 0, 255 - val / 4);
+    uint8_t val =
+        roundf(linlin(yocto.out[i].voltage_current, -5.0, 10.0, 0.0, 255.0));
+    WS2812_fill(&ws2812, i, val, 0, 255 - val);
   }
   WS2812_show(&ws2812);
+}
+
+void timer_callback_print_memory_usage(bool on, int user_data) {
+  print_memory_usage();
 }
 
 int main() {
@@ -182,7 +168,7 @@ int main() {
 
   // initialize knobs
   for (uint8_t i = 0; i < 8; i++) {
-    KnobChange_init(&pool_knobs[i], 10);
+    KnobChange_init(&pool_knobs[i], 3);
   }
 
   // setup buttons
@@ -192,31 +178,17 @@ int main() {
     gpio_pull_up(button_pins[i]);
   }
 
-  // initialize timers
-  // first 8 timers are for each output and disabled by default
-  for (uint8_t i = 0; i < 8; i++) {
-    // TODO: setup callbacks
-    SimpleTimer_init(&pool_timer[i], g_bpm, 4, 0, timer_callback_outputs, i);
-  }
-  // setup a timer at 5 milliseconds to sample the knobs
-  SimpleTimer_init(&pool_timer[8], 60 * 15, 4, 0, timer_callback_sample_knob,
-                   0);
-  SimpleTimer_init(&pool_timer[9], 60 * 15, 4, 0, timer_callback_ws2812, 0);
-
   // initialize MCP3208
   MCP3208_init(&mcp3208, spi0, PIN_SPI_CSN, PIN_SPI_CLK, PIN_SPI_RX,
                PIN_SPI_TX);
 
-  // // initialize WS2812
+  // initialize WS2812
   WS2812_init(&ws2812, WS2812_PIN, pio0, WS2812_SM, 8);
   WS2812_set_brightness(&ws2812, 70);
   for (uint8_t i = 0; i < 8; i++) {
     WS2812_fill(&ws2812, i, 255, 0, 255);
   }
   WS2812_show(&ws2812);
-
-  // initialize scenes
-  Scenes_init();
 
   // initialize SD card
   // sleep_ms(1000);
@@ -229,7 +201,6 @@ int main() {
     printf("[main]: failed to mount sd card\n");
   } else {
     // big_file_test("test.bin", 2, 0);  // perform read/write test
-    Scene_load_data_sdcard();
   }
 
   // initialize dac
@@ -251,10 +222,35 @@ int main() {
   }
   DAC_update(&dac);
 
+  // initialize the yoctocore
+  Yoctocore_init(&yocto);
+  // load the yoctocore data
+  uint64_t start_time = time_us_64();
+  sleep_ms(1000);
+  if (Yoctocore_load(&yocto)) {
+    printf("loaded data in %lld us\n", time_us_64() - start_time);
+  } else {
+    printf("failed to load data\n");
+  }
+
+  // initialize timers
   uint32_t ct = to_ms_since_boot(get_absolute_time());
-  uint32_t ct_last_print = ct;
-  uint32_t ct_next_bpm = ct + (60.0 / g_bpm * 1000);
-  bool startup = false;
+  // first 8 timers are for each output and disabled by default
+  for (uint8_t i = 0; i < 16; i++) {
+    SimpleTimer_init(&pool_timer[i], 16, 4, 0, timer_callback_outputs, i);
+  }
+  // setup a timer at 5 milliseconds to sample the knobs
+  SimpleTimer_init(&pool_timer[8], 60 * 15, 4, 0, timer_callback_sample_knob,
+                   0);
+  SimpleTimer_start(&pool_timer[8], ct);
+  // setup a timer at 33 hz to update the ws2812
+  SimpleTimer_init(&pool_timer[9], 60 * 15, 4, 0, timer_callback_ws2812, 0);
+  SimpleTimer_start(&pool_timer[9], ct);
+  // setup a timer at 1 second to print memory usage
+  SimpleTimer_init(&pool_timer[10], 30, 4, 0, timer_callback_print_memory_usage,
+                   0);
+  SimpleTimer_start(&pool_timer[10], ct);
+
   while (true) {
 #ifdef INCLUDE_MIDI
     tud_task();
@@ -262,30 +258,11 @@ int main() {
                    midi_continue, midi_stop, midi_timing);
 #endif
 
+    // get time
     ct = to_ms_since_boot(get_absolute_time());
-    if (ct - ct_last_print > 1000) {
-      ct_last_print = ct;
-      print_memory_usage();
-      //   flash_mem_test();
-      // printf("time: %lld\n", time_us_64());
-      //  ClockPool_enable(0, true);
-      //  ClockPool_reset_clock(0, 70, 1, 0, 5.0);
-      //  read knobs
 
-      if (!startup) {
-        startup = true;
-        printf("Startup complete\n");
-        SimpleTimer_start(&pool_timer[8], ct);
-        SimpleTimer_start(&pool_timer[9], ct);
-      }
-    }
-
-    // if (ct > ct_next_bpm) {
-    //   ct_next_bpm = ct + (60.0 / g_bpm * 1000);
-    //   printf("BPM: %f\n", g_bpm);
-    // }
-
-    for (uint8_t i = 0; i < 10; i++) {
+    // process timers
+    for (uint8_t i = 0; i < 16; i++) {
       SimpleTimer_process(&pool_timer[i], ct);
     }
 
@@ -298,33 +275,38 @@ int main() {
       }
     }
 
-    // update based on the mode
+    // yoctocore save (if debounced)
+    start_time = time_us_64();
+    if (Yoctocore_save(&yocto, ct)) {
+      printf("saved data in %lld us\n", time_us_64() - start_time);
+    }
+
+    // process outputs
     for (uint8_t i = 0; i < 8; i++) {
-      if (scenes[state.scene].output[i].mode == MODE_MANUAL) {
-        float val =
-            Slew_process(&scenes[state.scene].output_process[i].slew, ct);
-        DAC_set_voltage(&dac, i, val);
-      } else if (scenes[state.scene].output[i].mode == MODE_PITCH) {
-        // pitch
-        // DAC_set_voltage(&dac, i, 0);
-      } else if (scenes[state.scene].output[i].mode == MODE_ENVELOPE) {
-        // envelope
-        // DAC_set_voltage(&dac, i, 0);
-      } else if (scenes[state.scene].output[i].mode == MODE_CC) {
-        // cc
-        // DAC_set_voltage(&dac, i, 0);
-      } else if (scenes[state.scene].output[i].mode == MODE_MIDI_CLOCK) {
-        // midi clock
-        // DAC_set_voltage(&dac, i, 0);
-      } else if (scenes[state.scene].output[i].mode == MODE_CLOCK) {
-        // clock
-        // DAC_set_voltage(&dac, i, 0);
-      } else if (scenes[state.scene].output[i].mode == MODE_LFO) {
-        // lfo
-        // DAC_set_voltage(&dac, i, 0);
+      Out *out = &yocto.out[i];
+      Config *config = &yocto.config[yocto.i][i];
+      // check mode
+      switch (config->mode) {
+        case MODE_MANUAL:
+          // mode manual will set voltage based on knob turning and slew
+          // check if knob was turned
+          float knob_val = (float)KnobChange_get(&pool_knobs[i]);
+          if (knob_val != -1) {
+            // change the set voltage
+            out->voltage_set = linlin(knob_val, 0.0f, 1023.0f, -5.0, 10.0);
+          }
+          // slew the voltage
+          out->voltage_current = Slew_process(&out->slew, out->voltage_set, ct);
+          break;
+        default:
+          break;
       }
     }
 
-    Scene_save_data_sdcard();
+    // update the DAC
+    for (uint8_t i = 0; i < 8; i++) {
+      DAC_set_voltage(&dac, i, yocto.out[i].voltage_current);
+    }
+    DAC_update(&dac);
   }
 }
