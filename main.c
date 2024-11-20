@@ -42,6 +42,14 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #define DURATION_HOLD_LONG 1250
 #define FLASH_TARGET_OFFSET (5 * 256 * 1024)
 
+#define MODE_MANUAL 0
+#define MODE_PITCH 1
+#define MODE_ENVELOPE 2
+#define MODE_CC 3
+#define MODE_MIDI_CLOCK 4
+#define MODE_CLOCK 5
+#define MODE_LFO 6
+
 //
 #include "ff.h" /* Obtains integer types */
 //
@@ -65,6 +73,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/scene.h"
 #include "lib/sdcard.h"
 #include "lib/simpletimer.h"
+#include "lib/slew.h"
 // globals
 float g_bpm = 120.0;
 DAC dac;
@@ -92,8 +101,16 @@ void timer_callback_sample_knob(bool on, int user_data) {
   buf[0] = '\0';
   for (uint8_t i = 0; i < 8; i++) {
     uint16_t val = MCP3208_read(&mcp3208, i, false);
-    KnobChange_update(&pool_knobs[i], val);
+    int16_t val_changed = KnobChange_update(&pool_knobs[i], val);
     sprintf(buf, "%s%d ", buf, val);
+
+    if (val_changed != -1 &&
+        scenes[state.scene].output[i].mode == MODE_MANUAL) {
+      float voltage = linlin((float)val_changed, 0.0f, 1023.0f,
+                             scenes[state.scene].output[i].min_voltage,
+                             scenes[state.scene].output[i].max_voltage);
+      Slew_set_target(&scenes[state.scene].output_process[i].slew, voltage);
+    }
   }
   // printf("\n%s\n", buf);
 }
@@ -198,6 +215,9 @@ int main() {
   }
   WS2812_show(&ws2812);
 
+  // initialize scenes
+  Scenes_init();
+
   // initialize SD card
   // sleep_ms(1000);
   printf("[main]: initializing sd card\n");
@@ -275,6 +295,33 @@ int main() {
       if (val != button_values[i]) {
         printf("Button %d: %d\n", i, val);
         button_values[i] = val;
+      }
+    }
+
+    // update based on the mode
+    for (uint8_t i = 0; i < 8; i++) {
+      if (scenes[state.scene].output[i].mode == MODE_MANUAL) {
+        float val =
+            Slew_process(&scenes[state.scene].output_process[i].slew, ct);
+        DAC_set_voltage(&dac, i, val);
+      } else if (scenes[state.scene].output[i].mode == MODE_PITCH) {
+        // pitch
+        // DAC_set_voltage(&dac, i, 0);
+      } else if (scenes[state.scene].output[i].mode == MODE_ENVELOPE) {
+        // envelope
+        // DAC_set_voltage(&dac, i, 0);
+      } else if (scenes[state.scene].output[i].mode == MODE_CC) {
+        // cc
+        // DAC_set_voltage(&dac, i, 0);
+      } else if (scenes[state.scene].output[i].mode == MODE_MIDI_CLOCK) {
+        // midi clock
+        // DAC_set_voltage(&dac, i, 0);
+      } else if (scenes[state.scene].output[i].mode == MODE_CLOCK) {
+        // clock
+        // DAC_set_voltage(&dac, i, 0);
+      } else if (scenes[state.scene].output[i].mode == MODE_LFO) {
+        // lfo
+        // DAC_set_voltage(&dac, i, 0);
       }
     }
 

@@ -1,3 +1,8 @@
+#ifndef SCENE_LIB
+#define SCENE_LIB 1
+
+#include "slew.h"
+
 typedef struct Output {
   uint8_t mode;
   uint8_t quantization;
@@ -14,8 +19,13 @@ typedef struct Output {
   uint8_t lfo_waveform;
 } Output;
 
+typedef struct OutputProcess {
+  Slew slew;
+} OutputProcess;
+
 typedef struct Scene {
-  Output output[8];
+  Output output[8];                 // data that is saved
+  OutputProcess output_process[8];  // data that is processed
 } Scene;
 
 Scene scenes[8];
@@ -28,6 +38,27 @@ typedef struct StateData {
 } StateData;
 
 StateData state;
+
+void Scenes_init() {
+  for (uint8_t scene = 0; scene < 8; scene++) {
+    for (uint8_t output = 0; output < 8; output++) {
+      scenes[scene].output[output].mode = 0;
+      scenes[scene].output[output].quantization = 0;
+      scenes[scene].output[output].min_voltage = 0;
+      scenes[scene].output[output].max_voltage = 5;
+      scenes[scene].output[output].slew_time = 0;
+      scenes[scene].output[output].midi_channel = 0;
+      scenes[scene].output[output].midi_priority_channel = 0;
+      scenes[scene].output[output].midi_cc = 0;
+      scenes[scene].output[output].clock_tempo = 120;
+      scenes[scene].output[output].clock_division = 0;
+      scenes[scene].output[output].lfo_period = 0.5;
+      scenes[scene].output[output].lfo_depth = 0.5;
+      scenes[scene].output[output].lfo_waveform = 0;
+      Slew_init(&scenes[scene].output_process[output].slew, 0, 0);
+    }
+  }
+}
 
 void Scene_marshal(const Scene *scene, uint8_t *buffer) {
   for (int i = 0; i < 8; i++) {
@@ -146,6 +177,8 @@ void Scene_update_with_sysex(uint8_t *buffer) {
   } else if (strcmp(param, "slewtime") == 0) {
     val = util_clamp(val, 0.0f, 10.0f);
     scenes[scene_num].output[output_num].slew_time = val;
+    Slew_set_duration(&scenes[scene_num].output_process[output_num].slew,
+                      roundf(val * 1000));
     did_update = true;
   } else if (strcmp(param, "quantization") == 0) {
     scenes[scene_num].output[output_num].quantization = (uint8_t)val;
@@ -335,3 +368,5 @@ void Scene_load_data() {
   }
   state.magic = 123456;
 }
+
+#endif

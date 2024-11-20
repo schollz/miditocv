@@ -1,3 +1,6 @@
+#ifndef SLEW_LIB
+#define SLEW_LIB 1
+
 #include <stdint.h>
 
 typedef struct Slew {
@@ -7,7 +10,6 @@ typedef struct Slew {
   uint32_t start_time;
   uint32_t duration;
   uint32_t current_time;
-  int active;
 } Slew;
 
 void Slew_init(Slew *slew, uint32_t duration, float initial_value) {
@@ -16,7 +18,6 @@ void Slew_init(Slew *slew, uint32_t duration, float initial_value) {
   slew->start_value = initial_value;
   slew->start_time = 0;
   slew->duration = duration;
-  slew->active = 0;
 }
 
 void Slew_set_target(Slew *slew, float target_value) {
@@ -24,12 +25,14 @@ void Slew_set_target(Slew *slew, float target_value) {
     slew->start_value = slew->current_value;
     slew->target_value = target_value;
     slew->start_time = slew->current_time;
-    slew->active = 1;
   }
 }
 
 void Slew_set_duration(Slew *slew, uint32_t duration) {
   slew->duration = duration;
+  if (slew->duration == 0) {
+    slew->current_value = slew->target_value;
+  }
 }
 
 float Slew_smootherstep(float t) {
@@ -39,7 +42,7 @@ float Slew_smootherstep(float t) {
 
 float Slew_process(Slew *slew, uint32_t current_time) {
   slew->current_time = current_time;
-  if (!slew->active) {
+  if (slew->duration == 0) {
     return slew->current_value;
   }
 
@@ -48,7 +51,6 @@ float Slew_process(Slew *slew, uint32_t current_time) {
   // If the elapsed time exceeds the duration, finish the transition
   if (elapsed_time >= slew->duration) {
     slew->current_value = slew->target_value;
-    slew->active = 0;
     return slew->current_value;
   }
 
@@ -67,3 +69,5 @@ float Slew_process(Slew *slew, uint32_t current_time) {
                         (slew->target_value - slew->start_value) * smooth_step;
   return slew->current_value;
 }
+
+#endif
