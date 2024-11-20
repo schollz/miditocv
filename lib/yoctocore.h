@@ -8,6 +8,7 @@
 #include "adsr.h"
 #include "dac.h"
 #include "slew.h"
+#include "utils.h"
 
 #define MODE_MANUAL 0
 #define MODE_PITCH 1
@@ -172,6 +173,49 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
   }
 }
 
+float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
+                    uint32_t param) {
+  Config *config = &self->config[scene][output];
+  switch (param) {
+    case PARAM_MODE:
+      return config->mode;
+    case PARAM_QUANTIZATION:
+      return config->quantization;
+    case PARAM_MIN_VOLTAGE:
+      return config->min_voltage;
+    case PARAM_MAX_VOLTAGE:
+      return config->max_voltage;
+    case PARAM_SLEW_TIME:
+      return config->slew_time;
+    case PARAM_MIDI_CHANNEL:
+      return config->midi_channel;
+    case PARAM_MIDI_PRIORITY_CHANNEL:
+      return config->midi_priority_channel;
+    case PARAM_MIDI_CC:
+      return config->midi_cc;
+    case PARAM_CLOCK_TEMPO:
+      return config->clock_tempo;
+    case PARAM_CLOCK_DIVISION:
+      return config->clock_division;
+    case PARAM_LFO_PERIOD:
+      return config->lfo_period;
+    case PARAM_LFO_DEPTH:
+      return config->lfo_depth;
+    case PARAM_LFO_WAVEFORM:
+      return config->lfo_waveform;
+    case PARAM_ATTACK:
+      return config->attack;
+    case PARAM_DECAY:
+      return config->decay;
+    case PARAM_SUSTAIN:
+      return config->sustain;
+    case PARAM_RELEASE:
+      return config->release;
+    default:
+      return -1000;
+  }
+}
+
 bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
   if (self->debounce_save == 0) {
     return false;
@@ -255,6 +299,33 @@ bool Yoctocore_load(Yoctocore *self) {
     return false;
   }
   return true;
+}
+
+void Yoctocore_process_sysex(Yoctocore *self, uint8_t *buffer) {
+  int scene;
+  int output;
+  uint32_t param_hash;
+  float val;
+  int parsed = parse_wxyz((char *)buffer, &scene, &output, &param_hash, &val);
+  if (parsed == 0) {
+    printf("Failed to parse input\n");
+    return;
+  }
+
+  // Validate scene and output indices
+  if (scene_num < 0 || scene_num >= 8 || output_num < 0 || output_num >= 8) {
+    printf("invalid [%d][%d]\n", scene_num, output_num);
+    return;
+  }
+
+  // set the value if parsed==4
+  if (parsed == 4) {
+    Yoctocore_set(self, scene, output, param_hash, val);
+  } else if (parsed == 3) {
+    // get the value if parsed==3
+    float val = Yoctocore_get(self, scene, output, param_hash);
+    printf("%d %d %d %f\n", scene, output, param_hash, val);
+  }
 }
 
 #endif  // LIB_YOCTOCORE_H

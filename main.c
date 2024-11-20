@@ -62,7 +62,6 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/memusage.h"
 #include "lib/pcg_basic.h"
 #include "lib/random.h"
-#include "lib/scene.h"
 #include "lib/sdcard.h"
 #include "lib/simpletimer.h"
 #include "lib/yoctocore.h"
