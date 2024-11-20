@@ -71,7 +71,8 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   if (get_sysex_param_float_value("version", sysex, length, &val)) {
     printf("v1.0.0");
   } else {
-    Scene_update_with_sysex(sysex);
+    Yoctocore_process_sysex(&yocto, sysex);
+    // clear the sysex buffer
   }
 }
 
@@ -146,12 +147,13 @@ void midi_timing() {
       // sort midi_bpm_detect
 
       int bpm_new = findMedian(midi_bpm_detect, 7);
-      if (bpm_new > 60 && bpm_new < 260 && bpm_new != g_bpm) {
-        g_bpm = bpm_new;
-#ifdef DEBUG_MIDI
-        printf("[midicallback] midi bpm = %d\n", bpm_new);
-#endif
-      }
+      //       if (bpm_new > 60 && bpm_new < 260 && bpm_new != g_bpm) {
+      //         g_bpm = bpm_new;
+      // #ifdef DEBUG_MIDI
+      //         printf("[midicallback] midi bpm = %d\n", bpm_new);
+      // #endif
+      //       }
+
       //   if (bpm_input - 7 != bpm_set) {
       //     // set bpm
       //   }

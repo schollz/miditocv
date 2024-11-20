@@ -92,27 +92,27 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     # constants
     REFERENCE_5V=5.0
     # # settings
-    # INCLUDE_MIDI=1
+    INCLUDE_MIDI=1
 
     # debugging
-    DEBUG_MIDI=1
+    # DEBUG_MIDI=1
     # DEBUG_VOLTAGE_CALIBRATION=1
 
     USBD_PID=0x1836
 )
 
-# # uncomment these lines to include midi
-# target_link_libraries(${PROJECT_NAME} 
-#     tinyusb_device
-#     tinyusb_board
-# )
-# pico_enable_stdio_usb(${PROJECT_NAME} 0)
-# pico_enable_stdio_uart(${PROJECT_NAME} 1)
-# target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-
-# uncomment these lines to have normal USB
-pico_enable_stdio_usb(${PROJECT_NAME} 1)
+# uncomment these lines to include midi
+target_link_libraries(${PROJECT_NAME} 
+    tinyusb_device
+    tinyusb_board
+)
+pico_enable_stdio_usb(${PROJECT_NAME} 0)
 pico_enable_stdio_uart(${PROJECT_NAME} 1)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+
+# # uncomment these lines to have normal USB
+# pico_enable_stdio_usb(${PROJECT_NAME} 1)
+# pico_enable_stdio_uart(${PROJECT_NAME} 1)
 
 
 pico_add_extra_outputs(${PROJECT_NAME})

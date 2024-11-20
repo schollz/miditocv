@@ -108,6 +108,14 @@ void timer_callback_print_memory_usage(bool on, int user_data) {
   print_memory_usage();
 }
 
+void timer_callback_update_voltage(bool on, int user_data) {
+  // update the DAC
+  for (uint8_t i = 0; i < 8; i++) {
+    DAC_set_voltage(&dac, i, yocto.out[i].voltage_current);
+  }
+  DAC_update(&dac);
+}
+
 int main() {
   // Set PLL_USB 96MHz
   const uint32_t main_line = 96;
@@ -246,9 +254,13 @@ int main() {
   SimpleTimer_init(&pool_timer[9], 60 * 15, 4, 0, timer_callback_ws2812, 0);
   SimpleTimer_start(&pool_timer[9], ct);
   // setup a timer at 1 second to print memory usage
-  SimpleTimer_init(&pool_timer[10], 30, 4, 0, timer_callback_print_memory_usage,
-                   0);
+  SimpleTimer_init(&pool_timer[10], 1000.0f / 1000.0f * 30, 4, 0,
+                   timer_callback_print_memory_usage, 0);
   SimpleTimer_start(&pool_timer[10], ct);
+  // setup a timer at 4 ms intervals to update voltages
+  SimpleTimer_init(&pool_timer[11], 1000.0f / 4.0f * 30, 4, 0,
+                   timer_callback_update_voltage, 0);
+  SimpleTimer_start(&pool_timer[11], ct);
 
   while (true) {
 #ifdef INCLUDE_MIDI
@@ -301,11 +313,5 @@ int main() {
           break;
       }
     }
-
-    // update the DAC
-    for (uint8_t i = 0; i < 8; i++) {
-      DAC_set_voltage(&dac, i, yocto.out[i].voltage_current);
-    }
-    DAC_update(&dac);
   }
 }

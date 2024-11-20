@@ -148,6 +148,9 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
       if (sysex_callback != NULL) {
         sysex_callback(midi_sysex_buffer, midi_sysex_index);
       }
+      // clear the sysex buffer
+      midi_sysex_index = 0;
+      memset(midi_sysex_buffer, 0, sizeof(midi_sysex_buffer));
       return;
     } else if (midi_sysex_active) {
       midi_sysex_buffer[midi_sysex_index] = midi_buffer[i];

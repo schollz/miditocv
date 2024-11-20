@@ -15,7 +15,7 @@ void test1() {
 void test2() {
   int W, X;
   uint32_t Y;
-  char input[] = "1_2_3";
+  char input[] = "0_0_274204627";
   int parsed = parse_wxyz(input, &W, &X, &Y, NULL);
   if (!parsed) {
     printf("Failed to parse input\n");

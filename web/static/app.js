@@ -145,7 +145,7 @@ async function updateLocalScene(scene_num) {
     for (let output_num = 0; output_num < 8; output_num++) {
         for (let param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
             let value = vm.scenes[scene_num].outputs[output_num][param];
-            sysex_string = `${scene_num}_${output_num}_${param.replace(/_/g, '')}_-10.0`;
+            sysex_string = `${scene_num}_${output_num}_${hash_djb(param)}`;
             for (let i = 0; i < 3; i++) {
                 try {
                     console.log(`[sending_sysex] ${sysex_string}`);
@@ -158,6 +158,7 @@ async function updateLocalScene(scene_num) {
                 }
             }
         }
+        break;
     }
     disableWatchers = false;
 }
@@ -179,26 +180,35 @@ function setupMidiInputListener() {
                 if (sysex.startsWith("v")) {
                     //console.log(`[version] ${sysex}`);
                     return;
-                } else if (sysex.startsWith("scene")) {
-                    // extract number from string
-                    console.log(`[sysex_receieved] ${sysex}`);
-                    let scene_num = Number(sysex.match(/\d+/)[0]);
-                    // update the scene
-                    vm.current_scene = scene_num;
-                    updateLocalScene(scene_num);
+                    // } else if (sysex.startsWith("scene")) {
+                    //     // extract number from string
+                    //     console.log(`[sysex_receieved] ${sysex}`);
+                    //     let scene_num = Number(sysex.match(/\d+/)[0]);
+                    //     // update the scene
+                    //     vm.current_scene = scene_num;
+                    //     updateLocalScene(scene_num);
                 } else if (fields.length == 4) {
                     // check if field [3] is a parameter
                     externalTrigger();
                     console.log(`[sysex_receieved] ${fields[0]} ${fields[1]} ${fields[2]} ${fields[3]}`);
-                    let scene_num = Number(fields[0]);
-                    let output_num = Number(fields[1]);
-                    if (vm.scenes[scene_num] && vm.scenes[scene_num].outputs[output_num]) {
-                        let output = vm.scenes[scene_num].outputs[output_num];
-                        let param = fields[2];
-                        let value = Number(fields[3]);
-                        if (output[param] != value) {
-                            updateWithoutWatcher(scene_num, output_num, param, value);
+                    let param_hash = Number(fields[2]);
+                    if (param_hash == hash_djb("scene")) {
+                        let scene_num = Number(fields[3]);
+                        console.log(`[scene_change] ${scene_num}`);
+                        vm.current_scene = scene_num;
+                        updateLocalScene(scene_num);
+                    } else {
+                        let scene_num = Number(fields[0]);
+                        let output_num = Number(fields[1]);
+                        if (vm.scenes[scene_num] && vm.scenes[scene_num].outputs[output_num]) {
+                            let output = vm.scenes[scene_num].outputs[output_num];
+                            let param = Object.keys(output).find(key => hash_djb(key) == param_hash);
+                            let value = Number(fields[3]);
+                            if (output[param] != value) {
+                                updateWithoutWatcher(scene_num, output_num, param, value);
+                            }
                         }
+
                     }
                 } else {
                     addToMidiConsole(sysex);
@@ -268,7 +278,7 @@ function setupMidi() {
                 if (output.name.includes("yoctocore") || output.name.includes("zeptocore") || output.name.includes("ectocore")) {
                     window.yoctocoreDevice = output;
                     console.log("output device connected");
-                    sysex_string = `0_0_scene_-10.0`;
+                    sysex_string = `0_0_${hash_djb("scene")}`;
                     console.log(`[sending_sysex] ${sysex_string}`);
                     send_sysex(sysex_string);
                     vm.device_connected = true;
@@ -319,17 +329,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.chrome && window.chrome.app) {
         setupMidi();
 
-        setTimeout(() => {
-            setInterval(() => {
-                if (Date.now() - last_time_of_message_received > 317 * 2) {
-                    window.yoctocoreDevice && send_sysex("version0");
-                }
-                if (Date.now() - last_time_of_message_received > 317 * 4) {
-                    vm.device_connected = false;
-                    setupMidi();
-                }
-            }, 317);
-        }, 2000);
+        // setTimeout(() => {
+        //     setInterval(() => {
+        //         if (Date.now() - last_time_of_message_received > 317 * 2) {
+        //             window.yoctocoreDevice && send_sysex("version0");
+        //         }
+        //         if (Date.now() - last_time_of_message_received > 317 * 4) {
+        //             vm.device_connected = false;
+        //             setupMidi();
+        //         }
+        //     }, 317);
+        // }, 2000);
 
     }
 
@@ -342,18 +352,22 @@ const app = createApp({
             Array.from({ length: 8 }, () => ({
                 outputs: Array.from({ length: 8 }, () => ({
                     mode: 0,
+                    quantization: 0,
                     min_voltage: -5,
                     max_voltage: 10,
                     slew_time: 0,
-                    quantization: 0,
                     midi_channel: 0,
                     midi_priority_channel: 0,
                     midi_cc: 0,
                     clock_tempo: 120,
                     clock_division: 1,
-                    lfo_waveform: 0,
                     lfo_period: 1,
                     lfo_depth: 1,
+                    lfo_waveform: 0,
+                    attack: 0,
+                    decay: 0,
+                    sustain: 0,
+                    release: 0,
                 })),
             }))
         );
@@ -447,7 +461,7 @@ const app = createApp({
                 // send sysex to update the scene
                 updateLocalScene(newScene);
                 // update the scene on the device
-                sysex_string = `0_0_scene_${newScene}.0`;
+                sysex_string = `0_0_${hash_djb("scene")}_${newScene}`;
                 console.log(`[sending_sysex] ${sysex_string}`);
                 send_sysex(sysex_string);
             }
@@ -514,7 +528,7 @@ const app = createApp({
                     key,
                     debounce((sceneIdx, outputIdx, prop, val) => {
                         val = Number(val);
-                        sysex_string = `${sceneIdx}_${outputIdx}_${prop.replace(/_/g, '')}_${val.toPrecision(4)}`;
+                        sysex_string = `${sceneIdx}_${outputIdx}_${hash_djb(prop)}_${val.toPrecision(4)}`;
                         console.log(`[sending_sysex] ${sysex_string}`);
                         send_sysex(sysex_string);
                     }, 300)

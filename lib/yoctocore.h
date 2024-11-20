@@ -1,6 +1,7 @@
 #ifndef LIB_YOCTOCORE_H
 #define LIB_YOCTOCORE_H 1
 
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,6 +19,7 @@
 #define MODE_CLOCK 5
 #define MODE_LFO 6
 
+#define PARAM_SCENE 274204627
 #define PARAM_MODE 2090515018
 #define PARAM_QUANTIZATION 1091620620
 #define PARAM_MIN_VOLTAGE 2621916282
@@ -112,6 +114,9 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
   Config *config = &self->config[scene][output];
   Out *out = &self->out[output];
   switch (param) {
+    case PARAM_SCENE:
+      self->i = (uint8_t)val;
+      break;
     case PARAM_MODE:
       config->mode = (uint8_t)val;
       break;
@@ -177,6 +182,8 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
                     uint32_t param) {
   Config *config = &self->config[scene][output];
   switch (param) {
+    case PARAM_SCENE:
+      return self->i;
     case PARAM_MODE:
       return config->mode;
     case PARAM_QUANTIZATION:
@@ -306,15 +313,15 @@ void Yoctocore_process_sysex(Yoctocore *self, uint8_t *buffer) {
   int output;
   uint32_t param_hash;
   float val;
-  int parsed = parse_wxyz((char *)buffer, &scene, &output, &param_hash, &val);
+  int parsed = parse_wxyz(buffer, &scene, &output, &param_hash, &val);
   if (parsed == 0) {
     printf("Failed to parse input\n");
     return;
   }
 
   // Validate scene and output indices
-  if (scene_num < 0 || scene_num >= 8 || output_num < 0 || output_num >= 8) {
-    printf("invalid [%d][%d]\n", scene_num, output_num);
+  if (scene < 0 || scene >= 8 || output < 0 || output >= 8) {
+    printf("invalid [%d][%d]\n", scene, output);
     return;
   }
 
@@ -323,8 +330,8 @@ void Yoctocore_process_sysex(Yoctocore *self, uint8_t *buffer) {
     Yoctocore_set(self, scene, output, param_hash, val);
   } else if (parsed == 3) {
     // get the value if parsed==3
-    float val = Yoctocore_get(self, scene, output, param_hash);
-    printf("%d %d %d %f\n", scene, output, param_hash, val);
+    printf("%d %d %" PRIu32 " %f\n", scene, output, param_hash,
+           Yoctocore_get(self, scene, output, param_hash));
   }
 }
 
