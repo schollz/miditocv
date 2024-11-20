@@ -11,6 +11,28 @@ function addToMidiConsole(message) {
 
 let resolveExternalTrigger; // This will hold the resolve function for the external trigger promise
 
+function assert(condition, message) {
+    if (!condition) {
+        throw message || "Assertion failed";
+    }
+}
+
+function hash_djb(str) {
+    let hash = 5381; // Initialize hash value as in the C code
+    let i = 0; // Iterator for the string
+
+    while (i < str.length) {
+        let c = str.charCodeAt(i++); // Get ASCII value of character and increment iterator
+        hash = ((hash << 5) + hash) + c; // hash * 33 + c
+    }
+    hash = hash >>> 0;
+    return hash;
+}
+
+assert(hash_djb("helloworld") == 4294815105);
+assert(hash_djb("hello") == 261238937);
+assert(hash_djb("world") == 279393645);
+
 // Function that simulates an external trigger
 function externalTrigger() {
     if (resolveExternalTrigger) {
