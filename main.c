@@ -64,6 +64,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/random.h"
 #include "lib/sdcard.h"
 #include "lib/simpletimer.h"
+#include "lib/spiral.h"
 #include "lib/yoctocore.h"
 
 Yoctocore yocto;
@@ -312,12 +313,12 @@ int main() {
     for (uint8_t i = 0; i < 8; i++) {
       Out *out = &yocto.out[i];
       Config *config = &yocto.config[yocto.i][i];
+      float knob_val = (float)KnobChange_get(&pool_knobs[i]);
       // check mode
       switch (config->mode) {
         case MODE_MANUAL:
           // mode manual will set voltage based on knob turning and slew
           // check if knob was turned
-          float knob_val = (float)KnobChange_get(&pool_knobs[i]);
           if (knob_val != -1) {
             // change the set voltage
             out->voltage_set = linlin(knob_val, 0.0f, 1023.0f,
@@ -327,7 +328,19 @@ int main() {
           out->voltage_current = Slew_process(&out->slew, out->voltage_set, ct);
           break;
         case MODE_ENVELOPE:
-          // set the value of the envelope
+          // mode envelope will trigger the envelope based on button press
+          // knob changes will scale the attack/release
+          if (knob_val != -1) {
+            // scale the attack/release
+            float attack, release;
+            spiral_coordinate(knob_val, &attack, &release);
+            attack = linlin(attack, 0.0f, 1.0f, 10.0f, 1000.0f);
+            release = linlin(release, 0.0f, 1.0f, 10.0f, 5000.0f);
+            out->adsr.attack = roundf(attack);
+            out->adsr.release = roundf(release);
+            printf("Attack: %f, Release: %f\n", attack, release);
+          }
+
           out->voltage_set = linlin(ADSR_process(&out->adsr, ct), 0.0f, 1.0f,
                                     config->min_voltage, config->max_voltage);
           out->voltage_current = out->voltage_set;

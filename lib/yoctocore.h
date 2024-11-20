@@ -101,7 +101,7 @@ void Yoctocore_init(Yoctocore *self) {
     // initialize slew
     Slew_init(&self->out[output].slew, 0, 0);
     // initialize adsr
-    ADSR_init(&self->out[output].adsr, 0.1, 0.1, 0.5, 0.5, 0.5);
+    ADSR_init(&self->out[output].adsr, 100.0f, 500.0f, 0.707f, 1000.0f, 5.0f);
     // initialize voltage
     self->out[output].voltage_current = 0;
     self->out[output].voltage_set = 0;

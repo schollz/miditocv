@@ -26,7 +26,6 @@ int main() {
 
   // Start with the gate off
   ADSR_gate(&adsr, false, current_time);
-  ADSR_set_levels(&adsr, 1.2f, 2.0f);
 
   // Run the simulation
   uint32_t time_increment = 2;

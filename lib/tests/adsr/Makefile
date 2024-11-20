@@ -1,5 +1,6 @@
 run: build
 	./main
+	python3 plot.py
 
 build:
 	gcc -o main main.c -lm
