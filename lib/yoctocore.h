@@ -40,7 +40,7 @@
 
 typedef struct Config {
   uint8_t mode;
-  uint8_t quantization;
+  uint16_t quantization;
   float min_voltage;
   float max_voltage;
   float slew_time;
