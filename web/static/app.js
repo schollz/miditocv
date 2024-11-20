@@ -33,6 +33,69 @@ assert(hash_djb("helloworld") == 4294815105);
 assert(hash_djb("hello") == 261238937);
 assert(hash_djb("world") == 279393645);
 
+
+function parseStructAndHashVariables(cCode) {
+    // Match all variable names inside the struct using a regular expression
+    const structPattern = /typedef\s+struct\s+\w*\s*{([^}]*)}/s;
+    const match = cCode.match(structPattern);
+
+    if (!match) {
+        console.error("No struct found in the provided C code.");
+        return;
+    }
+
+    // Extract the content of the struct
+    const structBody = match[1];
+
+    // Match all variable declarations inside the struct
+    const variablePattern = /\s*\w+\s+(\w+)\s*;/g;
+    let variables = [];
+    let result;
+
+    while ((result = variablePattern.exec(structBody)) !== null) {
+        variables.push(result[1]); // Collect variable names
+    }
+
+    // Generate hashes for each variable name
+    const variableHashes = variables.map(varName => ({
+        variable: varName,
+        hash: hash_djb(varName),
+    }));
+
+    // Print out the hashes
+    console.log("Variable hashes:");
+    variableHashes.forEach(entry => {
+        console.log(`#define param_${entry.variable} ${entry.hash}`);
+    });
+
+    return variableHashes;
+}
+
+// Example usage
+const cCode = `
+typedef struct Config {
+  uint8_t mode;
+  uint8_t quantization;
+  float min_voltage;
+  float max_voltage;
+  float slew_time;
+  uint8_t midi_channel;
+  uint8_t midi_priority_channel;
+  uint8_t midi_cc;
+  float clock_tempo;
+  uint8_t clock_division;
+  float lfo_period;
+  float lfo_depth;
+  uint8_t lfo_waveform;
+  float attack;
+  float decay;
+  float sustain;
+  float release;
+} Config;
+`;
+
+parseStructAndHashVariables(cCode);
+
 // Function that simulates an external trigger
 function externalTrigger() {
     if (resolveExternalTrigger) {

@@ -60,16 +60,6 @@ void ADSR_gate(ADSR *adsr, bool gate, uint32_t current_time_ms) {
   }
 }
 
-void ADSR_set_shape(ADSR *adsr, float shape) { adsr->shape = shape; }
-
-void ADSR_set_attack(ADSR *adsr, float attack) { adsr->attack = attack; }
-
-void ADSR_set_decay(ADSR *adsr, float decay) { adsr->decay = decay; }
-
-void ADSR_set_sustain(ADSR *adsr, float sustain) { adsr->sustain = sustain; }
-
-void ADSR_set_release(ADSR *adsr, float release) { adsr->release = release; }
-
 float ADSR_process(ADSR *adsr, float current_time_ms) {
   if (adsr->state == env_attack) {
     int32_t elapsed = current_time_ms - adsr->start_time;

@@ -41,7 +41,7 @@ int main() {
       ADSR_gate(&adsr, false, current_time);
     }
     if (current_time == 5000) {
-      ADSR_set_attack(&adsr, 1000.0f);
+      adsr.attack = 1000.0f;
       ADSR_gate(&adsr, true, current_time);
     }
     if (current_time == 5300) {
