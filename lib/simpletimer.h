@@ -11,13 +11,11 @@ typedef void (*callback_bool_int)(bool, int);
 
 // Fractions of a beat
 #define SIMPLETIMER_NUM_DIVISIONS 9
-float simpletimer_divisions[SIMPLETIMER_NUM_DIVISIONS] = {
-    1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0 / 2, 1.0, 2.0, 4.0, 8.0, 16.0};
 
 // SimpleTimer structure definition
 typedef struct SimpleTimer {
   float bpm;
-  uint8_t division;
+  float division;
   float first_time;
   float next_time;
   float offset;
@@ -29,8 +27,7 @@ typedef struct SimpleTimer {
 
 // Function to set BPM
 void SimpleTimer_compute_time_diff(SimpleTimer *self) {
-  self->time_diff =
-      30000.0f / (self->bpm * simpletimer_divisions[self->division]);
+  self->time_diff = 30000.0f / (self->bpm * division);
 }
 
 void SimpleTimer_set_bpm(SimpleTimer *self, float bpm) {
@@ -52,20 +49,17 @@ void SimpleTimer_set_bpm(SimpleTimer *self, float bpm) {
 }
 
 // Function to set the division, ensuring it is within valid range
-void SimpleTimer_set_division(SimpleTimer *self, uint8_t division) {
-  if (division < SIMPLETIMER_NUM_DIVISIONS) {
-    self->division = division;
-    // recompute
-    SimpleTimer_set_bpm(self, self->bpm);
-  }
+void SimpleTimer_set_division(SimpleTimer *self, float division) {
+  self->division = division;
+  // recompute
+  SimpleTimer_set_bpm(self, self->bpm);
 }
 
 // Initialization function for SimpleTimer
-void SimpleTimer_init(SimpleTimer *self, float bpm, uint8_t division,
+void SimpleTimer_init(SimpleTimer *self, float bpm, float division,
                       float offset, callback_bool_int pulse_callback,
                       int user_data) {
   self->bpm = bpm;
-  self->division = 0;
   self->on = false;
   self->offset = offset;
   self->pulse_callback = pulse_callback;

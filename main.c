@@ -246,21 +246,21 @@ int main() {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   // first 8 timers are for each output and disabled by default
   for (uint8_t i = 0; i < 16; i++) {
-    SimpleTimer_init(&pool_timer[i], 16, 4, 0, timer_callback_outputs, i);
+    SimpleTimer_init(&pool_timer[i], 16, 1.0f, 0, timer_callback_outputs, i);
   }
   // setup a timer at 5 milliseconds to sample the knobs
-  SimpleTimer_init(&pool_timer[8], 1000.0f / 11.0f * 30, 4, 0,
+  SimpleTimer_init(&pool_timer[8], 1000.0f / 11.0f * 30, 1.0f, 0,
                    timer_callback_sample_knob, 0);
   SimpleTimer_start(&pool_timer[8], ct);
   // setup a timer at 33 hz to update the ws2812
-  SimpleTimer_init(&pool_timer[9], 60 * 15, 4, 0, timer_callback_ws2812, 0);
+  SimpleTimer_init(&pool_timer[9], 60 * 15, 1.0f, 0, timer_callback_ws2812, 0);
   SimpleTimer_start(&pool_timer[9], ct);
   // setup a timer at 1 second to print memory usage
-  SimpleTimer_init(&pool_timer[10], 1000.0f / 1000.0f * 30, 4, 0,
+  SimpleTimer_init(&pool_timer[10], 1000.0f / 1000.0f * 30, 1.0f, 0,
                    timer_callback_print_memory_usage, 0);
   // SimpleTimer_start(&pool_timer[10], ct);
   // setup a timer at 4 ms intervals to update voltages
-  SimpleTimer_init(&pool_timer[11], 1000.0f / 4.0f * 30, 4, 0,
+  SimpleTimer_init(&pool_timer[11], 1000.0f / 4.0f * 30, 1.0f, 0,
                    timer_callback_update_voltage, 0);
   SimpleTimer_start(&pool_timer[11], ct);
 
