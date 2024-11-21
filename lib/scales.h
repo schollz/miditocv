@@ -4,14 +4,17 @@
 #include <stdint.h>
 
 #define MAX_INTERVALS 16
-#define MAX_ALT_NAMES 8
-#define MAX_NAME_LENGTH 32
 #define MAX_SCALES 50
 
-typedef struct Scale {
+typedef struct {
   uint8_t intervals[MAX_INTERVALS];
   uint8_t interval_count;
 } Scale;
+
+float SCALE_CHROMATIC[13] = {
+    0.0f,          1.0f / 12.0f,  2.0f / 12.0f, 3.0f / 12.0f, 4.0f / 12.0f,
+    5.0f / 12.0f,  6.0f / 12.0f,  7.0f / 12.0f, 8.0f / 12.0f, 9.0f / 12.0f,
+    10.0f / 12.0f, 11.0f / 12.0f, 1.0f};
 
 Scale SCALES[MAX_SCALES] = {
     {// Chromatic
@@ -138,4 +141,35 @@ Scale SCALES[MAX_SCALES] = {
      {0, 4, 5, 7, 11, 12},
      6},
 };
+
+float scale_quantize_voltage(uint8_t scale, float voltage) {
+  if (scale == 0) {
+    // no quantization
+    return voltage;
+  }
+  scale--;
+  float voltage_octave = 0;
+  while (voltage >= 1.0f) {
+    voltage_octave += 1.0f;
+    voltage -= 1.0f;
+  }
+  while (voltage < 0.0f) {
+    voltage_octave -= 1.0f;
+    voltage += 1.0f;
+  }
+  // find the closest SCALE_CHROMATIC for the scale
+  float closest = 0.0f;
+  float closest_diff = 1.0f;
+  for (uint8_t i = 0; i < SCALES[scale].interval_count; i++) {
+    float diff = SCALE_CHROMATIC[SCALES[scale].intervals[i]] - voltage;
+    if (diff < 0.0f) {
+      diff = -diff;
+    }
+    if (diff < closest_diff) {
+      closest_diff = diff;
+      closest = SCALE_CHROMATIC[SCALES[scale].intervals[i]];
+    }
+  }
+  return closest + voltage_octave;
+}
 #endif
