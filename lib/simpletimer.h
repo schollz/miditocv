@@ -85,6 +85,13 @@ void SimpleTimer_start(SimpleTimer *self, float current_time) {
   SimpleTimer_reset(self, current_time);
 }
 
+void SimplerTimer_on(SimpleTimer *self, float current_time) {
+  if (self->on) {
+    return;
+  }
+  SimplerTimer_start(self, current_time);
+}
+
 // Main processing function for generating timer pulses
 bool SimpleTimer_process(SimpleTimer *self, float current_time) {
   if (self->next_time == 0) {

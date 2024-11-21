@@ -84,7 +84,14 @@ uint8_t button_values[9] = {0, 0, 0, 0, 0, 0};
 #endif
 
 void timer_callback_outputs(bool on, int user_data) {
-  // printf("[timer_callback_outputs]: %d %d\n", on, user_data);
+  printf("[timer_callback_outputs]: %d %d\n", on, user_data);
+  Out *out = &yocto.out[user_data];
+  Config *config = &yocto.config[yocto.i][user_data];
+  if (on) {
+    out->voltage_current = config->max_voltage;
+  } else {
+    out->voltage_current = config->min_voltage;
+  }
 }
 
 void timer_callback_sample_knob(bool on, int user_data) {
@@ -316,6 +323,12 @@ int main() {
       Config *config = &yocto.config[yocto.i][i];
       float knob_val = (float)KnobChange_get(&pool_knobs[i]);
       // check mode
+      // make sure modes are up to date
+      if (config->mode == MODE_CLOCK) {
+        SimpleTimer_on(&pool_timer[i], ct);
+      } else {
+        SimpleTimer_stop(&pool_timer[i]);
+      }
       switch (config->mode) {
         case MODE_MANUAL:
           // mode manual will set voltage based on knob turning and slew
@@ -335,6 +348,8 @@ int main() {
           out->voltage_current =
               Slew_process(&out->portamento, out->voltage_current, ct);
           break;
+        case MODE_CLOCK:
+          break;
         case MODE_ENVELOPE:
           // mode envelope will trigger the envelope based on button press
           // knob changes will scale the attack/release
@@ -352,6 +367,7 @@ int main() {
           out->voltage_set = linlin(ADSR_process(&out->adsr, ct), 0.0f, 1.0f,
                                     config->min_voltage, config->max_voltage);
           out->voltage_current = out->voltage_set;
+          break;
         default:
           break;
       }
