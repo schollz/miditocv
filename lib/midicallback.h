@@ -18,7 +18,7 @@ uint32_t midi_delta_count = 0;
 uint32_t midi_timing_count = 0;
 const uint8_t midi_timing_modulus = 24;
 
-void midi_note_off(int note) {
+void midi_note_off(int channel, int note) {
 #ifdef DEBUG_MIDI
   printf("note_off: %d\n", note);
 #endif
@@ -76,9 +76,15 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   }
 }
 
-void midi_note_on(int note, int velocity) {
+void midi_note_on(int channel, int note, int velocity) {
 #ifdef DEBUG_MIDI
   printf("note_on: %d\n", note);
+#endif
+}
+
+void midi_cc(int channel, int cc, int value) {
+#ifdef DEBUG_MIDI
+  printf("cc: %d\n", cc);
 #endif
 }
 

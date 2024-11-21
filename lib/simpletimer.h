@@ -27,7 +27,7 @@ typedef struct SimpleTimer {
 
 // Function to set BPM
 void SimpleTimer_compute_time_diff(SimpleTimer *self) {
-  self->time_diff = 30000.0f / (self->bpm * division);
+  self->time_diff = 30000.0f / (self->bpm * self->division);
 }
 
 void SimpleTimer_set_bpm(SimpleTimer *self, float bpm) {
@@ -85,11 +85,11 @@ void SimpleTimer_start(SimpleTimer *self, float current_time) {
   SimpleTimer_reset(self, current_time);
 }
 
-void SimplerTimer_on(SimpleTimer *self, float current_time) {
+void SimpleTimer_on(SimpleTimer *self, float current_time) {
   if (self->on) {
     return;
   }
-  SimplerTimer_start(self, current_time);
+  SimpleTimer_start(self, current_time);
 }
 
 // Main processing function for generating timer pulses

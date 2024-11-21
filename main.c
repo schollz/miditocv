@@ -274,8 +274,8 @@ int main() {
   while (true) {
 #ifdef INCLUDE_MIDI
     tud_task();
-    midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off, midi_start,
-                   midi_continue, midi_stop, midi_timing);
+    midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off, NULL,
+                   midi_start, midi_continue, midi_stop, midi_timing);
 #endif
 
     // get time

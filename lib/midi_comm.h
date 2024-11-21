@@ -3,6 +3,7 @@
 #include <stdarg.h>  // Include this header for va_start, va_end, etc.
 #include <stdio.h>   // Include for vsnprintf
 
+typedef void (*callback_int_int_int)(int, int, int);
 typedef void (*callback_int_int)(int, int);
 typedef void (*callback_int)(int);
 typedef void (*callback_int32)(int32_t);
@@ -123,7 +124,9 @@ bool midi_sysex_active = false;
 uint8_t midi_sysex_index = 0;
 
 void midi_comm_task(callback_uint8_buffer sysex_callback,
-                    callback_int_int midi_note_on, callback_int midi_note_off,
+                    callback_int_int_int midi_note_on,
+                    callback_int_int midi_note_off,
+                    callback_int_int_int midi_cc_callback,
                     callback_void midi_start, callback_void midi_continue,
                     callback_void midi_stop, callback_void midi_timing) {
   uint32_t bytes_read = 0;
@@ -193,7 +196,7 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
     // note off received
     usb_midi_present = true;
     if (midi_note_off != NULL) {
-      midi_note_off(midi_buffer[1]);
+      midi_note_off(midi_buffer[0] & 0x0F, midi_buffer[1]);
     }
     return;
   } else if (midi_buffer[0] == 0x90 && bytes_read > 2) {
@@ -202,10 +205,17 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
     if (midi_note_on != NULL) {
       if (bytes_read == 3) {
         // TODO: for some reason this is not working
-        midi_note_on(midi_buffer[1], midi_buffer[2]);
+        midi_note_on(midi_buffer[0] & 0x0F, midi_buffer[1], midi_buffer[2]);
       } else {
-        midi_note_on(midi_buffer[1], 0);
+        midi_note_on(midi_buffer[0] & 0x0F, midi_buffer[1], 0);
       }
+    }
+    return;
+  } else if ((midi_buffer[0] & 0xF0) == 0xB0 && bytes_read > 2) {
+    // control change received
+    usb_midi_present = true;
+    if (midi_cc_callback != NULL) {
+      midi_cc_callback(midi_buffer[0] & 0x0F, midi_buffer[1], midi_buffer[2]);
     }
     return;
   }
