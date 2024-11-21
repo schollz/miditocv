@@ -24,8 +24,8 @@ typedef struct OutputProcess {
 } OutputProcess;
 
 typedef struct Scene {
-  Output output[8];                 // data that is saved
-  OutputProcess output_process[8];  // data that is processed
+  Output output[8];                 // saved
+  OutputProcess output_process[8];  // runtime
 } Scene;
 
 Scene scenes[8];

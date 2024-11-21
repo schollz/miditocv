@@ -75,7 +75,9 @@ function parseStructAndHashVariables(cCode) {
 const cCode = `
 typedef struct Config {
   uint8_t mode;
-  uint8_t quantization;
+  uint16_t quantization;
+  float v_oct;
+  uint8_t root_note;
   float min_voltage;
   float max_voltage;
   float slew_time;
@@ -352,6 +354,8 @@ const app = createApp({
                 outputs: Array.from({ length: 8 }, () => ({
                     mode: 0,
                     quantization: 0,
+                    v_oct: 1.0,
+                    root_note: 60,
                     min_voltage: -5,
                     max_voltage: 10,
                     slew_time: 0,
@@ -378,6 +382,18 @@ const app = createApp({
         const device_connected = ref(false);
         const midi_input_active = ref({});
         const midi_input_last_message = ref({});
+        const note_names = computed(() => {
+            const noteNames = [
+                "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
+            ];
+            const notes = [];
+            for (let i = 0; i <= 127; i++) {
+                const octave = Math.floor(i / 12) - 1;
+                const note = noteNames[i % 12];
+                notes.push(`${note}${octave}`);
+            }
+            return notes;
+        });
 
         function toggleActivation(inputName) {
             console.log(`Toggling activation for ${inputName}`);
@@ -589,6 +605,7 @@ const app = createApp({
             midi_input_active,
             midi_input_last_message,
             toggleActivation,
+            note_names,
         };
     },
 });
