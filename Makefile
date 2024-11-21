@@ -50,3 +50,12 @@ ignore:
 	git status --porcelain | grep '^??' | cut -c4- >> .gitignore
 	git commit -am "update gitignore"
 
+
+.PHONY: web
+BROWSERSYNC_CMD = cd web && browsersync 
+SSL_PROXY_CMD = cd web && local-ssl-proxy --key localhost-key.pem --cert localhost.pem --source 8000 --target 8003
+web:
+	@echo "Starting BrowserSync in the background..."
+	@($(BROWSERSYNC_CMD) &) && \
+	echo "Starting local SSL proxy..." && \
+	$(SSL_PROXY_CMD)

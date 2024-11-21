@@ -62,6 +62,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/memusage.h"
 #include "lib/pcg_basic.h"
 #include "lib/random.h"
+#include "lib/scales.h"
 #include "lib/sdcard.h"
 #include "lib/simpletimer.h"
 #include "lib/spiral.h"
@@ -326,6 +327,13 @@ int main() {
           }
           // slew the voltage
           out->voltage_current = Slew_process(&out->slew, out->voltage_set, ct);
+          // quantize the voltage
+          out->voltage_current =
+              scale_quantize_voltage(config->quantization, config->root_note,
+                                     config->v_oct, out->voltage_current);
+          // portamento voltage
+          out->voltage_current =
+              Slew_process(&out->portamento, out->voltage_current, ct);
           break;
         case MODE_ENVELOPE:
           // mode envelope will trigger the envelope based on button press

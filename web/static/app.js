@@ -65,7 +65,7 @@ function parseStructAndHashVariables(cCode) {
     // Print out the hashes
     console.log("Variable hashes:");
     variableHashes.forEach(entry => {
-        console.log(`#define param_${entry.variable} ${entry.hash}`);
+        console.log(`#define PARAM_${entry.variable.toLocaleUpperCase()} ${entry.hash}`);
     });
 
     return variableHashes;
@@ -75,12 +75,13 @@ function parseStructAndHashVariables(cCode) {
 const cCode = `
 typedef struct Config {
   uint8_t mode;
-  uint16_t quantization;
-  float v_oct;
-  uint8_t root_note;
   float min_voltage;
   float max_voltage;
   float slew_time;
+  uint16_t quantization;
+  float v_oct;
+  uint8_t root_note;
+  float portamento;
   uint8_t midi_channel;
   uint8_t midi_priority_channel;
   uint8_t midi_cc;
@@ -359,6 +360,7 @@ const app = createApp({
                     min_voltage: -5,
                     max_voltage: 10,
                     slew_time: 0,
+                    portamento: 0,
                     midi_channel: 0,
                     midi_priority_channel: 0,
                     midi_cc: 0,
@@ -428,12 +430,14 @@ const app = createApp({
                 min_voltage: -5,
                 max_voltage: 10,
                 slew_time: 0,
+                portamento: 0,
                 quantization: 0,
             },
             1: {
                 min_voltage: -5,
                 max_voltage: 10,
                 slew_time: 0,
+                portamento: 0,
                 quantization: 1,
                 midi_channel: 0,
                 midi_priority_channel: 0,

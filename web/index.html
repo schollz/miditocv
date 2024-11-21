@@ -173,10 +173,10 @@
     <!-- Output Details -->
     <div class="output-details" v-if="current_output !== null">
       <div class="row">
-        <div class="col col-3 fr">
-          <label for="mode-select">Select Mode:</label>
+        <div class="col col-2 fr">
+          <label for=" mode-select">Select Mode:</label>
         </div>
-        <div class="col col-9">
+        <div class="col col-10">
           <select id="mode-select" v-model="selected_output.mode">
             <option value=0>Manual</option>
             <option value=1>MIDI Pitch</option>
@@ -188,37 +188,78 @@
           </select>
         </div>
       </div>
-      <div class="row" v-if="Number(selected_output.mode) === 0">
-        <div class="col col-3 fr">
-          <label for="slew-rate">Slew time (seconds):</label>
-        </div>
-        <div class="col col-9">
-          <input id="slew-rate" type="number" v-model.number="selected_output.slew_time" />
-        </div>
-      </div>
       <div class="row">
-        <div class="col col-3 fr">
+        <div class="col col-2 fr">
           <label>
-            Voltage range:
+            Voltage min:
           </label>
         </div>
         <div class="col col-4">
           <input type="number" v-model.number="selected_output.min_voltage" min="-5" max="10" step="0.01" />
         </div>
-        <div class="col col-1 center">
-          to
+        <div class="col col-2 fr">
+          Voltage max:
         </div>
         <div class="col col-4">
           <input type="number" v-model.number="selected_output.max_voltage" min="-5" max="10" step="0.01" />
         </div>
       </div>
-      <div class="row" v-if="[0, 1].includes(Number(selected_output.mode))">
-        <div class="col col-3 fr">
-          <label for="quantization">
-            Quantization:
+      <div class="row" v-if="Number(selected_output.mode) === 0">
+        <div class="col col-2 fr">
+          <label for="slew-rate">Slew:</label>
+        </div>
+        <div class="col col-4">
+          <input id="slew-rate" type="number" v-model.number="selected_output.slew_time" />
+        </div>
+        <div class="col col-2 fr">
+          <label for="portamento">Portamento:</label>
+        </div>
+        <div class="col col-4">
+          <input id="portamento" type="number" v-model.number="selected_output.portamento" />
+        </div>
+      </div>
+      <!-- lfo stuff -->
+      <div class="row" v-if="[6].includes(Number(selected_output.mode))">
+        <div class="col col-2 fr">
+          <label for="lfo-waveform">
+            LFO waveform:
           </label>
         </div>
         <div class="col col-2">
+          <select id="lfo-waveform" v-model="selected_output.lfo_waveform">
+            <option value=0>Sine</option>
+            <option value=1>Triangle</option>
+            <option value=2>Sawtooth</option>
+            <option value=3>Square</option>
+            <option value=4>Random</option>
+          </select>
+        </div>
+        <div class="col col-2 fr">
+          <label for="lfo-period">
+            Period:
+          </label>
+        </div>
+        <div class="col col-2">
+          <input id="lfo-rate" type="number" v-model.number="selected_output.lfo_period" min="0.1" max="10"
+            step="0.1" />
+        </div>
+        <div class="col col-2 fr">
+          <label for="lfo-depth">
+            Depth:
+          </label>
+        </div>
+        <div class="col col-2">
+          <input id="lfo-depth" type="number" v-model.number="selected_output.lfo_depth" min="0" max="1" step="0.01" />
+        </div>
+      </div>
+
+      <div class="row" v-if="[0, 1,2,6].includes(Number(selected_output.mode))">
+        <div class="col col-2 fr">
+          <label for="quantization">
+            Quantize:
+          </label>
+        </div>
+        <div class="col col-4">
           <select id="quantization" v-model="selected_output.quantization">
             <option value=0>None</option>
             <option value=1>Chromatic</option>
@@ -269,16 +310,16 @@
             V/Oct:
           </label>
         </div>
-        <div clas="col col-2">
+        <div clas="col col-1">
           <input id="v_oct" type="number" :disabled="Number(selected_output.quantization) === 0"
             v-model.number="selected_output.v_oct" min="-5" max="10" step="0.01" />
         </div>
         <div class="col col-1 fr">
           <label for="root_note">
-            Root note:
+            Root:
           </label>
         </div>
-        <div class="col col-3">
+        <div class="col col-2">
           <select id="root_note" :disabled="Number(selected_output.quantization) === 0"
             v-model.number="selected_output.root_note">
             <option v-for="(name, index) in note_names" :key="index" :value="index">
@@ -300,12 +341,12 @@
       </div>
       <!-- midi stuff -->
       <div class="row" v-if="[1,2,3,4].includes(Number(selected_output.mode))">
-        <div class="col col-3 fr">
+        <div class="col col-2 fr">
           <label for="midi-channel">
             MIDI Channel:
           </label>
         </div>
-        <div class="col col-9">
+        <div class="col col-4">
           <select id="midi-channel" v-model="selected_output.midi_channel">
             <option value=0>Any</option>
             <option value=1>Channel 1</option>
@@ -326,14 +367,12 @@
             <option value=16>Channel 16</option>
           </select>
         </div>
-      </div>
-      <div class="row" v-if="[1,2,3,4].includes(Number(selected_output.mode))">
-        <div class="col col-3 fr">
+        <div class="col col-2 fr">
           <label for="midi-priority-channel">
-            MIDI Priority Channel:
+            MIDI Priority:
           </label>
         </div>
-        <div class="col col-9">
+        <div class="col col-4">
           <select id="midi-priority-channel" v-model="selected_output.midi_priority_channel">
             <option value=0>None</option>
             <option value=1>Channel 1</option>
@@ -355,6 +394,7 @@
           </select>
         </div>
       </div>
+
 
       <!-- clock stuff -->
       <div class="row" v-if="[5].includes(Number(selected_output.mode))">
@@ -379,42 +419,6 @@
             <option value=0.125>1/8</option>
             <option value=0.016>1/16</option>
           </select>
-        </div>
-      </div>
-      <!-- lfo stuff -->
-      <div class="row" v-if="[6].includes(Number(selected_output.mode))">
-        <div class="col col-3 fr">
-          <label for="lfo-waveform">
-            LFO waveform:
-          </label>
-        </div>
-        <div class="col col-9">
-          <select id="lfo-waveform" v-model="selected_output.lfo_waveform">
-            <option value=0>Sine</option>
-            <option value=1>Triangle</option>
-            <option value=2>Sawtooth</option>
-            <option value=3>Square</option>
-            <option value=4>Random</option>
-          </select>
-        </div>
-      </div>
-      <div class="row" v-if="[6].includes(Number(selected_output.mode))">
-        <div class="col col-3 fr">
-          <label for="lfo-period">
-            LFO period:
-          </label>
-        </div>
-        <div class="col col-3">
-          <input id="lfo-rate" type="number" v-model.number="selected_output.lfo_period" min="0.1" max="10"
-            step="0.1" />
-        </div>
-        <div class="col col-3 fr">
-          <label for="lfo-depth">
-            LFO depth:
-          </label>
-        </div>
-        <div class="col col-3">
-          <input id="lfo-depth" type="number" v-model.number="selected_output.lfo_depth" min="0" max="1" step="0.01" />
         </div>
       </div>
     </div>

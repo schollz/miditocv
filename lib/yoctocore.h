@@ -21,12 +21,13 @@
 
 #define PARAM_SCENE 274204627
 #define PARAM_MODE 2090515018
-#define PARAM_QUANTIZATION 1091620620
-#define param_v_oct 277629184
-#define param_root_note 3088989278
 #define PARAM_MIN_VOLTAGE 2621916282
 #define PARAM_MAX_VOLTAGE 147793276
 #define PARAM_SLEW_TIME 1829861614
+#define PARAM_V_OCT 277629184
+#define PARAM_ROOT_NOTE 3088989278
+#define PARAM_QUANTIZATION 1091620620
+#define PARAM_PORTATMENTO 2099825230
 #define PARAM_MIDI_CHANNEL 2841142336
 #define PARAM_MIDI_PRIORITY_CHANNEL 1809248577
 #define PARAM_MIDI_CC 3330665741
@@ -42,12 +43,13 @@
 
 typedef struct Config {
   uint8_t mode;
-  uint16_t quantization;
-  float v_oct;
-  uint8_t root_note;
   float min_voltage;
   float max_voltage;
   float slew_time;
+  float v_oct;
+  uint8_t root_note;
+  uint16_t quantization;
+  float portamento;
   uint8_t midi_channel;
   uint8_t midi_priority_channel;
   uint8_t midi_cc;
@@ -67,6 +69,7 @@ typedef struct Out {
   float voltage_current;
   ADSR adsr;
   Slew slew;
+  Slew portamento;
 } Out;
 
 typedef struct Yoctocore {
@@ -86,9 +89,12 @@ void Yoctocore_init(Yoctocore *self) {
       // initialize config
       self->config[scene][output].mode = 0;
       self->config[scene][output].quantization = 0;
+      self->config[scene][output].v_oct = 1;
+      self->config[scene][output].root_note = 48;
       self->config[scene][output].min_voltage = 0;
       self->config[scene][output].max_voltage = 5;
       self->config[scene][output].slew_time = 0;
+      self->config[scene][output].portamento = 0;
       self->config[scene][output].midi_channel = 0;
       self->config[scene][output].midi_priority_channel = 0;
       self->config[scene][output].midi_cc = 0;
@@ -104,6 +110,8 @@ void Yoctocore_init(Yoctocore *self) {
     }
     // initialize slew
     Slew_init(&self->out[output].slew, 0, 0);
+    // initialize portamento
+    Slew_init(&self->out[output].portamento, 0, 0);
     // initialize adsr
     ADSR_init(&self->out[output].adsr, 100.0f, 500.0f, 0.707f, 1000.0f, 5.0f);
     // initialize voltage
@@ -126,6 +134,16 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       break;
     case PARAM_QUANTIZATION:
       config->quantization = (uint8_t)val;
+      break;
+    case PARAM_PORTATMENTO:
+      config->portamento = val;
+      Slew_set_duration(&out->portamento, roundf(val * 1000));
+      break;
+    case PARAM_V_OCT:
+      config->v_oct = val;
+      break;
+    case PARAM_ROOT_NOTE:
+      config->root_note = (uint8_t)val;
       break;
     case PARAM_MIN_VOLTAGE:
       config->min_voltage = val;
@@ -194,6 +212,12 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
       return config->mode;
     case PARAM_QUANTIZATION:
       return config->quantization;
+    case PARAM_PORTATMENTO:
+      return config->portamento;
+    case PARAM_V_OCT:
+      return config->v_oct;
+    case PARAM_ROOT_NOTE:
+      return config->root_note;
     case PARAM_MIN_VOLTAGE:
       return config->min_voltage;
     case PARAM_MAX_VOLTAGE:

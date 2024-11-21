@@ -142,34 +142,36 @@ Scale SCALES[MAX_SCALES] = {
      6},
 };
 
-float scale_quantize_voltage(uint8_t scale, float voltage) {
+float scale_quantize_voltage(uint8_t scale, uint8_t root_note, float v_oct,
+                             float voltage) {
   if (scale == 0) {
     // no quantization
     return voltage;
   }
   scale--;
   float voltage_octave = 0;
-  while (voltage >= 1.0f) {
+  while (voltage >= v_oct) {
     voltage_octave += 1.0f;
-    voltage -= 1.0f;
+    voltage -= v_oct;
   }
   while (voltage < 0.0f) {
     voltage_octave -= 1.0f;
-    voltage += 1.0f;
+    voltage += v_oct;
   }
   // find the closest SCALE_CHROMATIC for the scale
   float closest = 0.0f;
   float closest_diff = 1.0f;
   for (uint8_t i = 0; i < SCALES[scale].interval_count; i++) {
-    float diff = SCALE_CHROMATIC[SCALES[scale].intervals[i]] - voltage;
+    uint8_t note_index = (root_note + SCALES[scale].intervals[i]) % 12;
+    float diff = SCALE_CHROMATIC[note_index] - voltage;
     if (diff < 0.0f) {
       diff = -diff;
     }
     if (diff < closest_diff) {
       closest_diff = diff;
-      closest = SCALE_CHROMATIC[SCALES[scale].intervals[i]];
+      closest = SCALE_CHROMATIC[note_index];
     }
   }
-  return closest + voltage_octave;
+  return closest + voltage_octave * v_oct;
 }
 #endif
