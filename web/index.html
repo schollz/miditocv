@@ -101,6 +101,24 @@
       padding: 2em;
       box-shadow: 8px 8px 0px #000000;
     }
+
+    input:disabled,
+    select:disabled {
+      background-color: #f0f0f0;
+      /* Light gray background */
+      color: #a0a0a0;
+      /* Dimmed text color */
+      border: 1px solid #d0d0d0;
+      /* Lighter border */
+      cursor: not-allowed;
+      /* Indicate the input is not clickable */
+    }
+
+    input:disabled:hover,
+    select:disabled:hover {
+      background-color: #f0f0f0;
+      /* Prevent hover styles */
+    }
   </style>
 </head>
 
@@ -200,9 +218,9 @@
             Quantization:
           </label>
         </div>
-        <div class="col col-9">
+        <div class="col col-2">
           <select id="quantization" v-model="selected_output.quantization">
-            <option value=0>Free</option>
+            <option value=0>None</option>
             <option value=1>Chromatic</option>
             <option value=2>Major</option>
             <option value=3>Natural Minor</option>
@@ -244,6 +262,28 @@
             <option value=39>Gagaku Rittsu Sen Pou</option>
             <option value=40>In Sen Pou</option>
             <option value=41>Okinawa</option>
+          </select>
+        </div>
+        <div class="col col-1 fr">
+          <label for="v_oct">
+            V/Oct:
+          </label>
+        </div>
+        <div clas="col col-2">
+          <input id="v_oct" type="number" :disabled="Number(selected_output.quantization) === 0"
+            v-model.number="selected_output.v_oct" min="-5" max="10" step="0.01" />
+        </div>
+        <div class="col col-1 fr">
+          <label for="root_note">
+            Root note:
+          </label>
+        </div>
+        <div class="col col-3">
+          <select id="root_note" :disabled="Number(selected_output.quantization) === 0"
+            v-model.number="selected_output.root_note">
+            <option v-for="(name, index) in note_names" :key="index" :value="index">
+              {{ name }}
+            </option>
           </select>
         </div>
       </div>

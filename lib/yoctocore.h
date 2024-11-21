@@ -22,6 +22,8 @@
 #define PARAM_SCENE 274204627
 #define PARAM_MODE 2090515018
 #define PARAM_QUANTIZATION 1091620620
+#define param_v_oct 277629184
+#define param_root_note 3088989278
 #define PARAM_MIN_VOLTAGE 2621916282
 #define PARAM_MAX_VOLTAGE 147793276
 #define PARAM_SLEW_TIME 1829861614
@@ -41,6 +43,8 @@
 typedef struct Config {
   uint8_t mode;
   uint16_t quantization;
+  float v_oct;
+  uint8_t root_note;
   float min_voltage;
   float max_voltage;
   float slew_time;
