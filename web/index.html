@@ -345,7 +345,7 @@
         </div>
       </div>
       <!-- midi stuff -->
-      <div class="row" v-if="[1,2,3,4].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[1,2,3].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="midi-channel">
             MIDI Channel:
@@ -408,15 +408,17 @@
             Clock tempo:
           </label>
         </div>
-        <div class="col col-4">
+        <div class="col col-10">
           <input id="clock-tempo" type="number" v-model.number="selected_output.clock_tempo" min="15" max="300" />
         </div>
+      </div>
+      <div class="row" v-if="[4,5].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="clock-divider">
             Clock division:
           </label>
         </div>
-        <div class="col col-4">
+        <div class="col col-10">
           <select id="clock-divider" v-model="selected_output.clock_division">
             <!-- clockDivisions for loop -->
             <option v-for="(clockDivision, index) in clockDivisions" :key="index" :value="index">
@@ -424,6 +426,7 @@
             </option>
           </select>
         </div>
+
       </div>
     </div>
   </div>
