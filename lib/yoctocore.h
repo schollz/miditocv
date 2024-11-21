@@ -41,6 +41,12 @@
 #define PARAM_SUSTAIN 2977350188
 #define PARAM_RELEASE 1050875750
 
+float clock_divisions[19] = {1.0 / 512.0, 1.0 / 256.0, 1.0 / 128.0, 1.0 / 64.0,
+                             1.0 / 32.0,  1.0 / 16.0,  1.0 / 8.0,   1.0 / 4.0,
+                             1.0 / 2.0,   1.0,         2.0,         3.0,
+                             4.0,         6.0,         8.0,         12.0,
+                             16.0,        24.0,        48.0};
+
 typedef struct Config {
   uint8_t mode;
   float min_voltage;
@@ -99,7 +105,7 @@ void Yoctocore_init(Yoctocore *self) {
       self->config[scene][output].midi_priority_channel = 0;
       self->config[scene][output].midi_cc = 0;
       self->config[scene][output].clock_tempo = 120;
-      self->config[scene][output].clock_division = 0;
+      self->config[scene][output].clock_division = 9;
       self->config[scene][output].lfo_period = 0.5;
       self->config[scene][output].lfo_depth = 0.5;
       self->config[scene][output].lfo_waveform = 0;

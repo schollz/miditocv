@@ -365,7 +365,7 @@ const app = createApp({
                     midi_priority_channel: 0,
                     midi_cc: 0,
                     clock_tempo: 120,
-                    clock_division: 1,
+                    clock_division: 9,
                     lfo_period: 1,
                     lfo_depth: 1,
                     lfo_waveform: 0,
@@ -376,6 +376,10 @@ const app = createApp({
                 })),
             }))
         );
+        const clockDivisions = [
+            "/512", "/256", "/128", "/64", "/32", "/16", "/8", "/4", "/2",
+            "x1", "x2", "x3", "x4", "x6", "x8", "x12", "x16", "x24", "x48"
+        ];
         const current_scene = ref(0);
         const current_output = ref(0);
         const selected_output = computed(() => {
@@ -610,6 +614,7 @@ const app = createApp({
             midi_input_last_message,
             toggleActivation,
             note_names,
+            clockDivisions,
         };
     },
 });

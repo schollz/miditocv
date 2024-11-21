@@ -403,26 +403,25 @@
 
       <!-- clock stuff -->
       <div class="row" v-if="[5].includes(Number(selected_output.mode))">
-        <div class="col col-3 fr">
+        <div class="col col-2 fr">
           <label for="clock-tempo">
             Clock tempo:
           </label>
         </div>
-        <div class="col col-3">
+        <div class="col col-4">
           <input id="clock-tempo" type="number" v-model.number="selected_output.clock_tempo" min="15" max="300" />
         </div>
-        <div class="col col-3 fr">
+        <div class="col col-2 fr">
           <label for="clock-divider">
             Clock division:
           </label>
         </div>
-        <div class="col col-3">
+        <div class="col col-4">
           <select id="clock-divider" v-model="selected_output.clock_division">
-            <option value=1>1x</option>
-            <option value=0.5>1/2</option>
-            <option value=0.25>1/4</option>
-            <option value=0.125>1/8</option>
-            <option value=0.016>1/16</option>
+            <!-- clockDivisions for loop -->
+            <option v-for="(clockDivision, index) in clockDivisions" :key="index" :value="index">
+              {{ clockDivision }}
+            </option>
           </select>
         </div>
       </div>
