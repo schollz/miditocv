@@ -335,12 +335,12 @@
       </div>
       <!-- midi stuff -->
       <div class="row" v-if="[3].includes(Number(selected_output.mode))">
-        <div class="col col-3 fr">
+        <div class="col col-2 fr">
           <label for="midi-cc">
             MIDI CC:
           </label>
         </div>
-        <div class="col col-9">
+        <div class="col col-10">
           <input id="midi-cc" type="number" v-model.number="selected_output.midi_cc" min="0" max="16" />
         </div>
       </div>
