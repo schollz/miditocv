@@ -106,11 +106,26 @@ void timer_callback_sample_knob(bool on, int user_data) {
 
 void timer_callback_ws2812(bool on, int user_data) {
   for (uint8_t i = 0; i < 8; i++) {
-    uint8_t val =
-        roundf(linlin(yocto.out[i].voltage_current, -5.0, 10.0, 0.0, 255.0));
-    WS2812_fill(&ws2812, i, val, 0, 255 - val);
+    if (yocto.out[i].voltage_current < 0) {
+      // 0 to -5v goes 0 -> red
+      uint8_t val = 255 - roundf(linlin(yocto.out[i].voltage_current, -5.0, 0.0,
+                                        0.0, 255.0));
+      WS2812_fill(&ws2812, i, val, 0, 0);
+    } else if (yocto.out[i].voltage_current == 0) {
+      WS2812_fill(&ws2812, i, 0, 0, 0);
+    } else if (yocto.out[i].voltage_current <= 5.0) {
+      // 0 to 5v goes 0 -> green
+      uint8_t val =
+          roundf(linlin(yocto.out[i].voltage_current, 0.0, 5.0, 0.0, 255.0));
+      WS2812_fill(&ws2812, i, 0, val, 0);
+    } else {
+      // 5 to 10v goes 0 -> blue
+      uint8_t val = 255 - roundf(linlin(yocto.out[i].voltage_current, 5.0, 10.0,
+                                        0.0, 255.0));
+      WS2812_fill(&ws2812, i, 0, 255 - val, val);
+    }
+    WS2812_show(&ws2812);
   }
-  WS2812_show(&ws2812);
 }
 
 void timer_callback_print_memory_usage(bool on, int user_data) {
