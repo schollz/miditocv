@@ -125,6 +125,12 @@ void timer_callback_update_voltage(bool on, int user_data) {
   DAC_update(&dac);
 }
 
+void midi_note_on(int channel, int note, int velocity) {
+#ifdef DEBUG_MIDI
+  printf("ch=%d note_on=%d vel=%d\n", channel, note, velocity);
+#endif
+}
+
 int main() {
   // Set PLL_USB 96MHz
   const uint32_t main_line = 96;

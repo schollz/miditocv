@@ -76,12 +76,6 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   }
 }
 
-void midi_note_on(int channel, int note, int velocity) {
-#ifdef DEBUG_MIDI
-  printf("note_on: %d\n", note);
-#endif
-}
-
 void midi_cc(int channel, int cc, int value) {
 #ifdef DEBUG_MIDI
   printf("cc: %d\n", cc);
