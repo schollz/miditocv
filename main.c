@@ -374,7 +374,15 @@ int main() {
         case MODE_PITCH:
           // mode pitch will set the voltage based on midi note
           // check if midi note was received
-          out->voltage_current = out->voltage_set;
+          // slew the voltage
+          out->voltage_current = Slew_process(&out->slew, out->voltage_set, ct);
+          // quantize the voltage
+          out->voltage_current =
+              scale_quantize_voltage(config->quantization, config->root_note,
+                                     config->v_oct, out->voltage_current);
+          // portamento voltage
+          out->voltage_current =
+              Slew_process(&out->portamento, out->voltage_current, ct);
           break;
         case MODE_CLOCK:
           break;
@@ -399,6 +407,9 @@ int main() {
         default:
           break;
       }
+      // clamp voltages
+      out->voltage_current = util_clamp(
+          out->voltage_current, config->min_voltage, config->max_voltage);
     }
   }
 }
