@@ -387,6 +387,8 @@ const app = createApp({
                     release: 2.1,
                     linked_to: 0,
                     probability: 100,
+                    duration: 1,
+                    voltage_setpoint: 1.0,
                 })),
             }))
         );
@@ -438,6 +440,8 @@ const app = createApp({
                     return 'mode-clock';
                 case 6:
                     return 'mode-lfo';
+                case 7:
+                    return 'mode-sequencer';
                 default:
                     return '';
             }
