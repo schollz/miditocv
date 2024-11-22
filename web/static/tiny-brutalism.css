@@ -15,7 +15,6 @@ body,
 button,
 select,
 input {
-    height: 100%;
     font-family: 'Roboto Mono', monospace;
     background-color: #fff;
     color: #000;

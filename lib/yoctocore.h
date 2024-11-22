@@ -41,6 +41,7 @@
 #define PARAM_SUSTAIN 2977350188
 #define PARAM_RELEASE 1050875750
 #define PARAM_LINKED_TO 303481310
+#define PARAM_PROBABILITY 451533126
 
 float clock_divisions[19] = {1.0 / 512.0, 1.0 / 256.0, 1.0 / 128.0, 1.0 / 64.0,
                              1.0 / 32.0,  1.0 / 16.0,  1.0 / 8.0,   1.0 / 4.0,
@@ -70,7 +71,13 @@ typedef struct Config {
   float sustain;
   float release;
   uint8_t linked_to;
+  uint8_t probability;
 } Config;
+
+typedef struct NoteHeld {
+  uint8_t note;
+  uint32_t time_on;
+} NoteHeld;
 
 typedef struct Out {
   float voltage_set;
@@ -78,6 +85,7 @@ typedef struct Out {
   ADSR adsr;
   Slew slew;
   Slew portamento;
+  NoteHeld note_on;
 } Out;
 
 typedef struct Yoctocore {
@@ -116,6 +124,7 @@ void Yoctocore_init(Yoctocore *self) {
       self->config[scene][output].sustain = 0.5;
       self->config[scene][output].release = 0.5;
       self->config[scene][output].linked_to = 0;
+      self->config[scene][output].probability = 100;
     }
     // initialize slew
     Slew_init(&self->out[output].slew, 0, 0);
@@ -126,6 +135,8 @@ void Yoctocore_init(Yoctocore *self) {
     // initialize voltage
     self->out[output].voltage_current = 0;
     self->out[output].voltage_set = 0;
+    self->out[output].note_on.note = 0;
+    self->out[output].note_on.time_on = 0;
   }
   self->debounce_save = 0;
 }
@@ -207,6 +218,12 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
     case PARAM_LINKED_TO:
       config->linked_to = (uint8_t)val;
       break;
+    case PARAM_PROBABILITY:
+      if (val > 100) {
+        val = 100;
+      }
+      config->probability = (uint8_t)val;
+      break;
     default:
       return;
       break;
@@ -262,6 +279,8 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
       return config->release;
     case PARAM_LINKED_TO:
       return config->linked_to;
+    case PARAM_PROBABILITY:
+      return config->probability;
     default:
       return -1000;
   }
@@ -271,7 +290,7 @@ bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
   if (self->debounce_save == 0) {
     return false;
   }
-  if (current_time - self->debounce_save < 3000) {
+  if (current_time - self->debounce_save < 1000) {
     return false;
   }
   self->debounce_save = 0;

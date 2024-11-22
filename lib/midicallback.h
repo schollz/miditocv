@@ -18,12 +18,6 @@ uint32_t midi_delta_count = 0;
 uint32_t midi_timing_count = 0;
 const uint8_t midi_timing_modulus = 24;
 
-void midi_note_off(int channel, int note) {
-#ifdef DEBUG_MIDI
-  printf("note_off: %d\n", note);
-#endif
-}
-
 bool get_sysex_param_float_value(const char *param_name, const uint8_t *sysex,
                                  size_t length, float *out_value) {
   size_t param_len = strlen(param_name);

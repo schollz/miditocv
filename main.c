@@ -125,25 +125,82 @@ void timer_callback_update_voltage(bool on, int user_data) {
   DAC_update(&dac);
 }
 
-void midi_note_on(int channel, int note, int velocity) {
+void midi_note_off(int channel, int note) {
+  uint32_t ct = to_ms_since_boot(get_absolute_time());
   channel++;  // 1-indexed
-  // #ifdef DEBUG_MIDI
-  //   printf("ch=%d note_on=%d vel=%d\n", channel, note, velocity);
+              // #ifdef DEBUG_MIDI
+  printf("ch=%d note_off=%d\n", channel, note);
   // #endif
+  bool outs_with_note_change[8] = {false, false, false, false,
+                                   false, false, false, false};
   // check if any outputs are set to midi pitch
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
     if (config->mode == MODE_PITCH &&
-        (config->midi_channel == channel || config->midi_channel == 0)) {
+        (config->midi_channel == channel || config->midi_channel == 0) &&
+        out->note_on.note == note) {
       // set the voltage
+      out->note_on.note = 0;
+      out->note_on.time_on = 0;
+      outs_with_note_change[i] = true;
+      printf("[out%d] note_off %d\n", i + 1, note);
+    }
+  }
+  // find any linked outputs and activate the envelope
+  for (uint8_t i = 0; i < 8; i++) {
+    Config *config = &yocto.config[yocto.i][i];
+    Out *out = &yocto.out[i];
+    if (config->mode == MODE_ENVELOPE && config->linked_to > 0) {
+      if (outs_with_note_change[config->linked_to - 1]) {
+        // trigger the envelope
+        printf("[out%d] env_ff linked to out%d\n", i + 1, config->linked_to);
+        ADSR_gate(&out->adsr, 0, ct);
+      }
+    }
+  }
+}
+
+void midi_note_on(int channel, int note, int velocity) {
+  uint32_t ct = to_ms_since_boot(get_absolute_time());
+  channel++;  // 1-indexed
+  // #ifdef DEBUG_MIDI
+  //   printf("ch=%d note_on=%d vel=%d\n", channel, note, velocity);
+  // #endif
+  // check if any outputs are set to midi pitch
+  bool outs_with_note_change[8] = {false, false, false, false,
+                                   false, false, false, false};
+  for (uint8_t i = 0; i < 8; i++) {
+    Config *config = &yocto.config[yocto.i][i];
+    Out *out = &yocto.out[i];
+    if (config->mode == MODE_PITCH &&
+        (config->midi_channel == channel || config->midi_channel == 0) &&
+        (out->note_on.time_on == 0 ||
+         (ct - out->note_on.time_on) > MAX_NOTE_HOLD_TIME_MS) &&
+        random_integer_in_range(0, 99) < config->probability) {
+      // set the voltage for the pitch
+      out->note_on.note = note;
+      out->note_on.time_on = ct;
       out->voltage_set =
           (float)(note - config->root_note) * config->v_oct / 12.0f +
           config->min_voltage;
+      outs_with_note_change[i] = true;
 #ifdef DEBUG_MIDI
       printf("[out%d] %d %d %f %f to %f\n", i + 1, note, config->root_note,
              config->v_oct, config->min_voltage, out->voltage_set);
 #endif
+    }
+  }
+  // find any linked outputs and activate the envelope
+  for (uint8_t i = 0; i < 8; i++) {
+    Config *config = &yocto.config[yocto.i][i];
+    Out *out = &yocto.out[i];
+    if (config->mode == MODE_ENVELOPE && config->linked_to > 0) {
+      if (outs_with_note_change[config->linked_to - 1]) {
+        // trigger the envelope
+        printf("[out%d] env_on linked to out%d\n", i + 1, config->linked_to);
+        ADSR_gate(&out->adsr, 1, ct);
+      }
     }
   }
 }

@@ -78,9 +78,9 @@ typedef struct Config {
   float min_voltage;
   float max_voltage;
   float slew_time;
-  uint16_t quantization;
   float v_oct;
   uint8_t root_note;
+  uint16_t quantization;
   float portamento;
   uint8_t midi_channel;
   uint8_t midi_priority_channel;
@@ -95,7 +95,9 @@ typedef struct Config {
   float sustain;
   float release;
   uint8_t linked_to;
+  uint8_t probability;
 } Config;
+
 `;
 
 parseStructAndHashVariables(cCode);
@@ -384,6 +386,7 @@ const app = createApp({
                     sustain: 0.7,
                     release: 2.1,
                     linked_to: 0,
+                    probability: 100,
                 })),
             }))
         );

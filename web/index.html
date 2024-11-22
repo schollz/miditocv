@@ -39,6 +39,7 @@
     #app {
       width: 100%;
       max-width: 800px;
+      margin: 4em;
     }
 
     .active {
@@ -310,7 +311,7 @@
         <div class="col col-10">
           <select id="linked-to" v-model="selected_output.linked_to">
             <option value=0>None</option>
-            <option v-for="(output, index) in scenes[current_scene].outputs" :key="index" :value="index">
+            <option v-for="(output, index) in scenes[current_scene].outputs" :key="index" :value="index+1">
               Output {{ index + 1 }}
             </option>
           </select>
@@ -485,6 +486,18 @@
           </select>
         </div>
 
+      </div>
+      <!-- random stuff -->
+      <div class="row" v-if="[1].includes(Number(selected_output.mode))">
+        <div class="col col-2 fr">
+          <label for="probability">
+            Chance (%):
+          </label>
+        </div>
+        <div class="col col-10">
+          <input id="probability" type="number" v-model.number="selected_output.probability" min="0" max="100"
+            step="1" />
+        </div>
       </div>
     </div>
   </div>
