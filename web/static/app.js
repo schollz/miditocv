@@ -94,6 +94,7 @@ typedef struct Config {
   float decay;
   float sustain;
   float release;
+  uint8_t linked_to;
 } Config;
 `;
 
@@ -369,10 +370,11 @@ const app = createApp({
                     lfo_period: 1,
                     lfo_depth: 1,
                     lfo_waveform: 0,
-                    attack: 0,
-                    decay: 0,
-                    sustain: 0,
-                    release: 0,
+                    attack: 0.1,
+                    decay: 0.1,
+                    sustain: 0.7,
+                    release: 2.1,
+                    linked_to: 0,
                 })),
             }))
         );

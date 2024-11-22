@@ -258,7 +258,61 @@
         </div>
       </div>
 
-      <div class="row" v-if="[0, 1,2,6].includes(Number(selected_output.mode))">
+      <!-- attack / decay / sustain / release -->
+      <div class="row" v-if="[2].includes(Number(selected_output.mode))">
+        <div class="col col-2 fr">
+          <label for="attack">
+            Attack:
+          </label>
+        </div>
+        <div class="col col-4">
+          <input id="attack" type="number" v-model.number="selected_output.attack" min="0" max="10" step="0.01" />
+        </div>
+        <div class="col col-2 fr">
+          <label for="decay">
+            Decay:
+          </label>
+        </div>
+        <div class="col col-4">
+          <input id="decay" type="number" v-model.number="selected_output.decay" min="0" max="10" step="0.01" />
+        </div>
+      </div>
+      <div class="row" v-if="[2].includes(Number(selected_output.mode))">
+        <div class="col col-2 fr">
+          <label for="sustain">
+            Sustain:
+          </label>
+        </div>
+        <div class="col col-4">
+          <input id="sustain" type="number" v-model.number="selected_output.sustain" min="0" max="1" step="0.01" />
+        </div>
+        <div class="col col-2 fr">
+          <label for="release">
+            Release:
+          </label>
+        </div>
+        <div class="col col-4">
+          <input id="release" type="number" v-model.number="selected_output.release" min="0" max="10" step="0.01" />
+        </div>
+      </div>
+
+      <!-- linked to -->
+      <div class="row" v-if="[2].includes(Number(selected_output.mode))">
+        <div class="col col-2 fr">
+          <label for="linked-to">
+            Linked to:
+          </label>
+        </div>
+        <div class="col col-10">
+          <select id="linked-to" v-model="selected_output.linked_to">
+            <option value=0>None</option>
+            <option v-for="(output, index) in scenes[current_scene].outputs" :key="index" :value="index">
+              Output {{ index + 1 }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="row" v-if="[0,1,6].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="quantization">
             Quantize:
@@ -345,7 +399,7 @@
         </div>
       </div>
       <!-- midi stuff -->
-      <div class="row" v-if="[1,2,3].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[1,3].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="midi-channel">
             MIDI Channel:
