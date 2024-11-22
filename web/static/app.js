@@ -238,7 +238,6 @@ function setupMidi() {
                     window.inputMidiDevice = input;
                     setupMidiInputListener();
                     console.log("input device connected");
-                    break;
                 } else {
                     // add to midiInputDict if not already present
                     // check if input.name in midi_input_active
@@ -248,7 +247,17 @@ function setupMidi() {
                         vm.midi_input_active[input.name] = false;
                         vm.midi_input_last_message[input.name] = "";
                         input.onmidimessage = (midiMessage) => {
-                            console.log(`[${input.name}]`, midiMessage);
+                            // Check if the message is a "Note On" message and extract the channel, note, and velocity
+                            const [status, note, velocity] = midiMessage.data;
+                            const messageType = status & 0xF0; // Extract the message type
+                            const channel = status & 0x0F; // Extract the channel (0-15)
+
+                            if (messageType === 0x90 && velocity > 0) { // Note On (0x90) and velocity > 0
+                                console.log(`[${input.name}] note_on ch=${channel + 1}, note=${note}, vel=${velocity}`);
+                            } else if (messageType === 0x80 || (messageType === 0x90 && velocity === 0)) {
+                                console.log(`[${input.name}] note_off ch=${channel + 1}, note=${note}, vel=${velocity}`);
+                            }
+
                             // convert the data to hex string
                             let hexString = "";
                             for (let i = 0; i < midiMessage.data.length; i++) {
@@ -277,7 +286,7 @@ function setupMidi() {
             // Output setup
             const outputs = midiAccess.outputs.values();
             for (let output of outputs) {
-                // console.log(output.name);
+                // console.log(`[output] ${output.name}`);
                 if (output.name.includes("yoctocore")) {
                     window.yoctocoreDevice = output;
                     console.log("output device connected");
