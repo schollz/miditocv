@@ -126,9 +126,26 @@ void timer_callback_update_voltage(bool on, int user_data) {
 }
 
 void midi_note_on(int channel, int note, int velocity) {
+  channel++;  // 1-indexed
+  // #ifdef DEBUG_MIDI
+  //   printf("ch=%d note_on=%d vel=%d\n", channel, note, velocity);
+  // #endif
+  // check if any outputs are set to midi pitch
+  for (uint8_t i = 0; i < 8; i++) {
+    Config *config = &yocto.config[yocto.i][i];
+    Out *out = &yocto.out[i];
+    if (config->mode == MODE_PITCH &&
+        (config->midi_channel == channel || config->midi_channel == 0)) {
+      // set the voltage
+      out->voltage_set =
+          (float)(note - config->root_note) * config->v_oct / 12.0f +
+          config->min_voltage;
 #ifdef DEBUG_MIDI
-  printf("ch=%d note_on=%d vel=%d\n", channel, note, velocity);
+      printf("[out%d] %d %d %f %f to %f\n", i + 1, note, config->root_note,
+             config->v_oct, config->min_voltage, out->voltage_set);
 #endif
+    }
+  }
 }
 
 int main() {
@@ -353,6 +370,11 @@ int main() {
           // portamento voltage
           out->voltage_current =
               Slew_process(&out->portamento, out->voltage_current, ct);
+          break;
+        case MODE_PITCH:
+          // mode pitch will set the voltage based on midi note
+          // check if midi note was received
+          out->voltage_current = out->voltage_set;
           break;
         case MODE_CLOCK:
           break;

@@ -164,6 +164,9 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
     return;
   }
 
+  uint8_t messageType = midi_buffer[0] & 0xF0;  // Extract the message type
+  uint8_t channel = midi_buffer[0] & 0x0F;      // Extract the channel (0-15)
+
   if (midi_buffer[0] == 0xf8) {
     // timing received
     usb_midi_present = true;
@@ -192,22 +195,22 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
       midi_stop();
     }
     return;
-  } else if (midi_buffer[0] == 0x80 && bytes_read > 1) {
+  } else if (messageType == 0x80 && bytes_read > 1) {
     // note off received
     usb_midi_present = true;
     if (midi_note_off != NULL) {
-      midi_note_off(midi_buffer[0] & 0x0F, midi_buffer[1]);
+      midi_note_off(channel, midi_buffer[1]);
     }
     return;
-  } else if (midi_buffer[0] == 0x90 && bytes_read > 2) {
+  } else if (messageType == 0x90 && bytes_read > 2) {
     // note on received
     usb_midi_present = true;
     if (midi_note_on != NULL) {
       if (bytes_read == 3) {
         // TODO: for some reason this is not working
-        midi_note_on(midi_buffer[0] & 0x0F, midi_buffer[1], midi_buffer[2]);
+        midi_note_on(channel, midi_buffer[1], midi_buffer[2]);
       } else {
-        midi_note_on(midi_buffer[0] & 0x0F, midi_buffer[1], 0);
+        midi_note_on(channel, midi_buffer[1], 0);
       }
     }
     return;
@@ -215,7 +218,7 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
     // control change received
     usb_midi_present = true;
     if (midi_cc_callback != NULL) {
-      midi_cc_callback(midi_buffer[0] & 0x0F, midi_buffer[1], midi_buffer[2]);
+      midi_cc_callback(channel, midi_buffer[1], midi_buffer[2]);
     }
     return;
   }
@@ -223,13 +226,10 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
   if (bytes_read == 3) {
     usb_midi_present = true;
     // Extract the status byte and MIDI channel
-    uint8_t status = midi_buffer[0] & 0xF0;
-    uint8_t channel = midi_buffer[0] & 0x0F;
-
     // Extract the note number and velocity
     uint8_t note = midi_buffer[1];
     uint8_t velocity = midi_buffer[2];
-    if (status == 176 && channel == 0 && note == 0) {
+    if (messageType == 176 && channel == 0 && note == 0) {
       send_text_as_sysex("command=reset");
       sleep_ms(10);
       reset_usb_boot(0, 0);

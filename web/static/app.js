@@ -265,7 +265,7 @@ function setupMidi() {
                             }
                             vm.midi_input_last_message[input.name] = hexString;
                             // pass through to yoctocore if it is setup
-                            if (window.yoctocoreDevice) {
+                            if (window.yoctocoreDevice && vm.midi_input_active[input.name]) {
                                 window.yoctocoreDevice.send(midiMessage.data);
                             }
                         };
