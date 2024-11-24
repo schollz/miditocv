@@ -8,6 +8,7 @@
 
 #include "adsr.h"
 #include "dac.h"
+#include "lfo.h"
 #include "slew.h"
 #include "utils.h"
 
@@ -86,6 +87,7 @@ typedef struct Out {
   Slew slew;
   Slew portamento;
   NoteHeld note_on;
+  LFO lfo;
 } Out;
 
 typedef struct Yoctocore {
@@ -126,6 +128,8 @@ void Yoctocore_init(Yoctocore *self) {
       self->config[scene][output].linked_to = 0;
       self->config[scene][output].probability = 100;
     }
+    // initialize lfo
+    LFO_init(&self->out[output].lfo);
     // initialize slew
     Slew_init(&self->out[output].slew, 0, 0);
     // initialize portamento
@@ -143,6 +147,7 @@ void Yoctocore_init(Yoctocore *self) {
 
 void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
                    uint32_t param, float val) {
+  uint32_t ct = to_ms_since_boot(get_absolute_time());
   Config *config = &self->config[scene][output];
   Out *out = &self->out[output];
   switch (param) {
@@ -167,9 +172,17 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       break;
     case PARAM_MIN_VOLTAGE:
       config->min_voltage = val;
+      // if LFO set the min
+      if (config->mode == MODE_LFO) {
+        LFO_set_min_val(&out->lfo, val);
+      }
       break;
     case PARAM_MAX_VOLTAGE:
       config->max_voltage = val;
+      // if LFO set the max
+      if (config->mode == MODE_LFO) {
+        LFO_set_max_val(&out->lfo, val);
+      }
       break;
     case PARAM_SLEW_TIME:
       config->slew_time = val;
@@ -192,12 +205,14 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       break;
     case PARAM_LFO_PERIOD:
       config->lfo_period = val;
+      LFO_set_period(&out->lfo, val * 1000.0f);
       break;
     case PARAM_LFO_DEPTH:
       config->lfo_depth = val;
       break;
     case PARAM_LFO_WAVEFORM:
       config->lfo_waveform = (uint8_t)val;
+      LFO_set_type(&out->lfo, config->lfo_waveform, ct);
       break;
     case PARAM_ATTACK:
       config->attack = val;

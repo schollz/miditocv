@@ -9,8 +9,8 @@
 
 // Define the possible LFO types
 typedef enum {
-  LFO_TRIANGLE,
   LFO_SINE,
+  LFO_TRIANGLE,
   LFO_SAWTOOTH,
   LFO_SQUARE,
   LFO_DRUNK,
@@ -120,6 +120,12 @@ float LFO_update(LFO *lfo, float current_time_ms) {
                        lfo->min_val, lfo->max_val, lfo->phase, &lfo->noise);
 }
 
+void LFO_set_min_val(LFO *lfo, float min_val) { lfo->min_val = min_val; }
+
+void LFO_set_max_val(LFO *lfo, float max_val) { lfo->max_val = max_val; }
+
+void LFO_set_period(LFO *lfo, float period_ms) { lfo->period_ms = period_ms; }
+
 // Set LFO type with transition
 void LFO_set_type(LFO *lfo, LFO_Type new_type, float current_time_ms) {
   if (lfo->current_type != new_type) {
@@ -130,14 +136,13 @@ void LFO_set_type(LFO *lfo, LFO_Type new_type, float current_time_ms) {
 }
 
 // Initialize LFO
-void LFO_init(LFO *lfo, LFO_Type type, float period_ms, float min_val,
-              float max_val, float phase) {
-  lfo->current_type = type;
-  lfo->target_type = type;
-  lfo->period_ms = period_ms;
-  lfo->min_val = min_val;
-  lfo->max_val = max_val;
-  lfo->phase = phase;
+void LFO_init(LFO *lfo) {
+  lfo->current_type = 0;
+  lfo->target_type = 0;
+  lfo->period_ms = 1000;
+  lfo->min_val = 0;
+  lfo->max_val = 5;
+  lfo->phase = 0;
   lfo->is_transitioning = 0;
   lfo->transition_start_time = 0;
   Noise_init(&lfo->noise, 0);
