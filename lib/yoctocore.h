@@ -162,7 +162,6 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       break;
     case PARAM_PORTATMENTO:
       config->portamento = val;
-      Slew_set_duration(&out->portamento, roundf(val * 1000));
       break;
     case PARAM_V_OCT:
       config->v_oct = val;
@@ -178,7 +177,6 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       break;
     case PARAM_SLEW_TIME:
       config->slew_time = val;
-      Slew_set_duration(&out->slew, roundf(val * 1000));
       break;
     case PARAM_MIDI_CHANNEL:
       config->midi_channel = (uint8_t)val;

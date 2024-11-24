@@ -428,6 +428,10 @@ int main() {
       } else {
         SimpleTimer_stop(&pool_timer[i]);
       }
+      // update slews
+      Slew_set_duration(&out->portamento, roundf(config->portamento * 1000));
+      Slew_set_duration(&out->slew, roundf(config->slew_time * 1000));
+
       switch (config->mode) {
         case MODE_MANUAL:
           // mode manual will set voltage based on knob turning and slew
