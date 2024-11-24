@@ -87,7 +87,7 @@ typedef struct Out {
   Slew slew;
   Slew portamento;
   NoteHeld note_on;
-  LFO lfo;
+  Noise noise;
 } Out;
 
 typedef struct Yoctocore {
@@ -129,7 +129,7 @@ void Yoctocore_init(Yoctocore *self) {
       self->config[scene][output].probability = 100;
     }
     // initialize lfo
-    LFO_init(&self->out[output].lfo);
+    Noise_init(&self->out[output].noise, time_us_32());
     // initialize slew
     Slew_init(&self->out[output].slew, 0, 0);
     // initialize portamento
@@ -172,10 +172,6 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       break;
     case PARAM_MIN_VOLTAGE:
       config->min_voltage = val;
-      // if LFO set the min
-      if (config->mode == MODE_LFO) {
-        LFO_set_min_val(&out->lfo, val);
-      }
       break;
     case PARAM_MAX_VOLTAGE:
       config->max_voltage = val;

@@ -140,17 +140,6 @@ void timer_callback_update_voltage(bool on, int user_data) {
   DAC_update(&dac);
 }
 
-void timer_callback_lfo(bool on, int user_data) {
-  uint32_t ct = to_ms_since_boot(get_absolute_time());
-  for (uint8_t i = 0; i < 8; i++) {
-    Out *out = &yocto.out[i];
-    Config *config = &yocto.config[yocto.i][i];
-    if (config->mode == MODE_LFO) {
-      out->voltage_current = LFO_update(&out->lfo, ct);
-    }
-  }
-}
-
 void midi_note_off(int channel, int note) {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   channel++;  // 1-indexed
@@ -376,10 +365,6 @@ int main() {
   SimpleTimer_init(&pool_timer[11], 1000.0f / 4.0f * 30, 1.0f, 0,
                    timer_callback_update_voltage, 0);
   SimpleTimer_start(&pool_timer[11], ct);
-  // setup a timer at 10 ms to sample the LFO
-  SimpleTimer_init(&pool_timer[12], 1000.0f / 2.0f * 30, 1.0f, 0,
-                   timer_callback_lfo, 0);
-  SimpleTimer_start(&pool_timer[12], ct);
 
   while (true) {
 #ifdef INCLUDE_MIDI
@@ -457,6 +442,16 @@ int main() {
           // portamento voltage
           out->voltage_current =
               Slew_process(&out->portamento, out->voltage_current, ct);
+          break;
+        case MODE_LFO:
+          // mode lfo will set the voltage based on lfo
+          out->voltage_set = get_lfo_value(
+              config->lfo_waveform, ct, config->lfo_period * 1000,
+              config->min_voltage, config->max_voltage, 0, &out->noise);
+          // quantize
+          out->voltage_current =
+              scale_quantize_voltage(config->quantization, config->root_note,
+                                     config->v_oct, out->voltage_set);
           break;
         case MODE_PITCH:
           // mode pitch will set the voltage based on midi note
