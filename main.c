@@ -366,15 +366,13 @@ int main() {
                    timer_callback_update_voltage, 0);
   SimpleTimer_start(&pool_timer[11], ct);
 
+  uint32_t ct_last = ct;
   while (true) {
 #ifdef INCLUDE_MIDI
     tud_task();
     midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off, NULL,
                    midi_start, midi_continue, midi_stop, midi_timing);
 #endif
-
-    // get time
-    ct = to_ms_since_boot(get_absolute_time());
 
     // process timers
     for (uint8_t i = 0; i < 16; i++) {
@@ -404,6 +402,12 @@ int main() {
           }
         }
       }
+    }
+
+    // make sure the rest of the loop doesn't run faster than 500 hz
+    ct = to_ms_since_boot(get_absolute_time());
+    if (ct - ct_last < 2) {
+      continue;
     }
 
     // yoctocore save (if debounced)
