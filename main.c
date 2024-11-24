@@ -109,12 +109,39 @@ uint8_t gammaCorrectUint8_t(float value) {
   return roundf(255.0f * powf(value, 0.8f));
 }
 
+const uint8_t const_colors[8][3] = {
+    {160, 160, 160},  // White
+    {255, 0, 0},      // Red
+    {255, 74, 0},     // Orange
+    {250, 175, 0},    // Yellow
+    {0, 255, 0},      // Green
+    {0, 255, 255},    // Cyan
+    {0, 0, 244},      // Blue
+    {97, 0, 97},      // Violet
+};
+
 void timer_callback_ws2812(bool on, int user_data) {
   for (uint8_t i = 0; i < 8; i++) {
-    // float x = linlin(yocto.out[i].voltage_current, -5.0, 10.0, 0.0, 1.0);
-    // uint8_t r, g, b;
-    // RGB_Spectra_ToUint8(x, &r, &g, &b);
-    // WS2812_fill(&ws2812, i, r, g, b);
+    uint8_t jj =
+        roundf(linlin(yocto.out[i].voltage_current, -5.0, 10.0, 0, 7.4));
+    for (uint8_t j = 0; j < 8; j++) {
+      WS2812_fill(&ws2812, j, const_colors[jj][0], const_colors[jj][1],
+                  const_colors[jj][2]);
+    }
+    WS2812_show(&ws2812);
+    return;
+    float x = linlin(yocto.out[i].voltage_current, -5.0, 10.0, 0.0, 1.0);
+    uint8_t r, g, b;
+    RGB_Spectra_ToUint8(x, &r, &g, &b);
+    WS2812_fill(&ws2812, i, r, g, b);
+    if (i == 0) {
+      printf("RGB: %d %d %d\n", r, g, b);
+    }
+    for (uint8_t j = 1; j < 8; j++) {
+      WS2812_fill(&ws2812, j, r, g, b);
+    }
+    WS2812_show(&ws2812);
+    return;
     if (yocto.out[i].voltage_current < 0) {
       // 0 to -5V goes 0 -> blue with gamma correction
       float t = linlin(yocto.out[i].voltage_current, -5.0, 0.0, 0.0, 1.0);
@@ -380,7 +407,8 @@ int main() {
                    timer_callback_sample_knob, 0);
   SimpleTimer_start(&pool_timer[8], ct);
   // setup a timer at 33 hz to update the ws2812
-  SimpleTimer_init(&pool_timer[9], 60 * 15, 1.0f, 0, timer_callback_ws2812, 0);
+  SimpleTimer_init(&pool_timer[9], 1000.0f / 100.0f * 30, 1.0f, 0,
+                   timer_callback_ws2812, 0);
   SimpleTimer_start(&pool_timer[9], ct);
   // setup a timer at 1 second to print memory usage
   SimpleTimer_init(&pool_timer[10], 1000.0f / 1000.0f * 30, 1.0f, 0,
