@@ -179,10 +179,6 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       break;
     case PARAM_MAX_VOLTAGE:
       config->max_voltage = val;
-      // if LFO set the max
-      if (config->mode == MODE_LFO) {
-        LFO_set_max_val(&out->lfo, val);
-      }
       break;
     case PARAM_SLEW_TIME:
       config->slew_time = val;
@@ -205,30 +201,24 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       break;
     case PARAM_LFO_PERIOD:
       config->lfo_period = val;
-      LFO_set_period(&out->lfo, val * 1000.0f);
       break;
     case PARAM_LFO_DEPTH:
       config->lfo_depth = val;
       break;
     case PARAM_LFO_WAVEFORM:
       config->lfo_waveform = (uint8_t)val;
-      LFO_set_type(&out->lfo, config->lfo_waveform, ct);
       break;
     case PARAM_ATTACK:
       config->attack = val;
-      out->adsr.attack = roundf(config->attack * 1000);
       break;
     case PARAM_DECAY:
       config->decay = val;
-      out->adsr.decay = roundf(config->decay * 1000);
       break;
     case PARAM_SUSTAIN:
       config->sustain = val;
-      out->adsr.sustain = config->sustain;
       break;
     case PARAM_RELEASE:
       config->release = val;
-      out->adsr.release = roundf(config->release * 1000);
       break;
     case PARAM_LINKED_TO:
       config->linked_to = (uint8_t)val;

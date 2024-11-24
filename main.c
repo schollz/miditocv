@@ -482,11 +482,14 @@ int main() {
             spiral_coordinate(knob_val, &attack, &release);
             attack = linlin(attack, 0.0f, 1.0f, 10.0f, 1000.0f);
             release = linlin(release, 0.0f, 1.0f, 10.0f, 5000.0f);
-            out->adsr.attack = roundf(attack);
-            out->adsr.release = roundf(release);
+            config->attack = roundf(attack);
+            config->release = roundf(release);
             printf("Attack: %f, Release: %f\n", attack, release);
           }
-
+          out->adsr.attack = roundf(config->attack * 1000);
+          out->adsr.decay = roundf(config->decay * 1000);
+          out->adsr.sustain = config->sustain;
+          out->adsr.release = roundf(config->release * 1000);
           out->voltage_set = linlin(ADSR_process(&out->adsr, ct), 0.0f, 1.0f,
                                     config->min_voltage, config->max_voltage);
           out->voltage_current = out->voltage_set;
