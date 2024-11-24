@@ -120,8 +120,8 @@ void timer_callback_ws2812(bool on, int user_data) {
       WS2812_fill(&ws2812, i, 0, val, 0);
     } else {
       // 5 to 10v goes 0 -> blue
-      uint8_t val = 255 - roundf(linlin(yocto.out[i].voltage_current, 5.0, 10.0,
-                                        0.0, 255.0));
+      uint8_t val =
+          roundf(linlin(yocto.out[i].voltage_current, 5.0, 10.0, 0.0, 255.0));
       WS2812_fill(&ws2812, i, 0, 255 - val, val);
     }
     WS2812_show(&ws2812);
