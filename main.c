@@ -65,6 +65,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/scales.h"
 #include "lib/sdcard.h"
 #include "lib/simpletimer.h"
+#include "lib/spectra.h"
 #include "lib/spiral.h"
 #include "lib/yoctocore.h"
 
@@ -104,28 +105,52 @@ void timer_callback_sample_knob(bool on, int user_data) {
   }
 }
 
+uint8_t gammaCorrectUint8_t(float value) {
+  return roundf(255.0f * powf(value, 0.8f));
+}
+
 void timer_callback_ws2812(bool on, int user_data) {
   for (uint8_t i = 0; i < 8; i++) {
+    // float x = linlin(yocto.out[i].voltage_current, -5.0, 10.0, 0.0, 1.0);
+    // uint8_t r, g, b;
+    // RGB_Spectra_ToUint8(x, &r, &g, &b);
+    // WS2812_fill(&ws2812, i, r, g, b);
     if (yocto.out[i].voltage_current < 0) {
-      // 0 to -5v goes 0 -> red
-      uint8_t val = 255 - roundf(linlin(yocto.out[i].voltage_current, -5.0, 0.0,
-                                        0.0, 255.0));
-      WS2812_fill(&ws2812, i, val, 0, 0);
+      // 0 to -5V goes 0 -> blue with gamma correction
+      float t = linlin(yocto.out[i].voltage_current, -5.0, 0.0, 0.0, 1.0);
+      uint8_t blue = gammaCorrectUint8_t(t);  // Apply gamma to red intensity
+      WS2812_fill(&ws2812, i, 0, 0, 255 - blue);
     } else if (yocto.out[i].voltage_current == 0) {
+      // Voltage at 0V means off
       WS2812_fill(&ws2812, i, 0, 0, 0);
     } else if (yocto.out[i].voltage_current <= 5.0) {
-      // 0 to 5v goes 0 -> green
-      uint8_t val =
-          roundf(linlin(yocto.out[i].voltage_current, 0.0, 5.0, 0.0, 255.0));
-      WS2812_fill(&ws2812, i, 0, val, 0);
+      // 0 to 5V goes 0 -> green with gamma correction
+      float t = linlin(yocto.out[i].voltage_current, 0.0, 5.0, 0.0, 1.0);
+      uint8_t green = gammaCorrectUint8_t(t);  // Apply gamma to green intensity
+      WS2812_fill(&ws2812, i, 0, green, 0);
     } else {
-      // 5 to 10v goes 0 -> blue
-      uint8_t val =
-          roundf(linlin(yocto.out[i].voltage_current, 5.0, 10.0, 0.0, 255.0));
-      WS2812_fill(&ws2812, i, 0, 255 - val, val);
+      // 5 to 10V goes green -> red with constant perceived brightness
+      uint8_t brightness = 255;  // Maximum brightness level
+      float t = linlin(yocto.out[i].voltage_current, 5.0, 10.0, 0.0, 1.0);
+
+      // Calculate raw values for red and green
+      float red_raw = t;
+      float green_raw = 1.0 - t;
+
+      // Apply gamma correction
+      uint8_t red = gammaCorrectUint8_t(red_raw);
+      uint8_t green = gammaCorrectUint8_t(green_raw);
+
+      // Normalize to constant brightness
+      float total = red + green;
+      red = roundf((red / total) * brightness);
+      green = roundf((green / total) * brightness);
+
+      WS2812_fill(&ws2812, i, red, green,
+                  0);  // Set LED with gamma-corrected brightness
     }
-    WS2812_show(&ws2812);
   }
+  WS2812_show(&ws2812);
 }
 
 void timer_callback_print_memory_usage(bool on, int user_data) {
