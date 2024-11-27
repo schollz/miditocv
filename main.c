@@ -530,7 +530,7 @@ int main() {
         midi_reset_state();
       }
       time_last_midi = ct;
-      uint8_t ch = (uint8_t)uart_getc(UART_ID);
+      uint16_t ch = (uint16_t)uart_getc(UART_ID);
       // // invert
       // ch = ~ch;
       // // reverse bits
@@ -540,10 +540,10 @@ int main() {
 
       if (ch > 0) {
         // print bits
-        char buffer[9];
+        char buffer[16];
         // clear buffer
         buffer[0] = '\0';
-        for (int i = 7; i >= 0; i--) {
+        for (int i = 15; i >= 0; i--) {
           sprintf(buffer, "%s%d", buffer, (ch >> i) & 1);
         }
         printf("MIDI: %2x %s\n", ch, buffer);
