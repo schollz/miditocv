@@ -113,26 +113,14 @@ void setup_uart() {
   // as possible to that requested
   int __unused actual = uart_set_baudrate(UART_ID, BAUD_RATE);
 
-  // Set UART flow control CTS/RTS, we don't want these, so turn them off
-  uart_set_hw_flow(UART_ID, false, false);
+  // // Set UART flow control CTS/RTS, we don't want these, so turn them off
+  // uart_set_hw_flow(UART_ID, false, false);
 
   // Set our data format
   uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
 
-  // Turn off FIFO's - we want to do this character by character
-  uart_set_fifo_enabled(UART_ID, false);
-
-  // Set up a RX interrupt
-  // We need to set up the handler first
-  // Select correct interrupt for the UART we are using
-  int UART_IRQ = UART_ID == uart0 ? UART0_IRQ : UART1_IRQ;
-
-  // And set up and enable the interrupt handlers
-  irq_set_exclusive_handler(UART_IRQ, on_uart_rx);
-  irq_set_enabled(UART_IRQ, true);
-
-  // Now enable the UART to send interrupts - RX only
-  uart_set_irq_enables(UART_ID, true, false);
+  // // Turn off FIFO's - we want to do this character by character
+  // uart_set_fifo_enabled(UART_ID, true);
 }
 
 void timer_callback_outputs(bool on, int user_data) {
@@ -482,6 +470,10 @@ int main() {
                    midi_start, midi_continue, midi_stop, midi_timing);
 #endif
 
+    while (uart_is_readable(UART_ID)) {
+      uint8_t ch = uart_getc(UART_ID);
+      printf("MIDI: %x\n", ch);
+    }
     // process timers
     for (uint8_t i = 0; i < 16; i++) {
       SimpleTimer_process(&pool_timer[i], ct);

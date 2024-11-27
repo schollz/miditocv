@@ -28,11 +28,11 @@ changebaud:
 	-curl localhost:7083 
 
 resetpico2:
-	-amidi -p $$(amidi -l | grep 'yoctocore\|zeptoboard\|ectocore' | awk '{print $$2}') -S "B00000"
+	-amidi -p $$(amidi -l | grep 'yoctocore\|zeptoboard\|ectocore' | awk '{print $$2}') -S "F0 64 69 73 6B 6D 6F 64 65 31 F7"
 	sleep 0.1
-	-amidi -p $$(amidi -l | grep 'yoctocore\|zeptoboard\|ectocore' | awk '{print $$2}') -S "B00000"
+	-amidi -p $$(amidi -l | grep 'yoctocore\|zeptoboard\|ectocore' | awk '{print $$2}') -S "F0 64 69 73 6B 6D 6F 64 65 31 F7"
 	sleep 0.1
-	-amidi -p $$(amidi -l | grep 'yoctocore\|zeptoboard\|ectocore' | awk '{print $$2}') -S "B00000"
+	-amidi -p $$(amidi -l | grep 'yoctocore\|zeptoboard\|ectocore' | awk '{print $$2}') -S "F0 64 69 73 6B 6D 6F 64 65 31 F7"
 	sleep 0.1
 
 upload: resetpico2 changebaud yoctocore
