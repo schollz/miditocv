@@ -31,6 +31,7 @@ add_executable(${PROJECT_NAME}
 
 # Tell CMake where to find other source code
 add_subdirectory(lib/sdio build)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lua-5.4.6/src)
 
 # generate pio
 pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/WS2812.pio)
@@ -55,6 +56,7 @@ target_link_libraries(${PROJECT_NAME}
     hardware_spi
     hardware_uart
     hardware_irq
+    lua
 )
 
 # target_compile_options(command_line PUBLIC -Wall -Wextra -Wno-unused-function -Wno-unused-parameter)
