@@ -62,6 +62,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/knob_change.h"
 #include "lib/mcp3208.h"
 #include "lib/memusage.h"
+#include "lib/midiuart.h"
 #include "lib/pcg_basic.h"
 #include "lib/random.h"
 #include "lib/scales.h"
@@ -114,13 +115,13 @@ void setup_uart() {
   int __unused actual = uart_set_baudrate(UART_ID, BAUD_RATE);
 
   // // Set UART flow control CTS/RTS, we don't want these, so turn them off
-  // uart_set_hw_flow(UART_ID, false, false);
+  uart_set_hw_flow(UART_ID, false, false);
 
   // Set our data format
   uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
 
   // // Turn off FIFO's - we want to do this character by character
-  // uart_set_fifo_enabled(UART_ID, true);
+  uart_set_fifo_enabled(UART_ID, true);
 }
 
 void timer_callback_outputs(bool on, int user_data) {
@@ -360,6 +361,8 @@ int main() {
 
   // setup midi external
   setup_uart();
+  MidiUart midiuart;
+  MidiUart_init(&midiuart);
 
   // // // load the Scene data
   // Scene_load_data();
@@ -463,6 +466,7 @@ int main() {
   SimpleTimer_start(&pool_timer[11], ct);
 
   uint32_t ct_last = ct;
+
   while (true) {
 #ifdef INCLUDE_MIDI
     tud_task();
@@ -470,10 +474,14 @@ int main() {
                    midi_start, midi_continue, midi_stop, midi_timing);
 #endif
 
+    size_t uart_index = 0;
     while (uart_is_readable(UART_ID)) {
       uint8_t ch = uart_getc(UART_ID);
-      printf("MIDI: %x\n", ch);
+      if (ch > 0) {
+        MidiUart_process(&midiuart, ch);
+      }
     }
+
     // process timers
     for (uint8_t i = 0; i < 16; i++) {
       SimpleTimer_process(&pool_timer[i], ct);
