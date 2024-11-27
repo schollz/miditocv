@@ -419,3 +419,11 @@ status_t midi_receive_byte(char byte) {
     return rx_data_byte(byte);
   }
 }
+
+void midi_reset_state() {
+  g_state = STATE_WAITING_FOR_STATUS;
+  g_current_channel = 0;
+  g_data_byte_one = 0;
+  g_data_byte_two = 0;
+  g_message_counter = 0;
+}

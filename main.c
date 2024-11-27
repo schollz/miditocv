@@ -98,7 +98,7 @@ uint8_t button_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 void setup_uart() {
   // Set up our UART with a basic baud rate.
-  uart_init(UART_ID, 2400);
+  uart_init(UART_ID, BAUD_RATE);
 
   // Set the TX and RX pins by using the function select on the GPIO
   // Set datasheet for more information on function select
@@ -109,14 +109,14 @@ void setup_uart() {
   // as possible to that requested
   int __unused actual = uart_set_baudrate(UART_ID, BAUD_RATE);
 
-  // // Set UART flow control CTS/RTS, we don't want these, so turn them off
-  uart_set_hw_flow(UART_ID, false, false);
+  // // // Set UART flow control CTS/RTS, we don't want these, so turn them off
+  // uart_set_hw_flow(UART_ID, false, false);
 
   // Set our data format
   uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
 
   // // Turn off FIFO's - we want to do this character by character
-  uart_set_fifo_enabled(UART_ID, true);
+  uart_set_fifo_enabled(UART_ID, false);
 }
 
 void timer_callback_outputs(bool on, int user_data) {
@@ -400,7 +400,7 @@ int main() {
 
   // initialize WS2812
   WS2812_init(&ws2812, WS2812_PIN, pio0, WS2812_SM, 16);
-  WS2812_set_brightness(&ws2812, 30);
+  WS2812_set_brightness(&ws2812, 100);
   for (uint8_t i = 0; i < 16; i++) {
     WS2812_fill(&ws2812, i, 255, 0, 255);
   }
@@ -474,46 +474,49 @@ int main() {
 
   uint32_t ct_last = ct;
 
-  sleep_ms(3000);
+  // sleep_ms(3000);
 
-  lua_State *L = luaL_newstate();  // Create a new Lua state
-  luaL_openlibs(L);                // Open standard libraries
+  // lua_State *L = luaL_newstate();  // Create a new Lua state
+  // luaL_openlibs(L);                // Open standard libraries
 
-  // Define the Lua script directly as a string
-  const char *lua_code =
-      "function random_number()\n"
-      "  return math.random(1, 10)+100.123\n"
-      "end";
+  // // Define the Lua script directly as a string
+  // const char *lua_code =
+  //     "function random_number()\n"
+  //     "  return math.random(1, 10)+100.123\n"
+  //     "end";
 
-  // Run the Lua script to define the function
-  if (luaL_dostring(L, lua_code) != LUA_OK) {
-    printf("Error: %s\n", lua_tostring(L, -1));
-    lua_close(L);
-    return 1;
-  }
+  // // Run the Lua script to define the function
+  // if (luaL_dostring(L, lua_code) != LUA_OK) {
+  //   printf("Error: %s\n", lua_tostring(L, -1));
+  //   lua_close(L);
+  //   return 1;
+  // }
 
-  // Set up random number generator seed
-  luaL_dostring(L, "math.randomseed(os.time())");
+  // // Set up random number generator seed
+  // luaL_dostring(L, "math.randomseed(os.time())");
 
-  // Call the Lua function and get the result
-  for (int i = 0; i < 5; i++) {
-    lua_getglobal(L, "random_number");      // Get the function from Lua
-    if (lua_pcall(L, 0, 1, 0) != LUA_OK) {  // Call the function
-      printf("Error: %s\n", lua_tostring(L, -1));
-      lua_close(L);
-      return 1;
-    }
+  // // Call the Lua function and get the result
+  // for (int i = 0; i < 5; i++) {
+  //   lua_getglobal(L, "random_number");      // Get the function from Lua
+  //   if (lua_pcall(L, 0, 1, 0) != LUA_OK) {  // Call the function
+  //     printf("Error: %s\n", lua_tostring(L, -1));
+  //     lua_close(L);
+  //     return 1;
+  //   }
 
-    double val = lua_tonumber(L, -1);  // Get the return value as a float
-    lua_pop(L, 1);                     // Pop the result from the stack
-    printf("random float: %.2f\n", val);
+  //   double val = lua_tonumber(L, -1);  // Get the return value as a float
+  //   lua_pop(L, 1);                     // Pop the result from the stack
+  //   printf("random float: %.2f\n", val);
 
-    sleep_ms(1000);  // Sleep for 1 second (use sleep(1) instead of sleep_ms)
-  }
+  //   sleep_ms(1000);  // Sleep for 1 second (use sleep(1) instead of sleep_ms)
+  // }
 
-  lua_close(L);  // Clean up the Lua state
+  // lua_close(L);  // Clean up the Lua state
+  // sleep_ms(1000);
 
-  sleep_ms(1000);
+  printf("Starting main loop\n");
+
+  uint32_t time_last_midi = ct;
   while (true) {
 #ifdef INCLUDE_MIDI
     tud_task();
@@ -521,11 +524,31 @@ int main() {
                    midi_start, midi_continue, midi_stop, midi_timing);
 #endif
 
+    ct = to_ms_since_boot(get_absolute_time());
     while (uart_is_readable(UART_ID)) {
+      if (ct - time_last_midi > 1000) {
+        midi_reset_state();
+      }
+      time_last_midi = ct;
       uint8_t ch = (uint8_t)uart_getc(UART_ID);
+      // // invert
+      // ch = ~ch;
+      // // reverse bits
+      // ch = ((ch & 0x55) << 1) | ((ch & 0xAA) >> 1);
+      // ch = ((ch & 0x33) << 2) | ((ch & 0xCC) >> 2);
+      // ch = ((ch & 0x0F) << 4) | ((ch & 0xF0) >> 4);
+
       if (ch > 0) {
-        printf("MIDI: %d\n", ch);
-        midi_receive_byte(ch);
+        // print bits
+        char buffer[9];
+        // clear buffer
+        buffer[0] = '\0';
+        for (int i = 7; i >= 0; i--) {
+          sprintf(buffer, "%s%d", buffer, (ch >> i) & 1);
+        }
+        printf("MIDI: %2x %s\n", ch, buffer);
+        // printf("MIDI: %2x\n", ch);
+        // midi_receive_byte(ch);
       }
     }
 

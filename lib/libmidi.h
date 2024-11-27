@@ -144,6 +144,8 @@ status_t midi_register_event_handler(event_type evt, midi_event_callback_t cb);
  */
 status_t midi_receive_byte(char byte);
 
+void midi_reset_state();
+
 #ifdef __cplusplus
 }
 #endif
