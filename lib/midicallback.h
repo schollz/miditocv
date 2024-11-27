@@ -64,6 +64,9 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   float val;
   if (get_sysex_param_float_value("version", sysex, length, &val)) {
     printf("v1.0.0");
+  } else if (get_sysex_param_float_value("diskmode", sysex, length, &val)) {
+    sleep_ms(10);
+    reset_usb_boot(0, 0);
   } else {
     Yoctocore_process_sysex(&yocto, sysex);
     // clear the sysex buffer

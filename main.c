@@ -10,11 +10,13 @@
 #include "hardware/clocks.h"
 #include "hardware/flash.h"
 #include "hardware/i2c.h"
+#include "hardware/irq.h"
 #include "hardware/pio.h"
 #include "hardware/pll.h"
 #include "hardware/rtc.h"
 #include "hardware/structs/clocks.h"
 #include "hardware/sync.h"
+#include "hardware/uart.h"
 #include "hardware/watchdog.h"
 #include "pico/binary_info.h"
 #include "pico/bootrom.h"
@@ -76,13 +78,62 @@ SimpleTimer pool_timer[16];
 KnobChange pool_knobs[8];
 MCP3208 mcp3208;
 const uint8_t button_num = 9;
-const uint8_t button_pins[9] = {8, 9, 20, 21, 22, 26, 27, 28, 0};
+const uint8_t button_pins[9] = {1, 8, 20, 21, 22, 26, 27, 28, 0};
 uint8_t button_values[9] = {0, 0, 0, 0, 0, 0};
+
+#define UART_ID uart1
+#define BAUD_RATE 31250
+#define DATA_BITS 8
+#define STOP_BITS 1
+#define PARITY UART_PARITY_NONE
 
 #ifdef INCLUDE_MIDI
 #include "lib/midi_comm.h"
 #include "lib/midicallback.h"
 #endif
+
+// RX interrupt handler
+void on_uart_rx() {
+  while (uart_is_readable(UART_ID)) {
+    uint8_t ch = uart_getc(UART_ID);
+    printf("MIDI: %x\n", ch);
+  }
+}
+
+void setup_uart() {
+  // Set up our UART with a basic baud rate.
+  uart_init(UART_ID, 2400);
+
+  // Set the TX and RX pins by using the function select on the GPIO
+  // Set datasheet for more information on function select
+  gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+
+  // Actually, we want a different speed
+  // The call will return the actual baud rate selected, which will be as close
+  // as possible to that requested
+  int __unused actual = uart_set_baudrate(UART_ID, BAUD_RATE);
+
+  // Set UART flow control CTS/RTS, we don't want these, so turn them off
+  uart_set_hw_flow(UART_ID, false, false);
+
+  // Set our data format
+  uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
+
+  // Turn off FIFO's - we want to do this character by character
+  uart_set_fifo_enabled(UART_ID, false);
+
+  // Set up a RX interrupt
+  // We need to set up the handler first
+  // Select correct interrupt for the UART we are using
+  int UART_IRQ = UART_ID == uart0 ? UART0_IRQ : UART1_IRQ;
+
+  // And set up and enable the interrupt handlers
+  irq_set_exclusive_handler(UART_IRQ, on_uart_rx);
+  irq_set_enabled(UART_IRQ, true);
+
+  // Now enable the UART to send interrupts - RX only
+  uart_set_irq_enables(UART_ID, true, false);
+}
 
 void timer_callback_outputs(bool on, int user_data) {
   printf("[timer_callback_outputs]: %d %d\n", on, user_data);
@@ -315,8 +366,12 @@ int main() {
   gpio_pull_up(I2C1_SCL_PIN);
 
 #ifdef INCLUDE_MIDI
+  // setup midi
   tusb_init();
 #endif
+
+  // setup midi external
+  setup_uart();
 
   // // // load the Scene data
   // Scene_load_data();

@@ -53,6 +53,7 @@ target_link_libraries(${PROJECT_NAME}
     hardware_sync
     hardware_spi
     hardware_uart
+    hardware_irq
 )
 
 # target_compile_options(command_line PUBLIC -Wall -Wextra -Wno-unused-function -Wno-unused-parameter)
@@ -85,9 +86,10 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     PIN_SPI_CLK=18
     PIN_SPI_RX=16
     PIN_SPI_TX=19
+    UART_RX_PIN=9
     WS2812_PIN=7
     WS2812_SM=2
-    WS2812_NUM_LEDS=8
+    WS2812_NUM_LEDS=16
     
     # constants
     REFERENCE_5V=5.0
@@ -96,7 +98,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     INCLUDE_MIDI=1
 
     # debugging
-    # DEBUG_MIDI=1
+    DEBUG_MIDI=1
     # DEBUG_VOLTAGE_CALIBRATION=1
 
     USBD_PID=0x1836

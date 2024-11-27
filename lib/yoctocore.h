@@ -378,7 +378,7 @@ void Yoctocore_process_sysex(Yoctocore *self, uint8_t *buffer) {
   float val;
   int parsed = parse_wxyz(buffer, &scene, &output, &param_hash, &val);
   if (parsed == 0) {
-    printf("Failed to parse input\n");
+    printf("no parse: '%s'\n", buffer);
     return;
   }
 
