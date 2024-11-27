@@ -93,14 +93,6 @@ uint8_t button_values[9] = {0, 0, 0, 0, 0, 0};
 #include "lib/midicallback.h"
 #endif
 
-// RX interrupt handler
-void on_uart_rx() {
-  while (uart_is_readable(UART_ID)) {
-    uint8_t ch = uart_getc(UART_ID);
-    printf("MIDI: %x\n", ch);
-  }
-}
-
 void setup_uart() {
   // Set up our UART with a basic baud rate.
   uart_init(UART_ID, 2400);
@@ -478,7 +470,7 @@ int main() {
       while (uart_is_readable(UART_ID)) {
         MidiUart_process(&midiuart, (uint8_t)uart_getc(UART_ID));
       }
-      sleep_us(32);
+      sleep_us(320);
     }
 
     // process timers
