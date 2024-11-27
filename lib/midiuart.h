@@ -72,9 +72,7 @@ typedef struct midi_message {
 } midi_message;
 
 void MidiUart_process(MidiUart *self, uint8_t b) {
-  if (b != 0xf8 && b != 0xfe) {
-    printf("[onewiremidi] received: %02x\n", b);
-  }
+  printf("[midiuart] received: %02x\n", b);
 
   enum { DATA0_PRESENT = 0x80 };
   midi_message msg = {0};
@@ -107,6 +105,8 @@ void MidiUart_process(MidiUart *self, uint8_t b) {
       printf("[midiuart] note on: %d %d\n", msg.data[0], msg.data[1]);
     } else if (msg.status == MIDI_NOTE_OFF) {
       printf("[midiuart] note off\n");
+    } else if (msg.status == MIDI_CONTROL_CHANGE) {
+      printf("[midiuart] cc: %d %d\n", msg.data[0], msg.data[1]);
     }
   } else {
     self->previous = b | DATA0_PRESENT;

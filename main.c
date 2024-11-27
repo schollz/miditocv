@@ -474,12 +474,11 @@ int main() {
                    midi_start, midi_continue, midi_stop, midi_timing);
 #endif
 
-    size_t uart_index = 0;
-    while (uart_is_readable(UART_ID)) {
-      uint8_t ch = uart_getc(UART_ID);
-      if (ch > 0) {
-        MidiUart_process(&midiuart, ch);
+    for (uint8_t i = 0; i < 10; i++) {
+      while (uart_is_readable(UART_ID)) {
+        MidiUart_process(&midiuart, (uint8_t)uart_getc(UART_ID));
       }
+      sleep_us(32);
     }
 
     // process timers
