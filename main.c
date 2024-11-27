@@ -162,26 +162,26 @@ void midi_event_note_off(char chan, char data1, char data2) {
 
 void timer_callback_ws2812(bool on, int user_data) {
   for (uint8_t i = 0; i < 8; i++) {
-    uint8_t jj =
-        roundf(linlin(yocto.out[i].voltage_current, -5.0, 10.0, 0, 7.4));
-    for (uint8_t j = 0; j < 8; j++) {
-      WS2812_fill(&ws2812, j, const_colors[jj][0], const_colors[jj][1],
-                  const_colors[jj][2]);
-    }
-    WS2812_show(&ws2812);
-    return;
-    float x = linlin(yocto.out[i].voltage_current, -5.0, 10.0, 0.0, 1.0);
-    uint8_t r, g, b;
-    RGB_Spectra_ToUint8(x, &r, &g, &b);
-    WS2812_fill(&ws2812, i, r, g, b);
-    if (i == 0) {
-      printf("RGB: %d %d %d\n", r, g, b);
-    }
-    for (uint8_t j = 1; j < 8; j++) {
-      WS2812_fill(&ws2812, j, r, g, b);
-    }
-    WS2812_show(&ws2812);
-    return;
+    // uint8_t jj =
+    //     roundf(linlin(yocto.out[i].voltage_current, -5.0, 10.0, 0, 7.4));
+    // for (uint8_t j = 0; j < 8; j++) {
+    //   WS2812_fill(&ws2812, j, const_colors[jj][0], const_colors[jj][1],
+    //               const_colors[jj][2]);
+    // }
+    // WS2812_show(&ws2812);
+    // return;
+    // float x = linlin(yocto.out[i].voltage_current, -5.0, 10.0, 0.0, 1.0);
+    // uint8_t r, g, b;
+    // RGB_Spectra_ToUint8(x, &r, &g, &b);
+    // WS2812_fill(&ws2812, i, r, g, b);
+    // if (i == 0) {
+    //   printf("RGB: %d %d %d\n", r, g, b);
+    // }
+    // for (uint8_t j = 1; j < 8; j++) {
+    //   WS2812_fill(&ws2812, j, r, g, b);
+    // }
+    // WS2812_show(&ws2812);
+    // return;
     if (yocto.out[i].voltage_current < 0) {
       // 0 to -5V goes 0 -> blue with gamma correction
       float t = linlin(yocto.out[i].voltage_current, -5.0, 0.0, 0.0, 1.0);
@@ -360,10 +360,7 @@ int main() {
 #endif
 
   // setup midi external
-  uart_init(UART_ID, BAUD_RATE);
-  // Set the TX and RX pins
-  gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
-  uart_set_format(UART_ID, 8, 1, UART_PARITY_NONE);
+  setup_uart();
   midi_init();
   midi_register_event_handler(EVT_CHAN_NOTE_ON, midi_event_note_on);
   midi_register_event_handler(EVT_CHAN_NOTE_OFF, midi_event_note_off);
@@ -397,8 +394,8 @@ int main() {
 
   // initialize WS2812
   WS2812_init(&ws2812, WS2812_PIN, pio0, WS2812_SM, 8);
-  WS2812_set_brightness(&ws2812, 70);
-  for (uint8_t i = 0; i < 8; i++) {
+  WS2812_set_brightness(&ws2812, 30);
+  for (uint8_t i = 0; i < 16; i++) {
     WS2812_fill(&ws2812, i, 255, 0, 255);
   }
   WS2812_show(&ws2812);
@@ -482,7 +479,6 @@ int main() {
       uint8_t ch = (uint8_t)uart_getc(UART_ID);
       midi_receive_byte(ch);
     }
-    continue;
 
     // process timers
     for (uint8_t i = 0; i < 16; i++) {
