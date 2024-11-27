@@ -480,7 +480,10 @@ int main() {
 
     while (uart_is_readable(UART_ID)) {
       uint8_t ch = (uint8_t)uart_getc(UART_ID);
-      midi_receive_byte(ch);
+      if (ch > 0) {
+        printf("MIDI: %d\n", ch);
+        midi_receive_byte(ch);
+      }
     }
 
     // process timers
