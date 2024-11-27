@@ -60,9 +60,9 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/dac.h"
 #include "lib/filterexp.h"
 #include "lib/knob_change.h"
+#include "lib/libmidi.h"
 #include "lib/mcp3208.h"
 #include "lib/memusage.h"
-#include "lib/midiuart.h"
 #include "lib/pcg_basic.h"
 #include "lib/random.h"
 #include "lib/scales.h"
@@ -151,6 +151,14 @@ const uint8_t const_colors[8][3] = {
     {0, 0, 244},      // Blue
     {97, 0, 97},      // Violet
 };
+
+void midi_event_note_on(char chan, char data1, char data2) {
+  printf("midi_event_note_on: %d %d %d\n", chan, data1, data2);
+}
+
+void midi_event_note_off(char chan, char data1, char data2) {
+  printf("midi_event_note_off: %d %d %d\n", chan, data1, data2);
+}
 
 void timer_callback_ws2812(bool on, int user_data) {
   for (uint8_t i = 0; i < 8; i++) {
@@ -352,9 +360,13 @@ int main() {
 #endif
 
   // setup midi external
-  setup_uart();
-  MidiUart midiuart;
-  MidiUart_init(&midiuart);
+  uart_init(UART_ID, BAUD_RATE);
+  // Set the TX and RX pins
+  gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+  uart_set_format(UART_ID, 8, 1, UART_PARITY_NONE);
+  midi_init();
+  midi_register_event_handler(EVT_CHAN_NOTE_ON, midi_event_note_on);
+  midi_register_event_handler(EVT_CHAN_NOTE_OFF, midi_event_note_off);
 
   // // // load the Scene data
   // Scene_load_data();
@@ -466,11 +478,9 @@ int main() {
                    midi_start, midi_continue, midi_stop, midi_timing);
 #endif
 
-    for (uint8_t i = 0; i < 10; i++) {
-      while (uart_is_readable(UART_ID)) {
-        MidiUart_process(&midiuart, (uint8_t)uart_getc(UART_ID));
-      }
-      sleep_us(320);
+    while (uart_is_readable(UART_ID)) {
+      uint8_t ch = (uint8_t)uart_getc(UART_ID);
+      midi_receive_byte(ch);
     }
 
     // process timers
