@@ -482,6 +482,7 @@ int main() {
       uint8_t ch = (uint8_t)uart_getc(UART_ID);
       midi_receive_byte(ch);
     }
+    continue;
 
     // process timers
     for (uint8_t i = 0; i < 16; i++) {
