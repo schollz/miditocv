@@ -79,8 +79,8 @@ SimpleTimer pool_timer[16];
 KnobChange pool_knobs[8];
 MCP3208 mcp3208;
 const uint8_t button_num = 9;
-const uint8_t button_pins[9] = {1, 8, 20, 21, 22, 26, 27, 28, 0};
-uint8_t button_values[9] = {0, 0, 0, 0, 0, 0};
+const uint8_t button_pins[9] = {1, 8, 20, 21, 22, 26, 27, 28, 29};
+uint8_t button_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 #define UART_ID uart1
 #define BAUD_RATE 31250
@@ -216,6 +216,9 @@ void timer_callback_ws2812(bool on, int user_data) {
       WS2812_fill(&ws2812, i, red, green,
                   0);  // Set LED with gamma-corrected brightness
     }
+  }
+  for (uint8_t i = 8; i < 16; i++) {
+    WS2812_fill(&ws2812, i, 255, 255, 255);
   }
   WS2812_show(&ws2812);
 }
@@ -393,7 +396,7 @@ int main() {
                PIN_SPI_TX);
 
   // initialize WS2812
-  WS2812_init(&ws2812, WS2812_PIN, pio0, WS2812_SM, 8);
+  WS2812_init(&ws2812, WS2812_PIN, pio0, WS2812_SM, 16);
   WS2812_set_brightness(&ws2812, 30);
   for (uint8_t i = 0; i < 16; i++) {
     WS2812_fill(&ws2812, i, 255, 0, 255);
