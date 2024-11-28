@@ -22,12 +22,6 @@ uint32_t trand(Noise *noise);
 float frand2(Noise *noise);
 void fseed(Noise *noise, uint32_t seed);
 
-// Create and initialize a Noise object
-Noise *Noise_create(uint32_t seed);
-float LFNoise2(Noise *noise, float current_time, float period, float min_val,
-               float max_val);
-void Noise_destroy(Noise *noise);
-
 // Helper functions
 
 uint32_t trand(Noise *noise) {
@@ -68,28 +62,36 @@ void Noise_init(Noise *noise, uint32_t seed) {
   fseed(noise, seed);
 }
 
-float LFNoise2(Noise *noise, float current_time, float period, float min_val,
-               float max_val) {
-  float interval = 1000.0f / period;  // Interval in milliseconds
+float LFNoise2(Noise *noise, float current_time, float freq) {
+  // Calculate the time interval in seconds based on the frequency
+  float interval = 1.0f / freq;  // Interval in seconds
 
   // Check if it's time to update the noise value
   if (current_time - noise->last_update_time >= interval) {
-    float value = noise->m_nextvalue;
-    noise->m_nextvalue = frand2(noise);
-    noise->level = noise->m_nextmidpt;
-    noise->m_nextmidpt = (noise->m_nextvalue + value) * 0.5;
-    noise->last_update_time = current_time;
+    // Update values for the next segment
+    float prev_value = noise->m_nextvalue;  // Previous random value
+    noise->m_nextvalue = frand2(noise);     // Generate new random value
+    float midpoint = (prev_value + noise->m_nextvalue) * 0.5f;  // Midpoint
 
-    float fseglen = interval;
-    noise->curve =
-        2.0 * (noise->m_nextmidpt - noise->level - fseglen * noise->slope) /
-        (fseglen * fseglen + fseglen);
+    // Calculate the curve for a parabolic trajectory
+    float fseglen = interval;  // Segment length in seconds
+    noise->curve = 2.0f * (midpoint - noise->level - fseglen * noise->slope) /
+                   (fseglen * fseglen + fseglen);
+
+    // Update last update time
+    noise->last_update_time = current_time;
   }
 
-  noise->slope += noise->curve;
-  noise->level += noise->slope;
-  // noise->level is between -1 and 1, scale it to the desired range
-  return min_val + (max_val - min_val) * (noise->level + 1.0f) / 2.0f;
-}
+  // Calculate the current noise level
+  float t = current_time - noise->last_update_time;  // Time since last update
+  noise->slope += noise->curve;                      // Update the slope
+  noise->level += noise->slope;                      // Update the level
 
+  // Ensure the level stays in range [-1, 1]
+  if (noise->level > 1.0f) noise->level = 1.0f;
+  if (noise->level < -1.0f) noise->level = -1.0f;
+
+  // Return the current noise level
+  return noise->level;
+}
 #endif /* NOISE_LIB */
