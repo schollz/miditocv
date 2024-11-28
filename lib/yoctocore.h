@@ -86,6 +86,7 @@ typedef struct Out {
   ADSR adsr;
   Slew slew;
   Slew portamento;
+  Slew slew_lfo;
   NoteHeld note_on;
   Noise noise;
 } Out;
@@ -132,6 +133,8 @@ void Yoctocore_init(Yoctocore *self) {
     Noise_init(&self->out[output].noise, time_us_32());
     // initialize slew
     Slew_init(&self->out[output].slew, 0, 0);
+    // initialize slew
+    Slew_init(&self->out[output].slew_lfo, 0, 0);
     // initialize portamento
     Slew_init(&self->out[output].portamento, 0, 0);
     // initialize adsr

@@ -73,4 +73,8 @@ float Slew_process(Slew *slew, float target_value, uint32_t current_time) {
   return slew->current_value;
 }
 
+float Slew_process2(Slew *slew, uint32_t current_time) {
+  Slew_process(slew, slew->target_value, current_time);
+}
+
 #endif

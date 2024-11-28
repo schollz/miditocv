@@ -8,25 +8,13 @@
 #include <stdlib.h>
 
 typedef struct Noise {
-  float m_nextmidpt;
-  float m_nextvalue;
-  float level;
-  float curve;
-  float slope;
-  uint32_t s1, s2, s3;     // Random generator state
-  float last_update_time;  // Last update time as a float (in milliseconds)
+  uint32_t s1, s2, s3;  // Random generator state
 } Noise;
 
 // Helper function declarations
 uint32_t trand(Noise *noise);
 float frand2(Noise *noise);
 void fseed(Noise *noise, uint32_t seed);
-
-// Create and initialize a Noise object
-Noise *Noise_create(uint32_t seed);
-float LFNoise2(Noise *noise, float current_time, float period, float min_val,
-               float max_val);
-void Noise_destroy(Noise *noise);
 
 // Helper functions
 
@@ -58,38 +46,6 @@ void fseed(Noise *noise, uint32_t seed) {
   if (noise->s3 < 16) noise->s3 = 1821928721U;
 }
 
-void Noise_init(Noise *noise, uint32_t seed) {
-  noise->m_nextmidpt = 0;
-  noise->m_nextvalue = 0;
-  noise->level = 0;
-  noise->curve = 0;
-  noise->slope = 0;
-  noise->last_update_time = 0.0f;
-  fseed(noise, seed);
-}
-
-float LFNoise2(Noise *noise, float current_time, float period, float min_val,
-               float max_val) {
-  float interval = 1000.0f / period;  // Interval in milliseconds
-
-  // Check if it's time to update the noise value
-  if (current_time - noise->last_update_time >= interval) {
-    float value = noise->m_nextvalue;
-    noise->m_nextvalue = frand2(noise);
-    noise->level = noise->m_nextmidpt;
-    noise->m_nextmidpt = (noise->m_nextvalue + value) * 0.5;
-    noise->last_update_time = current_time;
-
-    float fseglen = interval;
-    noise->curve =
-        2.0 * (noise->m_nextmidpt - noise->level - fseglen * noise->slope) /
-        (fseglen * fseglen + fseglen);
-  }
-
-  noise->slope += noise->curve;
-  noise->level += noise->slope;
-  // noise->level is between -1 and 1, scale it to the desired range
-  return min_val + (max_val - min_val) * (noise->level + 1.0f) / 2.0f;
-}
+void Noise_init(Noise *noise, uint32_t seed) { fseed(noise, seed); }
 
 #endif /* NOISE_LIB */

@@ -17,6 +17,64 @@ function assert(condition, message) {
     }
 }
 
+function drawSparkline(index, data, mode) {
+    const canvas = document.getElementById(`sparkline-${index}`);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+
+    // Resize canvas to fit parent
+    const parent = canvas.parentElement;
+    canvas.width = parent.offsetWidth;
+    canvas.height = 35; // Fixed height
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Constants for scaling
+    const minValue = -5.5;
+    const maxValue = 10.5;
+    const valueRange = maxValue - minValue;
+
+    // Define colors based on index
+    const indexColors = [
+        "#000",          // index 0: mode-manual
+        "#FF0000",     // index 1: mode-midi-pitch
+        "#FFAA33",     // index 2: mode-midi-envelope
+        "#FFEA00",     // index 3: mode-midi-cc
+        "#32CD32",     // index 4: mode-midi-clock
+        "#7DF9FF",     // index 5: mode-clock
+        "#0096FF",     // index 6: mode-lfo
+        "#CBC3E3",     // index 7: mode-sequencer
+    ];
+
+    // Get the color for the current index, fallback to black if index is invalid
+    const color = indexColors[mode] || "#000";
+
+    // Draw sparkline
+    const step = canvas.width / (data.length - 1);
+    ctx.beginPath();
+    ctx.strokeStyle = color; // Use index-specific color
+    ctx.lineWidth = 2.5;
+
+    data.forEach((value, i) => {
+        const x = i * step;
+
+        // Scale the value from -5 to +10 range to canvas height
+        const normalizedValue = (value - minValue) / valueRange; // Normalize to 0-1
+        const y = canvas.height - normalizedValue * canvas.height; // Invert for canvas y-axis
+
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+
+    ctx.stroke();
+}
+
+
+function generateSparklineData() {
+    return Array.from({ length: 20 }, () => Math.random()); // Replace with real data
+}
+
 function hash_djb(str) {
     let hash = 5381; // Initialize hash value as in the C code
     let i = 0; // Iterator for the string
@@ -154,7 +212,7 @@ async function updateLocalScene(scene_num) {
             sysex_string = `${scene_num}_${output_num}_${hash_djb(param)}`;
             for (let i = 0; i < 3; i++) {
                 try {
-                    console.log(`[sending_sysex] ${sysex_string}`);
+                    console.log(`[sending_sysex] ${param} ${sysex_string}`);
                     send_sysex(sysex_string);
                     await waitForTriggerOrTimeout(200);
                     await Vue.nextTick();
@@ -180,6 +238,7 @@ function setupMidiInputListener() {
                 for (var i = 1; i < midiMessage.data.length - 1; i++) {
                     sysex += String.fromCharCode(midiMessage.data[i]);
                 }
+                // console.log(`[recv] ${sysex}`);
                 fields = sysex.split(" ");
                 // see if it starts with version=
                 if (sysex.startsWith("v")) {
@@ -192,6 +251,15 @@ function setupMidiInputListener() {
                     //     // update the scene
                     //     vm.current_scene = scene_num;
                     //     updateLocalScene(scene_num);
+                } else if (sysex.startsWith("spark_")) {
+                    // console.log(`[sparkline] ${sysex}`);
+                    const [_, indexStr, valueStr] = sysex.split("_");
+                    const index = parseInt(indexStr, 10);
+                    const value = parseFloat(valueStr);
+
+                    if (!isNaN(index) && index >= 0 && index < 8) {
+                        vm.updateSparkline(index, value);
+                    }
                 } else if (fields.length == 4) {
                     // check if field [3] is a parameter
                     externalTrigger();
@@ -343,17 +411,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.chrome && window.chrome.app) {
         setupMidi();
 
-        setTimeout(() => {
-            setInterval(() => {
-                if (Date.now() - last_time_of_message_received > 317 * 2) {
-                    window.yoctocoreDevice && send_sysex("version0");
-                }
-                if (Date.now() - last_time_of_message_received > 317 * 4) {
-                    vm.device_connected = false;
-                    setupMidi();
-                }
-            }, 317);
-        }, 2000);
+        // setTimeout(() => {
+        //     setInterval(() => {
+        //         if (Date.now() - last_time_of_message_received > 317 * 2) {
+        //             window.yoctocoreDevice && send_sysex("version0");
+        //         }
+        //         if (Date.now() - last_time_of_message_received > 317 * 4) {
+        //             vm.device_connected = false;
+        //             setupMidi();
+        //         }
+        //     }, 317);
+        // }, 2000);
 
     }
 
@@ -387,8 +455,6 @@ const app = createApp({
                     release: 2.1,
                     linked_to: 0,
                     probability: 100,
-                    duration: 1,
-                    voltage_setpoint: 1.0,
                 })),
             }))
         );
@@ -416,6 +482,26 @@ const app = createApp({
             }
             return notes;
         });
+        const sparklineData = reactive(
+            Array.from({ length: 8 }, () => []) // Initialize with empty arrays for 8 sparklines
+        );
+
+        function updateSparkline(index, value) {
+            const maxDataPoints = 50; // Limit the number of data points per sparkline
+
+            // Add the new value to the data buffer
+            sparklineData[index].push(value);
+
+            // Ensure the buffer size doesn't exceed the maximum
+            if (sparklineData[index].length > maxDataPoints) {
+                sparklineData[index].shift();
+            }
+
+            // Redraw the sparkline
+            const mode = scenes.value[current_scene.value].outputs[index].mode;
+            drawSparkline(index, sparklineData[index], mode);
+        }
+
 
         function doBoardReset() {
             send_sysex("diskmode1");
@@ -524,6 +610,11 @@ const app = createApp({
                 Object.assign(selected_output.value, modeDefaults);
             }
         );
+        onMounted(() => {
+            scenes.value[current_scene.value].outputs.forEach((_, index) => {
+                drawSparkline(index, sparklineData[index]); // Initially empty
+            });
+        });
 
         // Debounce function
         function debounce(fn, delay) {
@@ -558,7 +649,7 @@ const app = createApp({
                     debounce((sceneIdx, outputIdx, prop, val) => {
                         val = Number(val);
                         sysex_string = `${sceneIdx}_${outputIdx}_${hash_djb(prop)}_${val.toPrecision(4)}`;
-                        console.log(`[sending_sysex] ${sysex_string}`);
+                        console.log(`[sending_sysex] ${prop} ${sysex_string}`);
                         send_sysex(sysex_string);
                     }, 300)
                 );
@@ -622,8 +713,10 @@ const app = createApp({
             doBoardReset,
             note_names,
             clockDivisions,
+            updateSparkline,
         };
     },
 });
 
 vm = app.mount('#app');
+

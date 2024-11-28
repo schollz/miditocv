@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "noise.h"
+#include "slew.h"
 
 // Define the possible LFO types
 typedef enum {
@@ -24,7 +25,6 @@ typedef struct {
   float min_val;
   float max_val;
   float phase;
-  Noise noise;
   float transition_start_time;
   int is_transitioning;
 } LFO;
@@ -73,9 +73,21 @@ float square_wave(float t_ms, float period_ms, float min_val, float max_val,
   return value;
 }
 
+float drunk_wave(float t_ms, float period_ms, float min_val, float max_val,
+                 float phase, Noise *noise, Slew *slew) {
+  // check if t_ms mod period_ms is 0
+  if ((int)t_ms % (int)period_ms == 0) {
+    // generate random number between -1 and 1
+    float target = (float)frand2(noise);
+    Slew_set_target(slew, target);
+    Slew_set_duration(slew, period_ms);
+  }
+  Slew_process2(slew, t_ms);
+  return ((slew->current_value + 1.0f) / 2.0f) * (max_val - min_val) + min_val;
+}
 // Get LFO value based on type
 float get_lfo_value(LFO_Type type, float t_ms, float period_ms, float min_val,
-                    float max_val, float phase, Noise *noise) {
+                    float max_val, float phase, Noise *noise, Slew *slew) {
   switch (type) {
     case LFO_TRIANGLE:
       return triangle_wave(t_ms, period_ms, min_val, max_val, phase);
@@ -86,66 +98,10 @@ float get_lfo_value(LFO_Type type, float t_ms, float period_ms, float min_val,
     case LFO_SQUARE:
       return square_wave(t_ms, period_ms, min_val, max_val, phase);
     case LFO_DRUNK:
-      return LFNoise2(noise, t_ms, period_ms / 1000.0f, min_val, max_val);
+      return drunk_wave(t_ms, period_ms, min_val, max_val, phase, noise, slew);
     default:
       return 0.0f;
   }
-}
-
-// LFO update function with transition support
-float LFO_update(LFO *lfo, float current_time_ms) {
-  // Check if transitioning
-  if (lfo->is_transitioning) {
-    float elapsed_time = current_time_ms - lfo->transition_start_time;
-    if (elapsed_time >= LFO_TRANSITION_DURATION_MS) {
-      // End transition
-      lfo->is_transitioning = 0;
-      lfo->current_type = lfo->target_type;
-    } else {
-      // Interpolate between current and target LFO types
-      float progress = elapsed_time / LFO_TRANSITION_DURATION_MS;
-      float current_value =
-          get_lfo_value(lfo->current_type, current_time_ms, lfo->period_ms,
-                        lfo->min_val, lfo->max_val, lfo->phase, &lfo->noise);
-      float target_value =
-          get_lfo_value(lfo->target_type, current_time_ms, lfo->period_ms,
-                        lfo->min_val, lfo->max_val, lfo->phase, &lfo->noise);
-      // Linear interpolation
-      return current_value * (1.0f - progress) + target_value * progress;
-    }
-  }
-
-  // No transition, return current LFO value
-  return get_lfo_value(lfo->current_type, current_time_ms, lfo->period_ms,
-                       lfo->min_val, lfo->max_val, lfo->phase, &lfo->noise);
-}
-
-void LFO_set_min_val(LFO *lfo, float min_val) { lfo->min_val = min_val; }
-
-void LFO_set_max_val(LFO *lfo, float max_val) { lfo->max_val = max_val; }
-
-void LFO_set_period(LFO *lfo, float period_ms) { lfo->period_ms = period_ms; }
-
-// Set LFO type with transition
-void LFO_set_type(LFO *lfo, LFO_Type new_type, float current_time_ms) {
-  if (lfo->current_type != new_type) {
-    lfo->target_type = new_type;
-    lfo->transition_start_time = current_time_ms;
-    lfo->is_transitioning = 1;
-  }
-}
-
-// Initialize LFO
-void LFO_init(LFO *lfo) {
-  lfo->current_type = 0;
-  lfo->target_type = 0;
-  lfo->period_ms = 1000;
-  lfo->min_val = 0;
-  lfo->max_val = 5;
-  lfo->phase = 0;
-  lfo->is_transitioning = 0;
-  lfo->transition_start_time = 0;
-  Noise_init(&lfo->noise, 0);
 }
 
 #endif

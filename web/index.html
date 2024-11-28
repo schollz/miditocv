@@ -134,6 +134,14 @@
     .routing div:not(:first-child) {
       margin-left: 0.5em;
     }
+
+    .sparkline {
+      width: 100%;
+      height: 35px;
+      /* Adjust as needed */
+      display: block;
+      margin-bottom: 0.25em;
+    }
   </style>
 </head>
 
@@ -172,11 +180,14 @@
     </div>
 
 
+    <!-- spark lines -->
+
     <!-- Output Selection Buttons -->
     <!-- label for button row -->
     <h3>Outputs</h3>
     <div class="button-row row">
       <div class="col col-1" v-for="(output, index) in scenes[current_scene].outputs" :key="index">
+        <canvas :id="'sparkline-' + index" class="sparkline"></canvas>
         <button
           :class="[current_output !== index && 'inactive', current_output === index && 'active', getButtonClass(output.mode)]"
           @click="select_output(index)">
