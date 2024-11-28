@@ -44,8 +44,8 @@ int main() {
   luaL_dostring(L, "math.randomseed(os.time())");
 
   // Call the Lua function and get the result
-  for (int i = 0; i < 5; i++) {
-    lua_getglobal(L, "addone");             // Get the function from Lua
+  for (int i = 0; i < 10; i++) {
+    lua_getglobal(L, "abc");                // Get the function from Lua
     if (lua_pcall(L, 0, 1, 0) != LUA_OK) {  // Call the function
       printf("Error: %s\n", lua_tostring(L, -1));
       lua_close(L);
@@ -56,7 +56,16 @@ int main() {
     lua_pop(L, 1);                     // Pop the result from the stack
     printf("random float: %.2f\n", val);
 
-    sleep(1);  // Sleep for 1 second
+    if (i < 3) {
+      lua_getglobal(L, "abc");       // Push 'abc' table onto the stack
+      lua_getfield(L, -1, "reset");  // Get 'reset' method from 'abc'
+      lua_pushvalue(L, -2);  // Push 'abc' table as the first argument (self)
+      if (lua_pcall(L, 1, 0, 0) != LUA_OK) {  // Call 'reset' with 1 argument
+        printf("Error calling abc:reset: %s\n", lua_tostring(L, -1));
+        lua_pop(L, 1);  // Pop error message
+      }
+      lua_pop(L, 1);  // Pop 'abc' table from stack
+    }
   }
 
   lua_close(L);  // Clean up the Lua state
