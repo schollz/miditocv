@@ -6,6 +6,7 @@
 #include <unistd.h>  // For sleep
 
 #include "script.c"
+#include "sequins.c"
 
 int main() {
   lua_State *L = luaL_newstate();  // Create a new Lua state
@@ -26,12 +27,28 @@ int main() {
     return 1;
   }
 
+  // Load Lua script from embedded string
+  if (luaL_loadbuffer(L, (const char *)sequins_lua, sequins_lua_len,
+                      "embedded_script") != LUA_OK) {
+    printf("Error loading Lua script: %s\n", lua_tostring(L, -1));
+    lua_close(L);
+    return 1;
+  }
+
+  // Execute the loaded Lua script
+  if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
+    printf("Error executing Lua script: %s\n", lua_tostring(L, -1));
+    lua_close(L);
+    return 1;
+  }
+
   // Define the new Lua function addone()
   const char *addone_code =
       "function addone()\n"
       "  local num = random_number()\n"
       "  return num + 0.1\n"
-      "end";
+      "end\n"
+      "abc = S{1, S{2, 3}, 3}";
 
   // Execute the new Lua function definition
   if (luaL_dostring(L, addone_code) != LUA_OK) {

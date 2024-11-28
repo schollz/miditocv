@@ -17,6 +17,9 @@ main
 *.map
 *.exp
 
+script.c
+sequins.c
+
 # Precompiled Headers
 *.gch
 *.pch
