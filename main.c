@@ -280,6 +280,7 @@ void midi_note_on(int channel, int note, int velocity) {
       printf("[out%d] %d %d %f %f to %f\n", i + 1, note, config->root_note,
              config->v_oct, config->min_voltage, out->voltage_set);
 #endif
+      break;  // TODO make this an option
     }
   }
   // find any linked outputs and activate the envelope
