@@ -4,13 +4,24 @@ there are eight scenes. each scene is selected by holding down `shift` and then 
 
 each scene has eight outputs. each output can be configured to a different mode. modes are selected holding `shift` and pressing one of the eight buttons.
 
+| Category  | Button        | Knob          | Shift + Button | Shift + Knob  |
+|-----------|---------------|---------------|----------------|---------------|
+| Manual    |               | voltage       |                | slew          |
+| Pitch     |               | voltage       | listen         | portamento    |
+| Envelope  | trigger       | attack        |                | release       |
+| CC        |               |               | listen         |               |
+| Clock     | tap tempo     | bpm           |                | division      |
+| LFO       | reset         | period        |                | shape         |
+| Code      | key(on,shift) | knob(x,shift) | key(on,shift)  | knob(x,shift) |
+| Sequencer | jump here     | voltage       |                | duration      |
+
 ## modes
 
 ### manual
 
-[manual mode](#manual) is the default mode. the output voltage is controlled by the knob. 
+[manual mode](#manual) is the default mode. the output voltage is controlled by the knob.
 
-the output range is configurable in the editor, the default range is -5v to 10v. 
+the output range is configurable in the editor, the default range is -5v to 10v.
 
 the output voltage quantization is configurable in the editor, the default quantization is the resolution of the knob (12-bit) scaled by the output range (minimum resolution is 0.004v).
 
@@ -38,7 +49,7 @@ on the device, the envelope parameters can be configured by holding shift and tu
 
 ### midi cc
 
-[midi cc mode](#midi-cc) is a midi to CV converter. the output voltage is controlled by the midi cc value. the output voltage is calculated as `cc / 127`. 
+[midi cc mode](#midi-cc) is a midi to CV converter. the output voltage is controlled by the midi cc value. the output voltage is calculated as `cc / 127`.
 
 the MIDI cc to listen for is configurable in the editor, the default cc is 0.
 
@@ -48,7 +59,7 @@ the output voltage range is configurable in the editor, the default range is -5v
 
 ### clock
 
-[clock mode](#clock) will output a clock signal. the clock signal is a square wave with a 50% duty cycle. 
+[clock mode](#clock) will output a clock signal. the clock signal is a square wave with a 50% duty cycle.
 
 the default clock bpm can be set in the editor, the default bpm is 120. the clock bpm can also be configured by turning the knob. the middle knob position is always the default bpm.
 
@@ -58,7 +69,7 @@ the button can be used to manually create a tempo.
 
 ### lfo
 
-[lfo mode](#lfo) will output a low frequency oscillator. 
+[lfo mode](#lfo) will output a low frequency oscillator.
 
 the lfo waveform can be configured in the editor, the default waveform is a sine wave. the lfo waveform can be changed by pressing the button.
 
