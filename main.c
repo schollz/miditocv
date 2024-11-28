@@ -108,7 +108,8 @@ uint8_t button_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 void timer_callback_outputs(bool on, int user_data) {
   printf("[timer_callback_outputs]: %d %d\n", on, user_data);
   Out *out = &yocto.out[user_data];
-  Config *config = &yocto.config[yocto.i][user_data];
+  ConfigMode *config = &yocto.config[yocto.i][user_data]
+                            .data[yocto.config[yocto.i][user_data].mode];
   if (on) {
     out->voltage_current = config->max_voltage;
   } else {
@@ -200,10 +201,9 @@ void timer_callback_ws2812(bool on, int user_data) {
   }
   const int leds_second_8[8] = {0, 1, 2, 4, 3, 7, 6, 5};
   for (uint8_t i = 8; i < 16; i++) {
-    Config *config = &yocto.config[yocto.i][i - 8];
-    WS2812_fill(&ws2812, leds_second_8[i - 8] + 8,
-                const_colors[config->mode][0], const_colors[config->mode][1],
-                const_colors[config->mode][2]);
+    uint8_t config_mode = yocto.config[yocto.i][i - 8].mode;
+    WS2812_fill(&ws2812, leds_second_8[i - 8] + 8, const_colors[config_mode][0],
+                const_colors[config_mode][1], const_colors[config_mode][2]);
   }
   WS2812_show(&ws2812);
 }
@@ -230,9 +230,10 @@ void midi_note_off(int channel, int note) {
                                    false, false, false, false};
   // check if any outputs are set to midi pitch
   for (uint8_t i = 0; i < 8; i++) {
-    Config *config = &yocto.config[yocto.i][i];
+    uint8_t config_mode = yocto.config[yocto.i][i].mode;
+    ConfigMode *config = &yocto.config[yocto.i][i].data[config_mode];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_PITCH &&
+    if (config_mode == MODE_PITCH &&
         (config->midi_channel == channel || config->midi_channel == 0) &&
         out->note_on.note == note) {
       // set the voltage
@@ -244,9 +245,10 @@ void midi_note_off(int channel, int note) {
   }
   // find any linked outputs and activate the envelope
   for (uint8_t i = 0; i < 8; i++) {
-    Config *config = &yocto.config[yocto.i][i];
+    uint8_t config_mode = yocto.config[yocto.i][i].mode;
+    ConfigMode *config = &yocto.config[yocto.i][i].data[config_mode];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_ENVELOPE && config->linked_to > 0) {
+    if (config_mode == MODE_ENVELOPE && config->linked_to > 0) {
       if (outs_with_note_change[config->linked_to - 1]) {
         // trigger the envelope
         printf("[out%d] env_ff linked to out%d\n", i + 1, config->linked_to);
@@ -266,9 +268,11 @@ void midi_note_on(int channel, int note, int velocity) {
   bool outs_with_note_change[8] = {false, false, false, false,
                                    false, false, false, false};
   for (uint8_t i = 0; i < 8; i++) {
-    Config *config = &yocto.config[yocto.i][i];
+    ConfigMode *config =
+        &yocto.config[yocto.i][i].data[yocto.config[yocto.i][i].mode];
+    uint8_t config_mode = yocto.config[yocto.i][i].mode;
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_PITCH &&
+    if (config_mode == MODE_PITCH &&
         (config->midi_channel == channel || config->midi_channel == 0) &&
         (out->note_on.time_on == 0 ||
          (ct - out->note_on.time_on) > MAX_NOTE_HOLD_TIME_MS) &&
@@ -289,9 +293,10 @@ void midi_note_on(int channel, int note, int velocity) {
   }
   // find any linked outputs and activate the envelope
   for (uint8_t i = 0; i < 8; i++) {
-    Config *config = &yocto.config[yocto.i][i];
+    uint8_t config_mode = yocto.config[yocto.i][i].mode;
+    ConfigMode *config = &yocto.config[yocto.i][i].data[config_mode];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_ENVELOPE && config->linked_to > 0) {
+    if (config_mode == MODE_ENVELOPE && config->linked_to > 0) {
       if (outs_with_note_change[config->linked_to - 1]) {
         // trigger the envelope
         printf("[out%d] env_on linked to out%d\n", i + 1, config->linked_to);
@@ -503,9 +508,11 @@ int main() {
         if (i < 8) {
           // process button press
           Out *out = &yocto.out[i];
-          Config *config = &yocto.config[yocto.i][i];
+          ConfigMode *config =
+              &yocto.config[yocto.i][i].data[yocto.config[yocto.i][i].mode];
+          uint8_t config_mode = yocto.config[yocto.i][i].mode;
           // check mode
-          switch (config->mode) {
+          switch (config_mode) {
             case MODE_MANUAL:
               break;
             case MODE_ENVELOPE:
@@ -534,11 +541,12 @@ int main() {
     // process outputs
     for (uint8_t i = 0; i < 8; i++) {
       Out *out = &yocto.out[i];
-      Config *config = &yocto.config[yocto.i][i];
+      uint8_t config_mode = yocto.config[yocto.i][i].mode;
+      ConfigMode *config = &yocto.config[yocto.i][i].data[config_mode];
       float knob_val = (float)KnobChange_get(&pool_knobs[i]);
       // check mode
       // make sure modes are up to date
-      if (config->mode == MODE_CLOCK) {
+      if (config_mode == MODE_CLOCK) {
         SimpleTimer_on(&pool_timer[i], ct);
       } else {
         SimpleTimer_stop(&pool_timer[i]);
@@ -547,7 +555,7 @@ int main() {
       Slew_set_duration(&out->portamento, roundf(config->portamento * 1000));
       Slew_set_duration(&out->slew, roundf(config->slew_time * 1000));
 
-      switch (config->mode) {
+      switch (config_mode) {
         case MODE_MANUAL:
           // mode manual will set voltage based on knob turning and slew
           // check if knob was turned

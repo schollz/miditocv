@@ -154,14 +154,15 @@ void Yoctocore_init(Yoctocore *self) {
 void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
                    uint32_t param, float val) {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
-  Config *config = &self->config[scene][output];
+  ConfigMode *config =
+      &self->config[scene][output].data[self->config[scene][output].mode];
   Out *out = &self->out[output];
   switch (param) {
     case PARAM_SCENE:
       self->i = (uint8_t)val;
       break;
     case PARAM_MODE:
-      config->mode = (uint8_t)val;
+      self->config[scene][output].mode = (uint8_t)val;
       break;
     case PARAM_QUANTIZATION:
       config->quantization = (uint8_t)val;
@@ -238,12 +239,13 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
 
 float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
                     uint32_t param) {
-  Config *config = &self->config[scene][output];
+  ConfigMode *config =
+      &self->config[scene][output].data[self->config[scene][output].mode];
   switch (param) {
     case PARAM_SCENE:
       return self->i;
     case PARAM_MODE:
-      return config->mode;
+      return self->config[scene][output].mode;
     case PARAM_QUANTIZATION:
       return config->quantization;
     case PARAM_PORTATMENTO:
@@ -291,6 +293,8 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
   }
 }
 
+#define SAVEFILE_NAME "savefile1"
+
 bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
   if (self->debounce_save == 0) {
     return false;
@@ -303,7 +307,7 @@ bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
   FIL file;
   UINT bw;
   char fname[32];
-  sprintf(fname, "savefile");
+  sprintf(fname, SAVEFILE_NAME);
 
   fr = f_open(&file, fname, FA_WRITE | FA_CREATE_ALWAYS);
   if (FR_OK != fr) {
@@ -321,7 +325,7 @@ bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
   // write each config of each scene
   for (uint8_t scene = 0; scene < 8; scene++) {
     for (uint8_t output = 0; output < 8; output++) {
-      fr = f_write(&file, &self->config[scene][output], sizeof(Config), &bw);
+      fr = f_write(&file, &self->config[scene][output], sizeof(ConfigOut), &bw);
       if (FR_OK != fr) {
         printf("f_write error: %s (%d)\n", FRESULT_str(fr), fr);
         return false;
@@ -343,7 +347,7 @@ bool Yoctocore_load(Yoctocore *self) {
   FIL file;
   UINT br;
   char fname[32];
-  sprintf(fname, "savefile");
+  sprintf(fname, SAVEFILE_NAME);
 
   fr = f_open(&file, fname, FA_READ);
   if (FR_OK != fr) {
@@ -361,7 +365,7 @@ bool Yoctocore_load(Yoctocore *self) {
   // read each config of each scene
   for (uint8_t scene = 0; scene < 8; scene++) {
     for (uint8_t output = 0; output < 8; output++) {
-      fr = f_read(&file, &self->config[scene][output], sizeof(Config), &br);
+      fr = f_read(&file, &self->config[scene][output], sizeof(ConfigOut), &br);
       if (FR_OK != fr) {
         printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
         return false;
