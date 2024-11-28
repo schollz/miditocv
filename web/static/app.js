@@ -17,8 +17,7 @@ function assert(condition, message) {
     }
 }
 
-
-function drawSparkline(index, data) {
+function drawSparkline(index, data, mode) {
     const canvas = document.getElementById(`sparkline-${index}`);
     if (!canvas) return;
 
@@ -27,21 +26,36 @@ function drawSparkline(index, data) {
     // Resize canvas to fit parent
     const parent = canvas.parentElement;
     canvas.width = parent.offsetWidth;
-    canvas.height = 50; // Fixed height
+    canvas.height = 20; // Fixed height
 
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Constants for scaling
-    const minValue = -5;
-    const maxValue = 10;
+    const minValue = -5.5;
+    const maxValue = 10.5;
     const valueRange = maxValue - minValue;
+
+    // Define colors based on index
+    const indexColors = [
+        "#000",          // index 0: mode-manual
+        "#FF0000",     // index 1: mode-midi-pitch
+        "#FFAA33",     // index 2: mode-midi-envelope
+        "#FFEA00",     // index 3: mode-midi-cc
+        "#32CD32",     // index 4: mode-midi-clock
+        "#7DF9FF",     // index 5: mode-clock
+        "#0096FF",     // index 6: mode-lfo
+        "#CBC3E3",     // index 7: mode-sequencer
+    ];
+
+    // Get the color for the current index, fallback to black if index is invalid
+    const color = indexColors[mode] || "#000";
 
     // Draw sparkline
     const step = canvas.width / (data.length - 1);
     ctx.beginPath();
-    ctx.strokeStyle = "#000"; // Sparkline color
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = color; // Use index-specific color
+    ctx.lineWidth = 2.0;
 
     data.forEach((value, i) => {
         const x = i * step;
@@ -198,7 +212,7 @@ async function updateLocalScene(scene_num) {
             sysex_string = `${scene_num}_${output_num}_${hash_djb(param)}`;
             for (let i = 0; i < 3; i++) {
                 try {
-                    console.log(`[sending_sysex] ${sysex_string}`);
+                    console.log(`[sending_sysex] ${param} ${sysex_string}`);
                     send_sysex(sysex_string);
                     await waitForTriggerOrTimeout(200);
                     await Vue.nextTick();
@@ -224,6 +238,7 @@ function setupMidiInputListener() {
                 for (var i = 1; i < midiMessage.data.length - 1; i++) {
                     sysex += String.fromCharCode(midiMessage.data[i]);
                 }
+                // console.log(`[recv] ${sysex}`);
                 fields = sysex.split(" ");
                 // see if it starts with version=
                 if (sysex.startsWith("v")) {
@@ -237,6 +252,7 @@ function setupMidiInputListener() {
                     //     vm.current_scene = scene_num;
                     //     updateLocalScene(scene_num);
                 } else if (sysex.startsWith("spark_")) {
+                    // console.log(`[sparkline] ${sysex}`);
                     const [_, indexStr, valueStr] = sysex.split("_");
                     const index = parseInt(indexStr, 10);
                     const value = parseFloat(valueStr);
@@ -395,17 +411,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.chrome && window.chrome.app) {
         setupMidi();
 
-        setTimeout(() => {
-            setInterval(() => {
-                if (Date.now() - last_time_of_message_received > 317 * 2) {
-                    window.yoctocoreDevice && send_sysex("version0");
-                }
-                if (Date.now() - last_time_of_message_received > 317 * 4) {
-                    vm.device_connected = false;
-                    setupMidi();
-                }
-            }, 317);
-        }, 2000);
+        // setTimeout(() => {
+        //     setInterval(() => {
+        //         if (Date.now() - last_time_of_message_received > 317 * 2) {
+        //             window.yoctocoreDevice && send_sysex("version0");
+        //         }
+        //         if (Date.now() - last_time_of_message_received > 317 * 4) {
+        //             vm.device_connected = false;
+        //             setupMidi();
+        //         }
+        //     }, 317);
+        // }, 2000);
 
     }
 
@@ -439,8 +455,6 @@ const app = createApp({
                     release: 2.1,
                     linked_to: 0,
                     probability: 100,
-                    duration: 1,
-                    voltage_setpoint: 1.0,
                 })),
             }))
         );
@@ -484,7 +498,8 @@ const app = createApp({
             }
 
             // Redraw the sparkline
-            drawSparkline(index, sparklineData[index]);
+            const mode = scenes.value[current_scene.value].outputs[index].mode;
+            drawSparkline(index, sparklineData[index], mode);
         }
 
 
@@ -634,7 +649,7 @@ const app = createApp({
                     debounce((sceneIdx, outputIdx, prop, val) => {
                         val = Number(val);
                         sysex_string = `${sceneIdx}_${outputIdx}_${hash_djb(prop)}_${val.toPrecision(4)}`;
-                        console.log(`[sending_sysex] ${sysex_string}`);
+                        console.log(`[sending_sysex] ${prop} ${sysex_string}`);
                         send_sysex(sysex_string);
                     }, 300)
                 );

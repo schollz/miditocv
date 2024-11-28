@@ -94,6 +94,9 @@ void SimpleTimer_on(SimpleTimer *self, float current_time) {
 
 // Main processing function for generating timer pulses
 bool SimpleTimer_process(SimpleTimer *self, float current_time) {
+  if (self->pulse_callback == NULL) {
+    return false;
+  }
   if (self->next_time == 0) {
     return false;
   }

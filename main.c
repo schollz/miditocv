@@ -105,17 +105,6 @@ uint8_t button_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 #include "lib/midicallback.h"
 #endif
 
-void timer_callback_outputs(bool on, int user_data) {
-  printf("[timer_callback_outputs]: %d %d\n", on, user_data);
-  Out *out = &yocto.out[user_data];
-  Config *config = &yocto.config[yocto.i][user_data];
-  if (on) {
-    out->voltage_current = config->max_voltage;
-  } else {
-    out->voltage_current = config->min_voltage;
-  }
-}
-
 void timer_callback_sample_knob(bool on, int user_data) {
   for (uint8_t i = 0; i < 8; i++) {
     int16_t val_changed =
@@ -220,9 +209,14 @@ void timer_callback_update_voltage(bool on, int user_data) {
   DAC_update(&dac);
 }
 
-void timer_callback_update_sparkline(bool on, int user_data) {
-  for (uint8_t i = 0; i < 8; i++) {
-    printf("spark_%d_%2.1f ", i, yocto.out[i].voltage_current);
+uint8_t sparkline_updater = 0;
+
+void timer_callback_sparkline(bool on, int user_data) {
+  printf("spark_%d_%2.1f", sparkline_updater,
+         yocto.out[sparkline_updater].voltage_current);
+  sparkline_updater++;
+  if (sparkline_updater >= 8) {
+    sparkline_updater = 0;
   }
 }
 
@@ -458,7 +452,8 @@ int main() {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   // first 8 timers are for each output and disabled by default
   for (uint8_t i = 0; i < 16; i++) {
-    SimpleTimer_init(&pool_timer[i], 16, 1.0f, 0, timer_callback_outputs, i);
+    SimpleTimer_init(&pool_timer[i], 1000.0f / (100.0f + i * 10) * 30, 1.0f, 0,
+                     NULL, i);
   }
   // setup a timer at 5 milliseconds to sample the knobs
   SimpleTimer_init(&pool_timer[8], 1000.0f / 11.0f * 30, 1.0f, 0,
@@ -476,9 +471,9 @@ int main() {
   SimpleTimer_init(&pool_timer[11], 1000.0f / 4.0f * 30, 1.0f, 0,
                    timer_callback_update_voltage, 0);
   SimpleTimer_start(&pool_timer[11], ct);
-  // setup a timer at 1 second to update sparkline
-  SimpleTimer_init(&pool_timer[12], 1000.0f / 100.0f * 30, 1.0f, 0,
-                   timer_callback_update_sparkline, 0);
+  // setup a timer at 1 second to print sparkline
+  SimpleTimer_init(&pool_timer[12], 1000.0f / 10.0f * 30, 1.0f, 0,
+                   timer_callback_sparkline, 0);
   SimpleTimer_start(&pool_timer[12], ct);
 
   uint32_t ct_last = ct;
