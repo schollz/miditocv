@@ -8,13 +8,7 @@
 #include <stdlib.h>
 
 typedef struct Noise {
-  float m_nextmidpt;
-  float m_nextvalue;
-  float level;
-  float curve;
-  float slope;
-  uint32_t s1, s2, s3;     // Random generator state
-  float last_update_time;  // Last update time as a float (in milliseconds)
+  uint32_t s1, s2, s3;  // Random generator state
 } Noise;
 
 // Helper function declarations
@@ -52,46 +46,6 @@ void fseed(Noise *noise, uint32_t seed) {
   if (noise->s3 < 16) noise->s3 = 1821928721U;
 }
 
-void Noise_init(Noise *noise, uint32_t seed) {
-  noise->m_nextmidpt = 0;
-  noise->m_nextvalue = 0;
-  noise->level = 0;
-  noise->curve = 0;
-  noise->slope = 0;
-  noise->last_update_time = 0.0f;
-  fseed(noise, seed);
-}
+void Noise_init(Noise *noise, uint32_t seed) { fseed(noise, seed); }
 
-float LFNoise2(Noise *noise, float current_time, float freq) {
-  // Calculate the time interval in seconds based on the frequency
-  float interval = 1.0f / freq;  // Interval in seconds
-
-  // Check if it's time to update the noise value
-  if (current_time - noise->last_update_time >= interval) {
-    // Update values for the next segment
-    float prev_value = noise->m_nextvalue;  // Previous random value
-    noise->m_nextvalue = frand2(noise);     // Generate new random value
-    float midpoint = (prev_value + noise->m_nextvalue) * 0.5f;  // Midpoint
-
-    // Calculate the curve for a parabolic trajectory
-    float fseglen = interval;  // Segment length in seconds
-    noise->curve = 2.0f * (midpoint - noise->level - fseglen * noise->slope) /
-                   (fseglen * fseglen + fseglen);
-
-    // Update last update time
-    noise->last_update_time = current_time;
-  }
-
-  // Calculate the current noise level
-  float t = current_time - noise->last_update_time;  // Time since last update
-  noise->slope += noise->curve;                      // Update the slope
-  noise->level += noise->slope;                      // Update the level
-
-  // Ensure the level stays in range [-1, 1]
-  if (noise->level > 1.0f) noise->level = 1.0f;
-  if (noise->level < -1.0f) noise->level = -1.0f;
-
-  // Return the current noise level
-  return noise->level;
-}
 #endif /* NOISE_LIB */

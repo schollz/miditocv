@@ -573,9 +573,10 @@ int main() {
           break;
         case MODE_LFO:
           // mode lfo will set the voltage based on lfo
-          out->voltage_set = get_lfo_value(
-              config->lfo_waveform, ct, config->lfo_period * 1000,
-              config->min_voltage, config->max_voltage, 0, &out->noise);
+          out->voltage_set =
+              get_lfo_value(config->lfo_waveform, ct, config->lfo_period * 1000,
+                            config->min_voltage, config->max_voltage, 0,
+                            &out->noise, &out->slew_lfo);
           // quantize
           out->voltage_current =
               scale_quantize_voltage(config->quantization, config->root_note,

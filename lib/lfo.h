@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "noise.h"
+#include "slew.h"
 
 // Define the possible LFO types
 typedef enum {
@@ -24,7 +25,6 @@ typedef struct {
   float min_val;
   float max_val;
   float phase;
-  Noise noise;
   float transition_start_time;
   int is_transitioning;
 } LFO;
@@ -73,9 +73,21 @@ float square_wave(float t_ms, float period_ms, float min_val, float max_val,
   return value;
 }
 
+float drunk_wave(float t_ms, float period_ms, float min_val, float max_val,
+                 float phase, Noise *noise, Slew *slew) {
+  // check if t_ms mod period_ms is 0
+  if ((int)t_ms % (int)period_ms == 0) {
+    // generate random number between -1 and 1
+    float target = (float)frand2(noise);
+    Slew_set_target(slew, target);
+    Slew_set_duration(slew, period_ms);
+  }
+  Slew_process2(slew, t_ms);
+  return ((slew->current_value + 1.0f) / 2.0f) * (max_val - min_val) + min_val;
+}
 // Get LFO value based on type
 float get_lfo_value(LFO_Type type, float t_ms, float period_ms, float min_val,
-                    float max_val, float phase, Noise *noise) {
+                    float max_val, float phase, Noise *noise, Slew *slew) {
   switch (type) {
     case LFO_TRIANGLE:
       return triangle_wave(t_ms, period_ms, min_val, max_val, phase);
@@ -86,9 +98,7 @@ float get_lfo_value(LFO_Type type, float t_ms, float period_ms, float min_val,
     case LFO_SQUARE:
       return square_wave(t_ms, period_ms, min_val, max_val, phase);
     case LFO_DRUNK:
-      return (LFNoise2(noise, t_ms, 1000.0f / period_ms) + 1.0f / 2.0f) *
-                 (max_val - min_val) +
-             min_val;
+      return drunk_wave(t_ms, period_ms, min_val, max_val, phase, noise, slew);
     default:
       return 0.0f;
   }
