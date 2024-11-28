@@ -17,6 +17,40 @@ function assert(condition, message) {
     }
 }
 
+
+function drawSparkline(index, data) {
+    const canvas = document.getElementById(`sparkline-${index}`);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+
+    // Resize canvas to fit parent
+    const parent = canvas.parentElement;
+    canvas.width = parent.offsetWidth;
+    canvas.height = 50; // Fixed height
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw sparkline
+    const step = canvas.width / (data.length - 1);
+    ctx.beginPath();
+    ctx.strokeStyle = "#000"; // Sparkline color
+    ctx.lineWidth = 1;
+
+    data.forEach((value, i) => {
+        const x = i * step;
+        const y = canvas.height - value * canvas.height;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+
+    ctx.stroke();
+}
+
+function generateSparklineData() {
+    return Array.from({ length: 20 }, () => Math.random()); // Replace with real data
+}
+
 function hash_djb(str) {
     let hash = 5381; // Initialize hash value as in the C code
     let i = 0; // Iterator for the string
@@ -192,6 +226,14 @@ function setupMidiInputListener() {
                     //     // update the scene
                     //     vm.current_scene = scene_num;
                     //     updateLocalScene(scene_num);
+                } else if (sysex.startsWith("spark_")) {
+                    const [_, indexStr, valueStr] = sysex.split("_");
+                    const index = parseInt(indexStr, 10);
+                    const value = parseFloat(valueStr);
+
+                    if (!isNaN(index) && index >= 0 && index < 8) {
+                        vm.updateSparkline(index, value);
+                    }
                 } else if (fields.length == 4) {
                     // check if field [3] is a parameter
                     externalTrigger();
@@ -416,6 +458,25 @@ const app = createApp({
             }
             return notes;
         });
+        const sparklineData = reactive(
+            Array.from({ length: 8 }, () => []) // Initialize with empty arrays for 8 sparklines
+        );
+
+        function updateSparkline(index, value) {
+            const maxDataPoints = 50; // Limit the number of data points per sparkline
+
+            // Add the new value to the data buffer
+            sparklineData[index].push(value);
+
+            // Ensure the buffer size doesn't exceed the maximum
+            if (sparklineData[index].length > maxDataPoints) {
+                sparklineData[index].shift();
+            }
+
+            // Redraw the sparkline
+            drawSparkline(index, sparklineData[index]);
+        }
+
 
         function doBoardReset() {
             send_sysex("diskmode1");
@@ -524,6 +585,11 @@ const app = createApp({
                 Object.assign(selected_output.value, modeDefaults);
             }
         );
+        onMounted(() => {
+            scenes.value[current_scene.value].outputs.forEach((_, index) => {
+                drawSparkline(index, sparklineData[index]); // Initially empty
+            });
+        });
 
         // Debounce function
         function debounce(fn, delay) {
@@ -622,8 +688,10 @@ const app = createApp({
             doBoardReset,
             note_names,
             clockDivisions,
+            updateSparkline,
         };
     },
 });
 
 vm = app.mount('#app');
+
