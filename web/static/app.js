@@ -417,6 +417,9 @@ const app = createApp({
             return notes;
         });
 
+        function doBoardReset() {
+            send_sysex("diskmode1");
+        }
         function toggleActivation(inputName) {
             console.log(`Toggling activation for ${inputName}`);
             midi_input_active.value[inputName] = !midi_input_active.value[inputName];
@@ -631,6 +634,7 @@ const app = createApp({
             midi_input_active,
             midi_input_last_message,
             toggleActivation,
+            doBoardReset,
             note_names,
             clockDivisions,
         };

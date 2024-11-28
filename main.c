@@ -141,17 +141,6 @@ const uint8_t const_colors[8][3] = {
     {97, 0, 97},      // Violet
 };
 
-void midi_event_note_on(char chan, char data1, char data2) {
-  printf("midi_event_note_on: %d %d %d\n", chan, data1, data2);
-}
-
-void midi_event_note_off(char chan, char data1, char data2) {
-  printf("midi_event_note_off: %d %d %d\n", chan, data1, data2);
-}
-
-void midi_event_control_change(char chan, char data1, char data2) {
-  printf("midi_event_control_change: %d %d %d\n", chan, data1, data2);
-}
 void timer_callback_ws2812(bool on, int user_data) {
   for (uint8_t i = 0; i < 8; i++) {
     // uint8_t jj =
@@ -230,9 +219,9 @@ void timer_callback_update_voltage(bool on, int user_data) {
 void midi_note_off(int channel, int note) {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   channel++;  // 1-indexed
-              // #ifdef DEBUG_MIDI
+#ifdef DEBUG_MIDI
   printf("ch=%d note_off=%d\n", channel, note);
-  // #endif
+#endif
   bool outs_with_note_change[8] = {false, false, false, false,
                                    false, false, false, false};
   // check if any outputs are set to midi pitch
@@ -266,9 +255,9 @@ void midi_note_off(int channel, int note) {
 void midi_note_on(int channel, int note, int velocity) {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   channel++;  // 1-indexed
-  // #ifdef DEBUG_MIDI
-  //   printf("ch=%d note_on=%d vel=%d\n", channel, note, velocity);
-  // #endif
+#ifdef DEBUG_MIDI
+  printf("ch=%d note_on=%d vel=%d\n", channel, note, velocity);
+#endif
   // check if any outputs are set to midi pitch
   bool outs_with_note_change[8] = {false, false, false, false,
                                    false, false, false, false};
@@ -307,6 +296,17 @@ void midi_note_on(int channel, int note, int velocity) {
   }
 }
 
+void midi_event_note_on(char chan, char data1, char data2) {
+  midi_note_on(chan, data1, data2);
+}
+
+void midi_event_note_off(char chan, char data1, char data2) {
+  midi_note_off(chan, data1);
+}
+
+void midi_event_control_change(char chan, char data1, char data2) {
+  printf("midi_event_control_change: %d %d %d\n", chan, data1, data2);
+}
 int main() {
   // Set PLL_USB 96MHz
   const uint32_t main_line = 96;
