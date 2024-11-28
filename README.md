@@ -15,6 +15,10 @@ each scene has eight outputs. each output can be configured to a different mode.
 | Code      | key(on,shift) | knob(x,shift) | key(on,shift)  | knob(x,shift) |
 | Sequencer | jump here     | voltage       |                | duration      |
 
+## TODO
+
+- add code mode, Lua + fengari
+
 ## modes
 
 ### manual
