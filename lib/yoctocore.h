@@ -50,8 +50,7 @@ float clock_divisions[19] = {1.0 / 512.0, 1.0 / 256.0, 1.0 / 128.0, 1.0 / 64.0,
                              4.0,         6.0,         8.0,         12.0,
                              16.0,        24.0,        48.0};
 
-typedef struct Config {
-  uint8_t mode;
+typedef struct ConfigMode {
   float min_voltage;
   float max_voltage;
   float slew_time;
@@ -73,7 +72,12 @@ typedef struct Config {
   float release;
   uint8_t linked_to;
   uint8_t probability;
-} Config;
+} ConfigMode;
+
+typedef struct ConfigOut {
+  uint8_t mode;
+  ConfigMode data[8];
+} ConfigOut;
 
 typedef struct NoteHeld {
   uint8_t note;
@@ -93,8 +97,8 @@ typedef struct Out {
 typedef struct Yoctocore {
   // index of the scene
   uint8_t i;
-  // 8 scenes of 8 outputs
-  Config config[8][8];
+  // 8 scenes -> 8 outputs
+  ConfigOut config[8][8];
   // 8 outputs
   Out out[8];
   // debounces
@@ -104,44 +108,46 @@ typedef struct Yoctocore {
 void Yoctocore_init(Yoctocore *self) {
   for (uint8_t output = 0; output < 8; output++) {
     for (uint8_t scene = 0; scene < 8; scene++) {
-      // initialize config
+      for (uint8_t mode = 0; mode < 8; mode++) {
+        // Initialize ConfigMode fields
+        self->config[scene][output].data[mode].quantization = 0;
+        self->config[scene][output].data[mode].v_oct = 1.0f;
+        self->config[scene][output].data[mode].root_note = 48;
+        self->config[scene][output].data[mode].min_voltage = 0.0f;
+        self->config[scene][output].data[mode].max_voltage = 5.0f;
+        self->config[scene][output].data[mode].slew_time = 0.0f;
+        self->config[scene][output].data[mode].portamento = 0.0f;
+        self->config[scene][output].data[mode].midi_channel = 0;
+        self->config[scene][output].data[mode].midi_priority_channel = 0;
+        self->config[scene][output].data[mode].midi_cc = 0;
+        self->config[scene][output].data[mode].clock_tempo = 120.0f;
+        self->config[scene][output].data[mode].clock_division = 9;
+        self->config[scene][output].data[mode].lfo_period = 0.5f;
+        self->config[scene][output].data[mode].lfo_depth = 0.5f;
+        self->config[scene][output].data[mode].lfo_waveform = 0;
+        self->config[scene][output].data[mode].attack = 0.1f;
+        self->config[scene][output].data[mode].decay = 0.1f;
+        self->config[scene][output].data[mode].sustain = 0.5f;
+        self->config[scene][output].data[mode].release = 0.5f;
+        self->config[scene][output].data[mode].linked_to = 0;
+        self->config[scene][output].data[mode].probability = 100;
+      }
+      // Initialize the mode for the ConfigOut
       self->config[scene][output].mode = 0;
-      self->config[scene][output].quantization = 0;
-      self->config[scene][output].v_oct = 1;
-      self->config[scene][output].root_note = 48;
-      self->config[scene][output].min_voltage = 0;
-      self->config[scene][output].max_voltage = 5;
-      self->config[scene][output].slew_time = 0;
-      self->config[scene][output].portamento = 0;
-      self->config[scene][output].midi_channel = 0;
-      self->config[scene][output].midi_priority_channel = 0;
-      self->config[scene][output].midi_cc = 0;
-      self->config[scene][output].clock_tempo = 120;
-      self->config[scene][output].clock_division = 9;
-      self->config[scene][output].lfo_period = 0.5;
-      self->config[scene][output].lfo_depth = 0.5;
-      self->config[scene][output].lfo_waveform = 0;
-      self->config[scene][output].attack = 0.1;
-      self->config[scene][output].decay = 0.1;
-      self->config[scene][output].sustain = 0.5;
-      self->config[scene][output].release = 0.5;
-      self->config[scene][output].linked_to = 0;
-      self->config[scene][output].probability = 100;
     }
-    // initialize lfo
+
+    // Initialize other fields for the output
     Noise_init(&self->out[output].noise, time_us_32());
-    // initialize slew
-    Slew_init(&self->out[output].slew, 0, 0);
-    // initialize portamento
-    Slew_init(&self->out[output].portamento, 0, 0);
-    // initialize adsr
+    Slew_init(&self->out[output].slew, 0.0f, 0.0f);
+    Slew_init(&self->out[output].portamento, 0.0f, 0.0f);
     ADSR_init(&self->out[output].adsr, 100.0f, 500.0f, 0.707f, 1000.0f, 5.0f);
-    // initialize voltage
-    self->out[output].voltage_current = 0;
-    self->out[output].voltage_set = 0;
+    self->out[output].voltage_current = 0.0f;
+    self->out[output].voltage_set = 0.0f;
     self->out[output].note_on.note = 0;
     self->out[output].note_on.time_on = 0;
   }
+
+  // Initialize debounce save
   self->debounce_save = 0;
 }
 
