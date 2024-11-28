@@ -31,6 +31,20 @@ bool usb_midi_present = false;
 #include "lib/midi_comm.h"
 #endif
 
+// needed for lua
+#include <errno.h>
+#include <sys/types.h>
+
+int _link(const char *oldpath, const char *newpath) {
+  errno = ENOSYS;
+  return -1;
+}
+
+int _unlink(const char *pathname) {
+  errno = ENOSYS;
+  return -1;
+}
+
 // utility functions
 #define util_clamp(x, a, b) ((x) > (b) ? (b) : ((x) < (a) ? (a) : (x)))
 
@@ -74,6 +88,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/spectra.h"
 #include "lib/spiral.h"
 #include "lib/yoctocore.h"
+#include "uart_rx.pio.h"
 
 Yoctocore yocto;
 DAC dac;
@@ -85,39 +100,10 @@ const uint8_t button_num = 9;
 const uint8_t button_pins[9] = {1, 8, 20, 21, 22, 26, 27, 28, 29};
 uint8_t button_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-#define UART_ID uart1
-#define BAUD_RATE 31250
-#define DATA_BITS 8
-#define STOP_BITS 1
-#define PARITY UART_PARITY_NONE
-
 #ifdef INCLUDE_MIDI
 #include "lib/midi_comm.h"
 #include "lib/midicallback.h"
 #endif
-
-void setup_uart() {
-  // Set up our UART with a basic baud rate.
-  uart_init(UART_ID, BAUD_RATE);
-
-  // Set the TX and RX pins by using the function select on the GPIO
-  // Set datasheet for more information on function select
-  gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
-
-  // Actually, we want a different speed
-  // The call will return the actual baud rate selected, which will be as close
-  // as possible to that requested
-  int __unused actual = uart_set_baudrate(UART_ID, BAUD_RATE);
-
-  // // // Set UART flow control CTS/RTS, we don't want these, so turn them off
-  // uart_set_hw_flow(UART_ID, false, false);
-
-  // Set our data format
-  uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
-
-  // // Turn off FIFO's - we want to do this character by character
-  uart_set_fifo_enabled(UART_ID, false);
-}
 
 void timer_callback_outputs(bool on, int user_data) {
   printf("[timer_callback_outputs]: %d %d\n", on, user_data);
@@ -163,6 +149,9 @@ void midi_event_note_off(char chan, char data1, char data2) {
   printf("midi_event_note_off: %d %d %d\n", chan, data1, data2);
 }
 
+void midi_event_control_change(char chan, char data1, char data2) {
+  printf("midi_event_control_change: %d %d %d\n", chan, data1, data2);
+}
 void timer_callback_ws2812(bool on, int user_data) {
   for (uint8_t i = 0; i < 8; i++) {
     // uint8_t jj =
@@ -365,11 +354,16 @@ int main() {
   tusb_init();
 #endif
 
-  // setup midi external
-  setup_uart();
+  // setup libmidi
   midi_init();
   midi_register_event_handler(EVT_CHAN_NOTE_ON, midi_event_note_on);
   midi_register_event_handler(EVT_CHAN_NOTE_OFF, midi_event_note_off);
+  midi_register_event_handler(EVT_CHAN_CONTROL_CHANGE,
+                              midi_event_control_change);
+
+  // setup pio for uart
+  uint offset = pio_add_program(pio0, &uart_rx_program);
+  uart_rx_program_init(pio0, 0, offset, UART_RX_PIN, 31250);
 
   // // // load the Scene data
   // Scene_load_data();
@@ -517,6 +511,7 @@ int main() {
   printf("Starting main loop\n");
 
   uint32_t time_last_midi = ct;
+
   while (true) {
 #ifdef INCLUDE_MIDI
     tud_task();
@@ -524,32 +519,9 @@ int main() {
                    midi_start, midi_continue, midi_stop, midi_timing);
 #endif
 
-    ct = to_ms_since_boot(get_absolute_time());
-    while (uart_is_readable(UART_ID)) {
-      if (ct - time_last_midi > 1000) {
-        midi_reset_state();
-      }
-      time_last_midi = ct;
-      uint16_t ch = (uint16_t)uart_getc(UART_ID);
-      // // invert
-      // ch = ~ch;
-      // // reverse bits
-      // ch = ((ch & 0x55) << 1) | ((ch & 0xAA) >> 1);
-      // ch = ((ch & 0x33) << 2) | ((ch & 0xCC) >> 2);
-      // ch = ((ch & 0x0F) << 4) | ((ch & 0xF0) >> 4);
-
-      if (ch > 0) {
-        // print bits
-        char buffer[16];
-        // clear buffer
-        buffer[0] = '\0';
-        for (int i = 15; i >= 0; i--) {
-          sprintf(buffer, "%s%d", buffer, (ch >> i) & 1);
-        }
-        printf("MIDI: %2x %s\n", ch, buffer);
-        // printf("MIDI: %2x\n", ch);
-        // midi_receive_byte(ch);
-      }
+    if (!pio_sm_is_rx_fifo_empty(pio0, 0)) {
+      uint8_t ch = uart_rx_program_getc(pio0, 0);
+      midi_receive_byte(ch);
     }
 
     // process timers

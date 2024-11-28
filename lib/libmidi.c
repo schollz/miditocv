@@ -403,17 +403,14 @@ status_t midi_receive_byte(char byte) {
     g_debug_last_status_byte = byte;
     return rx_status_sys_realtime_byte(byte);
   } else if ((byte & SYS_COMMON_MASK) == SYS_COMMON_MASK) {
-    printf("System common byte: %d\n", byte);
     // The byte is a system common status byte.
     g_debug_last_status_byte = byte;
     return rx_status_sys_common_byte(byte);
   } else if (byte & CHAN_STATUS_MASK) {
-    printf("Channel byte: %d\n", byte);
     // The byte is a channel voice or channel mode status byte.
     g_debug_last_status_byte = byte;
     return rx_status_channel_byte(byte);
   } else {
-    printf("Data byte: %d\n", byte);
     // The byte is a regular data byte.
     g_debug_last_data_byte = byte;
     return rx_data_byte(byte);

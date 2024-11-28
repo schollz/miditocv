@@ -1,6 +1,9 @@
 # Set minimum required version of CMake
 cmake_minimum_required(VERSION 3.12)
 
+# needed for building lua without warnings
+cmake_policy(SET CMP0076 NEW)
+
 # Pull in PICO SDK (must be before project)
 include(pico_sdk_import.cmake)
 
@@ -35,9 +38,8 @@ add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lua-5.4.6/src)
 
 # generate pio
 pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/WS2812.pio)
+pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/uart_rx.pio)
 # pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/buttonmatrix3.pio)
-# pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/onewiremidi.pio)
-# pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/uart_rx.pio)
 
 # Create map/bin/hex/uf2 files
 pico_add_extra_outputs(${PROJECT_NAME})
@@ -54,8 +56,6 @@ target_link_libraries(${PROJECT_NAME}
     hardware_i2c
     hardware_sync
     hardware_spi
-    hardware_uart
-    hardware_irq
     lua
 )
 
