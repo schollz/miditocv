@@ -198,10 +198,12 @@ void timer_callback_ws2812(bool on, int user_data) {
                   0);  // Set LED with gamma-corrected brightness
     }
   }
+  const int leds_second_8[8] = {0, 1, 2, 4, 3, 7, 6, 5};
   for (uint8_t i = 8; i < 16; i++) {
     Config *config = &yocto.config[yocto.i][i - 8];
-    WS2812_fill(&ws2812, i, const_colors[config->mode][0],
-                const_colors[config->mode][1], const_colors[config->mode][2]);
+    WS2812_fill(&ws2812, leds_second_8[i - 8] + 8,
+                const_colors[config->mode][0], const_colors[config->mode][1],
+                const_colors[config->mode][2]);
   }
   WS2812_show(&ws2812);
 }
