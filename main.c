@@ -477,7 +477,7 @@ int main() {
                    timer_callback_update_voltage, 0);
   SimpleTimer_start(&pool_timer[11], ct);
   // setup a timer at 1 second to update sparkline
-  SimpleTimer_init(&pool_timer[12], 1000.0f / 1000.0f * 30, 1.0f, 0,
+  SimpleTimer_init(&pool_timer[12], 1000.0f / 100.0f * 30, 1.0f, 0,
                    timer_callback_update_sparkline, 0);
   SimpleTimer_start(&pool_timer[12], ct);
 

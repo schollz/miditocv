@@ -32,6 +32,11 @@ function drawSparkline(index, data) {
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Constants for scaling
+    const minValue = -5;
+    const maxValue = 10;
+    const valueRange = maxValue - minValue;
+
     // Draw sparkline
     const step = canvas.width / (data.length - 1);
     ctx.beginPath();
@@ -40,12 +45,17 @@ function drawSparkline(index, data) {
 
     data.forEach((value, i) => {
         const x = i * step;
-        const y = canvas.height - value * canvas.height;
+
+        // Scale the value from -5 to +10 range to canvas height
+        const normalizedValue = (value - minValue) / valueRange; // Normalize to 0-1
+        const y = canvas.height - normalizedValue * canvas.height; // Invert for canvas y-axis
+
         i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
 
     ctx.stroke();
 }
+
 
 function generateSparklineData() {
     return Array.from({ length: 20 }, () => Math.random()); // Replace with real data
