@@ -5,19 +5,37 @@
 #include <stdlib.h>
 #include <unistd.h>  // For sleep
 
+#include "script.c"
+
 int main() {
   lua_State *L = luaL_newstate();  // Create a new Lua state
   luaL_openlibs(L);                // Open standard libraries
 
-  // Define the Lua script directly as a string
-  const char *lua_code =
-      "function random_number()\n"
-      "  return math.random(1, 10) + 100.123\n"
+  // Load Lua script from embedded string
+  if (luaL_loadbuffer(L, (const char *)script_lua, script_lua_len,
+                      "embedded_script") != LUA_OK) {
+    printf("Error loading Lua script: %s\n", lua_tostring(L, -1));
+    lua_close(L);
+    return 1;
+  }
+
+  // Execute the loaded Lua script
+  if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
+    printf("Error executing Lua script: %s\n", lua_tostring(L, -1));
+    lua_close(L);
+    return 1;
+  }
+
+  // Define the new Lua function addone()
+  const char *addone_code =
+      "function addone()\n"
+      "  local num = random_number()\n"
+      "  return num + 0.1\n"
       "end";
 
-  // Run the Lua script to define the function
-  if (luaL_dostring(L, lua_code) != LUA_OK) {
-    printf("Error: %s\n", lua_tostring(L, -1));
+  // Execute the new Lua function definition
+  if (luaL_dostring(L, addone_code) != LUA_OK) {
+    printf("Error defining addone function: %s\n", lua_tostring(L, -1));
     lua_close(L);
     return 1;
   }
@@ -27,7 +45,7 @@ int main() {
 
   // Call the Lua function and get the result
   for (int i = 0; i < 5; i++) {
-    lua_getglobal(L, "random_number");      // Get the function from Lua
+    lua_getglobal(L, "addone");             // Get the function from Lua
     if (lua_pcall(L, 0, 1, 0) != LUA_OK) {  // Call the function
       printf("Error: %s\n", lua_tostring(L, -1));
       lua_close(L);
