@@ -123,6 +123,13 @@ button,
     transition: all 0.2s ease;
 }
 
+/* Add the pressed effect */
+button:active,
+.button:active {
+    box-shadow: 2px 2px 0 #000;
+    transform: translate(2px, 2px);
+}
+
 /* button:hover,
 .button:hover {
     box-shadow: 6px 6px 0 #000;

@@ -452,49 +452,33 @@ const app = createApp({
 
         const defaultValues = {
             0: {
-                min_voltage: -5,
-                max_voltage: 10,
-                slew_time: 0,
-                portamento: 0,
                 quantization: 0,
             },
             1: {
-                min_voltage: -5,
-                max_voltage: 10,
-                slew_time: 0,
-                portamento: 0,
                 quantization: 1,
-                midi_channel: 0,
-                midi_priority_channel: 0,
+                root_note: 60,
+                min_voltage: 0,
+                max_voltage: 10,
+                probability: 100,
             },
             2: {
-                min_voltage: 0,
-                max_voltage: 10,
-                midi_channel: 0,
-                midi_priority_channel: 0,
+
             },
             3: {
-                midi_channel: 0,
-                midi_priority_channel: 0,
-                midi_cc: 0,
+
             },
             4: {
-                midi_channel: 0,
                 min_voltage: 0,
-                max_voltage: 5,
             },
             5: {
-                clock_tempo: 120,
-                clock_division: 1,
                 min_voltage: 0,
-                max_voltage: 5,
+
             },
             6: {
-                lfo_waveform: 0,
-                lfo_period: 1,
-                lfo_depth: 1,
-                min_voltage: -5,
-                max_voltage: 5,
+                quantization: 0,
+            },
+            7: {
+
             },
         };
 
@@ -531,14 +515,15 @@ const app = createApp({
             }
         )
 
-        // // Watcher for mode changes to update default values
-        // watch(
-        //     () => selected_output.value.mode,
-        //     (newMode) => {
-        //         const modeDefaults = defaultValues[newMode] || {};
-        //         Object.assign(selected_output.value, modeDefaults);
-        //     }
-        // );
+        // Watcher for mode changes to update default values
+        watch(
+            () => selected_output.value.mode,
+            (newMode) => {
+                const modeDefaults = defaultValues[newMode] || {};
+                console.log(`Setting defaults for mode ${newMode}:`, modeDefaults);
+                Object.assign(selected_output.value, modeDefaults);
+            }
+        );
 
         // Debounce function
         function debounce(fn, delay) {
