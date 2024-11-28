@@ -1,0 +1,3 @@
+e g b (med)
+c c b (high)
+a g g (low)
