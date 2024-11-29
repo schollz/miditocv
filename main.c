@@ -80,6 +80,7 @@ WS2812 ws2812;
 SimpleTimer pool_timer[16];
 KnobChange pool_knobs[8];
 MCP3208 mcp3208;
+bool blink_on = false;
 const uint8_t button_num = 9;
 const uint8_t button_pins[9] = {1, 8, 20, 21, 22, 26, 27, 28, 29};
 uint8_t button_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -174,9 +175,14 @@ void timer_callback_ws2812(bool on, int user_data) {
   const int leds_second_8[8] = {0, 1, 2, 4, 3, 7, 6, 5};
   for (uint8_t i = 8; i < 16; i++) {
     Config *config = &yocto.config[yocto.i][i - 8];
-    WS2812_fill(&ws2812, leds_second_8[i - 8] + 8,
-                const_colors[config->mode][0], const_colors[config->mode][1],
-                const_colors[config->mode][2]);
+    Out *out = &yocto.out[i - 8];
+    if (out->tuning && blink_on) {
+      WS2812_fill(&ws2812, leds_second_8[i - 8] + 8, 0, 0, 0);
+    } else {
+      WS2812_fill(&ws2812, leds_second_8[i - 8] + 8,
+                  const_colors[config->mode][0], const_colors[config->mode][1],
+                  const_colors[config->mode][2]);
+    }
   }
   WS2812_show(&ws2812);
 }
@@ -203,6 +209,8 @@ void timer_callback_sparkline(bool on, int user_data) {
     sparkline_updater = 0;
   }
 }
+
+void timer_callback_blink(bool on, int user_data) { blink_on = on; }
 
 void midi_note_off(int channel, int note) {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
@@ -459,21 +467,26 @@ int main() {
   SimpleTimer_init(&pool_timer[12], 1000.0f / 10.0f * 30, 1.0f, 0,
                    timer_callback_sparkline, 0);
   SimpleTimer_start(&pool_timer[12], ct);
+  // blinking timer
+  SimpleTimer_init(&pool_timer[13], 1000.0f / 370.0f * 30, 1.0f, 0,
+                   timer_callback_blink, 0);
+  SimpleTimer_start(&pool_timer[13], ct);
 
   uint32_t ct_last = ct;
 
   printf("Starting main loop\n");
 
   uint32_t time_last_midi = ct;
+  bool button_shift = false;
 
-  sleep_ms(2000);
-  print_memory_usage();
-  runlua();
-  print_memory_usage();
-  sleep_ms(2000);
-  runlua();
-  print_memory_usage();
-  sleep_ms(2000);
+  // sleep_ms(2000);
+  // print_memory_usage();
+  // runlua();
+  // print_memory_usage();
+  // sleep_ms(2000);
+  // runlua();
+  // print_memory_usage();
+  // sleep_ms(2000);
 
   while (true) {
 #ifdef INCLUDE_MIDI
@@ -510,9 +523,17 @@ int main() {
               // trigger the envelope
               ADSR_gate(&out->adsr, val, ct);
               break;
+            case MODE_PITCH:
+              if (button_shift && val) {
+                // toggle tuning mode
+                out->tuning = !out->tuning;
+                printf("[out%d] tuning %d\n", i + 1, out->tuning);
+              }
             default:
               break;
           }
+        } else {
+          button_shift = val;
         }
       }
     }
@@ -587,6 +608,9 @@ int main() {
           // portamento voltage
           out->voltage_current =
               Slew_process(&out->portamento, out->voltage_current, ct);
+          if (out->tuning) {
+            out->voltage_current = 0;
+          }
           break;
         case MODE_CLOCK:
           break;

@@ -89,6 +89,7 @@ typedef struct Out {
   Slew slew_lfo;
   NoteHeld note_on;
   Noise noise;
+  bool tuning;
 } Out;
 
 typedef struct Yoctocore {
@@ -144,6 +145,7 @@ void Yoctocore_init(Yoctocore *self) {
     self->out[output].voltage_set = 0;
     self->out[output].note_on.note = 0;
     self->out[output].note_on.time_on = 0;
+    self->out[output].tuning = false;
   }
   self->debounce_save = 0;
 }
