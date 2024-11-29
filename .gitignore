@@ -61,3 +61,5 @@ dkms.conf
 lib/tests/spiral/data.txt
 lib/tests/spiral/out
 lib/tests/scales/out
+lib/script.h
+lib/sequins.h

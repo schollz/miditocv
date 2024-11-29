@@ -31,20 +31,6 @@ bool usb_midi_present = false;
 #include "lib/midi_comm.h"
 #endif
 
-// needed for lua
-#include <errno.h>
-#include <sys/types.h>
-
-int _link(const char *oldpath, const char *newpath) {
-  errno = ENOSYS;
-  return -1;
-}
-
-int _unlink(const char *pathname) {
-  errno = ENOSYS;
-  return -1;
-}
-
 // utility functions
 #define util_clamp(x, a, b) ((x) > (b) ? (b) : ((x) < (a) ? (a) : (x)))
 
@@ -68,16 +54,13 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "my_debug.h"
 #include "sd_card.h"
 //
-#include <lauxlib.h>
-#include <lua.h>
-#include <lualib.h>
-//
 #include "lib/WS2812.h"
 #include "lib/adsr.h"
 #include "lib/dac.h"
 #include "lib/filterexp.h"
 #include "lib/knob_change.h"
 #include "lib/libmidi.h"
+#include "lib/luavm.h"
 #include "lib/mcp3208.h"
 #include "lib/memusage.h"
 #include "lib/pcg_basic.h"
@@ -89,6 +72,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/spiral.h"
 #include "lib/yoctocore.h"
 #include "uart_rx.pio.h"
+//
 
 Yoctocore yocto;
 DAC dac;
@@ -212,8 +196,8 @@ void timer_callback_update_voltage(bool on, int user_data) {
 uint8_t sparkline_updater = 0;
 
 void timer_callback_sparkline(bool on, int user_data) {
-  printf("spark_%d_%2.1f", sparkline_updater,
-         yocto.out[sparkline_updater].voltage_current);
+  // printf("spark_%d_%2.1f", sparkline_updater,
+  //        yocto.out[sparkline_updater].voltage_current);
   sparkline_updater++;
   if (sparkline_updater >= 8) {
     sparkline_updater = 0;
@@ -481,6 +465,15 @@ int main() {
   printf("Starting main loop\n");
 
   uint32_t time_last_midi = ct;
+
+  sleep_ms(2000);
+  print_memory_usage();
+  runlua();
+  print_memory_usage();
+  sleep_ms(2000);
+  runlua();
+  print_memory_usage();
+  sleep_ms(2000);
 
   while (true) {
 #ifdef INCLUDE_MIDI

@@ -6,10 +6,14 @@ GOVERSION = go1.21.11
 GOBIN = $(HOME)/go/bin
 GOINSTALLPATH = $(GOBIN)/$(GOVERSION)
 
-yoctocore: pico-extras build 
+yoctocore: luascripts pico-extras build 
 	make -C build -j$(NPROCS)
 	echo "build success"
 	cp build/*.uf2 yoctocore.uf2
+
+luascripts:
+	xxd -i lib/script.lua > lib/script.h
+	xxd -i lib/sequins.lua > lib/sequins.h
 
 build: 
 	mkdir -p build
@@ -42,6 +46,8 @@ clean:
 	rm -rf build
 	rm -rf *.wav
 	rm -rf lib/biquad.h
+	rm -rf lib/script.h
+	rm -rf lib/sequins.h
 
 cloc:
 	cloc --exclude-list-file=dev/.clocignore --exclude-lang="make,CMake,D,Markdown,JSON,INI,Bourne Shell,TOML,TypeScript,YAML,Assembly" *
