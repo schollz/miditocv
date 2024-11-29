@@ -89,7 +89,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     PIN_SPI_CLK=18
     PIN_SPI_RX=16
     PIN_SPI_TX=19
-    UART_RX_PIN=9
+    MIDI_RX_PIN=9
     WS2812_PIN=7
     WS2812_SM=2
     WS2812_NUM_LEDS=16
@@ -98,7 +98,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     REFERENCE_5V=5.0
     MAX_NOTE_HOLD_TIME_MS=30000
     # # settings
-    # INCLUDE_MIDI=1
+    INCLUDE_MIDI=1
 
     # debugging
     # DEBUG_MIDI=1
@@ -107,18 +107,19 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     USBD_PID=0x1836
 )
 
-# # uncomment these lines to include midi
-# target_link_libraries(${PROJECT_NAME} 
-#     tinyusb_device
-#     tinyusb_board
-# )
-# pico_enable_stdio_usb(${PROJECT_NAME} 0)
-# pico_enable_stdio_uart(${PROJECT_NAME} 1)
-# target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
-# uncomment these lines to have normal USB
-pico_enable_stdio_usb(${PROJECT_NAME} 1)
+# if INCLUDE_MIDI
+target_link_libraries(${PROJECT_NAME} 
+    tinyusb_device
+    tinyusb_board
+)
+pico_enable_stdio_usb(${PROJECT_NAME} 0)
 pico_enable_stdio_uart(${PROJECT_NAME} 1)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+
+# if NOT INCLUDE_MIDI
+# pico_enable_stdio_usb(${PROJECT_NAME} 1)
+# pico_enable_stdio_uart(${PROJECT_NAME} 1)
 
 
 pico_add_extra_outputs(${PROJECT_NAME})

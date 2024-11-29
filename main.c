@@ -81,6 +81,7 @@ SimpleTimer pool_timer[16];
 KnobChange pool_knobs[8];
 MCP3208 mcp3208;
 bool blink_on = false;
+bool sparkline_do_update = false;
 const uint8_t button_num = 9;
 const uint8_t button_pins[9] = {1, 8, 20, 21, 22, 26, 27, 28, 29};
 uint8_t button_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -199,17 +200,6 @@ void timer_callback_update_voltage(bool on, int user_data) {
   DAC_update(&dac);
 }
 
-uint8_t sparkline_updater = 0;
-
-void timer_callback_sparkline(bool on, int user_data) {
-  // printf("spark_%d_%2.1f", sparkline_updater,
-  //        yocto.out[sparkline_updater].voltage_current);
-  sparkline_updater++;
-  if (sparkline_updater >= 8) {
-    sparkline_updater = 0;
-  }
-}
-
 void timer_callback_blink(bool on, int user_data) { blink_on = on; }
 
 void midi_note_off(int channel, int note) {
@@ -254,6 +244,26 @@ void midi_note_on(int channel, int note, int velocity) {
 #ifdef DEBUG_MIDI
   printf("ch=%d note_on=%d vel=%d\n", channel, note, velocity);
 #endif
+  // special commands
+  // 9F 01 01
+  if (channel == 16 && note == 1 && velocity == 1) {
+    char sparkline_update[42];
+    sparkline_update[0] = '\0';
+    for (uint8_t i = 0; i < 8; i++) {
+      if (i == 0) {
+        sprintf(sparkline_update, "%d",
+                (int)roundf(linlin(yocto.out[i].voltage_current, -5.0f, 10.0f,
+                                   0.0f, 9990.0f)));
+      } else {
+        sprintf(sparkline_update, "%s_%d", sparkline_update,
+                (int)roundf(linlin(yocto.out[i].voltage_current, -5.0f, 10.0f,
+                                   0.0f, 9999.0f)));
+      }
+    }
+    printf("%s\n", sparkline_update);
+    return;
+  }
+
   // check if any outputs are set to midi pitch
   bool outs_with_note_change[8] = {false, false, false, false,
                                    false, false, false, false};
@@ -360,7 +370,7 @@ int main() {
 
   // setup pio for uart
   uint offset = pio_add_program(pio0, &uart_rx_program);
-  uart_rx_program_init(pio0, 0, offset, UART_RX_PIN, 31250);
+  uart_rx_program_init(pio0, 0, offset, MIDI_RX_PIN, 31250);
 
   // // // load the Scene data
   // Scene_load_data();
@@ -463,10 +473,6 @@ int main() {
   SimpleTimer_init(&pool_timer[11], 1000.0f / 4.0f * 30, 1.0f, 0,
                    timer_callback_update_voltage, 0);
   SimpleTimer_start(&pool_timer[11], ct);
-  // setup a timer at 1 second to print sparkline
-  SimpleTimer_init(&pool_timer[12], 1000.0f / 10.0f * 30, 1.0f, 0,
-                   timer_callback_sparkline, 0);
-  SimpleTimer_start(&pool_timer[12], ct);
   // blinking timer
   SimpleTimer_init(&pool_timer[13], 1000.0f / 370.0f * 30, 1.0f, 0,
                    timer_callback_blink, 0);

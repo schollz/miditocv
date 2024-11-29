@@ -154,6 +154,7 @@ typedef struct Config {
   float release;
   uint8_t linked_to;
   uint8_t probability;
+  bool sparkline_do_update;
 } Config;
 
 `;
@@ -240,6 +241,7 @@ function setupMidiInputListener() {
                 }
                 // console.log(`[recv] ${sysex}`);
                 fields = sysex.split(" ");
+                fields_ = sysex.split("_");
                 // see if it starts with version=
                 if (sysex.startsWith("v")) {
                     //console.log(`[version] ${sysex}`);
@@ -251,15 +253,17 @@ function setupMidiInputListener() {
                     //     // update the scene
                     //     vm.current_scene = scene_num;
                     //     updateLocalScene(scene_num);
-                } else if (sysex.startsWith("spark_")) {
-                    // console.log(`[sparkline] ${sysex}`);
-                    const [_, indexStr, valueStr] = sysex.split("_");
-                    const index = parseInt(indexStr, 10);
-                    const value = parseFloat(valueStr);
-
-                    if (!isNaN(index) && index >= 0 && index < 8) {
-                        vm.updateSparkline(index, value);
+                } else if (fields_.length == 8) {
+                    // update sparkline with each value
+                    // iterate over every field
+                    last_time_of_message_received = Date.now();
+                    for (let i = 0; i < 8; i++) {
+                        let value = parseFloat(fields_[i]);
+                        // convert range 0-999 to -5 to 10
+                        vm.updateSparkline(i, value / 9999.0 * 15.0 - 5);
                     }
+                    // is connected
+                    vm.device_connected = true
                 } else if (fields.length == 4) {
                     // check if field [3] is a parameter
                     externalTrigger();
@@ -411,17 +415,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.chrome && window.chrome.app) {
         setupMidi();
 
-        // setTimeout(() => {
-        //     setInterval(() => {
-        //         if (Date.now() - last_time_of_message_received > 317 * 2) {
-        //             window.yoctocoreDevice && send_sysex("version0");
-        //         }
-        //         if (Date.now() - last_time_of_message_received > 317 * 4) {
-        //             vm.device_connected = false;
-        //             setupMidi();
-        //         }
-        //     }, 317);
-        // }, 2000);
+        // ask for sparkline data (doubles as check if connected)
+        const sparkline_update_time_ms = 50;
+        setTimeout(() => {
+            setInterval(() => {
+                if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
+                    window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
+                }
+                if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
+                    vm.device_connected = false;
+                    setupMidi();
+                }
+            }, sparkline_update_time_ms);
+        }, 2000);
 
     }
 
