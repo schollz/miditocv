@@ -143,6 +143,19 @@
       margin-bottom: 0.25em;
     }
   </style>
+  <!-- codemirror -->
+  <script src="/static/codemirror.js"></script>
+  <link rel="stylesheet" href="/static/codemirror.css">
+  <script src="/static/lua.js"></script>
+  <script src="/static/lua.vm.js"></script>
+  <style>
+    .CodeMirror {
+      border: black;
+      border-style: solid;
+      box-shadow: 6px 6px black;
+      border-width: 1.5px;
+    }
+  </style>
 </head>
 
 <body>
@@ -528,10 +541,61 @@
             step="1" />
         </div>
       </div>
+
+      <div class="row" style="padding-left:1.5em;">
+        <div class="col-6">
+          <textarea id="mytext">
+print("hello world")
+</textarea>
+        </div>
+        <div class="col col-1" style="padding-left:1em;">
+          <button onclick=" executeLua(myCodeMirror.getValue(), true); return false">Run</button>
+        </div>
+        <div class="col col-4">
+          <pre id="output"></pre>
+        </div>
+      </div>
+      <div class="row">
+
+      </div>
     </div>
   </div>
 
   <script src="/static/app.js"></script>
+  <script>
+    // CodeMirror
+    var myCodeMirror = CodeMirror.fromTextArea(document.getElementById('mytext'));
+    // add line numbers
+    myCodeMirror.setOption("lineNumbers", true);
+    // set size
+    myCodeMirror.setSize("100%", "100%");
+    //myCodeMirror.setSize(screen.width*0.6, screen.height*0.2);
+
+    // Execution
+    var outputElement = document.getElementById('output')
+    emscripten.print = function (x) {
+      outputElement.textContent = (outputElement.textContent ? outputElement.textContent + '\n' : '') + x;
+    }
+
+    // load data from /static/sequins.lua
+    let sequins_lua = "";
+    fetch('/static/sequins.lua')
+      .then(response => response.text())
+      .then(data => {
+        sequins_lua = data;
+      });
+    function executeLua(code, clear) {
+      if (clear) {
+        outputElement.style.color = null;
+        outputElement.textContent = '';
+      }
+      try {
+        L.execute(sequins_lua + code);
+      } catch (e) {
+        outputElement.style.color = " red"; outputElement.textContent = e.toString();
+      }
+    } 
+  </script>
 </body>
 
 </html>
