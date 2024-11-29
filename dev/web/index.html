@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>yoctocore</title>
+
+    <style>
+        @font-face {
+            font-family: Glass;
+            src: url(Glass_TTY_VT220.ttf) format("truetype");
+        }
+
+        html,
+        input,
+        label {
+            font-family: Glass;
+            font-size: 18pt;
+            color: white;
+            background: black;
+            text-shadow: rgb(141, 141, 141) 0px 0px 3px;
+        }
+
+        input {
+            padding: 8px;
+            margin-top: 12px;
+        }
+
+        h2,
+        h3 {
+            margin-bottom: 8px;
+            margin-top: 0;
+        }
+
+
+        /* Ensure the image fills the screen while maintaining aspect ratio and cropping */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            /* Full viewport height */
+            overflow: hidden;
+            /* Prevent scrolling */
+        }
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* Ensure the image fills the screen and crops excess */
+            position: absolute;
+        }
+
+        /* Image map clickable */
+        area {
+            cursor: pointer;
+        }
+
+        #mc_embed_shell {
+            z-index: 10000;
+            /* hide */
+            color: #fff;
+            position: absolute;
+            top: 16px;
+            left: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <img id="mainImage" src="/1.jpg" usemap="#image-map">
+    <!-- https://www.fla-shop.com/image-map/ -->
+    <map name="image-map">
+        <area target="" alt="" title="midi trsa" href="#" coords="111,100,179,189" shape="rect"></area>
+        <area target="" alt="" title="midi trsb" href="#" coords="871,106,933,188" shape="rect"></area>
+        <area target="" alt="" title="out1" href="#" coords="194,99,262,191" shape="rect"></area>
+        <area target="" alt="" title="out2" href="#" coords="279,95,336,188" shape="rect"></area>
+        <area target="" alt="" title="out3" href="#" coords="363,96,416,183" shape="rect"></area>
+        <area target="" alt="" title="out4" href="#" coords="445,97,505,178" shape="rect"></area>
+        <area target="" alt="" title="out5" href="#" coords="535,98,589,182" shape="rect"></area>
+        <area target="" alt="" title="out6" href="#" coords="620,88,675,188" shape="rect"></area>
+        <area target="" alt="" title="out7" href="#" coords="705,94,768,191" shape="rect"></area>
+        <area target="" alt="" title="out8" href="#" coords="782,85,840,189" shape="rect"></area>
+        <area target="" alt="" title="knob1" href="#" coords="137,198,213,331" shape="rect"></area>
+        <area target="" alt="" title="knob2" href="#" coords="235,207,304,336" shape="rect"></area>
+        <area target="" alt="" title="knob3" href="#" coords="330,215,407,324" shape="rect"></area>
+        <area target="" alt="" title="knob4" href="#" coords="441,211,502,323" shape="rect"></area>
+        <area target="" alt="" title="knob5" href="#" coords="542,208,599,329" shape="rect"></area>
+        <area target="" alt="" title="knob6" href="#" coords="634,209,698,318" shape="rect"></area>
+        <area target="" alt="" title="knob7" href="#" coords="734,212,787,317" shape="rect"></area>
+        <area target="" alt="" title="knob8" href="#" coords="839,207,895,319" shape="rect"></area>
+        <area target="" alt="" title="15v in" href="#" coords="15,312,106,379" shape="rect"></area>
+        <area target="" alt="" title="sd card" href="#" coords="50,264,128,305" shape="rect"></area>
+        <area target="" alt="" title="midi chip" href="#" coords="932,329,1014,372" shape="rect"></area>
+    </map>
+    <div id="mc_embed_shell">
+        <div id="mc_embed_signup">
+            <form
+                action="https://schollz.us21.list-manage.com/subscribe/post?u=6f305d82cde1a96e67a3c0577&amp;id=8f5c3ddc01&amp;f_id=0009ace1f0"
+                method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate"
+                target="_self" novalidate="">
+                <div id="mc_embed_signup_scroll">
+                    <h2>yoctocore. midi to cv x 8.</h2>
+                    <h3>also envelopes, lfos, clocks, code injections, more. between -5 v and +10 v.</h3>
+                    <!-- <div class="indicates-required"><span class="asterisk">*</span> indicates required</div> -->
+                    <div class="mc-field-group">
+                        <label for="mce-EMAIL">enter email</label>
+                        <input type="email" name="EMAIL" class="required email" id="mce-EMAIL" required="" value="">
+                    </div>
+                    <div class="mc-field-group" style="display:none;">
+                        <label for="mce-ZEPTOCORE">YOCTOCORE</label>
+                        <input type="text" name="ZEPTOCORE" class="text" id="mce-ZEPTOCORE" value="yoctocore">
+                    </div>
+                    <div hidden=""><input type="hidden" name="tags" value="2989283"></div>
+                    <div id="mce-responses" class="clear">
+                        <div class="response" id="mce-error-response" style="display: none;"></div>
+                        <div class="response" id="mce-success-response" style="display: none;"></div>
+                    </div>
+                    <div style="position: absolute; left: -5000px;" aria-hidden="true">
+                        <input type="text" name="b_6f305d82cde1a96e67a3c0577_8f5c3ddc01" tabindex="-1" value="">
+                    </div>
+                    <div class="clear">
+                        <input type="submit" name="subscribe" id="mc-embedded-subscribe" class="button"
+                            value="sign up to learn more">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+    <script>
+        // for eac area add a mouse over and a click event
+        const areas = document.querySelectorAll('area');
+        areas.forEach((area, index) => {
+            console.log(area);
+            area.addEventListener('mouseover', () => {
+                // get x and y of this area
+                const coords = area.getAttribute('coords').split(',').map(Number);
+                const y = (coords[0] + coords[2]) / 2 - 50;
+                const x = (coords[1] + coords[3]) / 2 - 50;
+                const title = area.getAttribute('title');
+                console.log(`Mouse over area at index ${index}`, area);
+                // show a text box at that location
+                const textBox = document.createElement('div');
+                textBox.style.position = 'absolute';
+                textBox.style.top = `${x}px`;
+                textBox.style.left = `${y}px`;
+                textBox.style.width = `100px`;
+                textBox.style.height = `100px`;
+                textBox.style.backgroundColor = '#ffffff22';
+                textBox.style.color = 'black';
+                // center text
+                textBox.style.textAlign = 'center';
+                // center vertically
+                textBox.style.display = 'flex';
+                textBox.style.justifyContent = 'center';
+                textBox.style.alignItems = 'center';
+
+                // bold
+                textBox.style.fontWeight = 'bold';
+                textBox.style.padding = '8px';
+                textBox.style.zIndex = 1000;
+                textBox.innerText = title;
+                // rounded
+                document.body.appendChild(textBox);
+            });
+            area.addEventListener('mouseout', () => {
+                console.log(`Mouse out area at index ${index}`, area);
+            });
+            area.addEventListener('click', () => {
+                console.log(`Clicked area at index ${index}`, area);
+            });
+        });
+
+
+        function adjustImageMap() {
+            const img = document.getElementById('mainImage');
+
+            // Use helper function to get offset and scaled dimensions
+            const { offsetX, offsetY, width: displayWidth, height: displayHeight } = getImageOffsetAndSize(img);
+
+            const originalWidth = 1049; // Original width of the image
+            const originalHeight = 534; // Original height of the image
+
+            // Calculate the scaling factor
+            const scaleX = displayWidth / originalWidth;
+            const scaleY = displayHeight / originalHeight;
+
+            // Adjust each area based on scaling and offsets
+            const areas = document.querySelectorAll('area');
+            areas.forEach(area => {
+                // Get the original coordinates stored in a data attribute
+                const originalCoords = area.dataset.originalCoords.split(',').map(Number);
+                const adjustedCoords = originalCoords.map((coord, index) => {
+                    if (index % 2 === 0) {
+                        // Adjust X coordinate
+                        return Math.round((coord * scaleX) + offsetX);
+                    } else {
+                        // Adjust Y coordinate
+                        return Math.round((coord * scaleY) + offsetY);
+                    }
+                });
+                console.log(adjustedCoords);
+                area.setAttribute('coords', adjustedCoords.join(','));
+            });
+        }
+
+        function getImageOffsetAndSize(img) {
+            const containerWidth = img.parentElement.offsetWidth;
+            const containerHeight = img.parentElement.offsetHeight;
+            const imgWidth = img.naturalWidth;
+            const imgHeight = img.naturalHeight;
+
+            let offsetX = 0;
+            let offsetY = 0;
+            let displayWidth = containerWidth;
+            let displayHeight = containerHeight;
+
+            // Calculate the aspect ratios of the container and the image
+            const containerAspectRatio = containerWidth / containerHeight;
+            const imgAspectRatio = imgWidth / imgHeight;
+
+            // Determine if the image is wider or taller than the container
+            if (imgAspectRatio > containerAspectRatio) {
+                // Image is wider, so we need to crop the sides
+                displayWidth = containerHeight * imgAspectRatio;
+                offsetX = (displayWidth - containerWidth) / 2 * -1;
+            } else {
+                // Image is taller, so we need to crop the top and bottom
+                displayHeight = containerWidth / imgAspectRatio;
+                offsetY = (displayHeight - containerHeight) / 2 * -1;
+            }
+
+            return {
+                offsetX,
+                offsetY,
+                width: displayWidth,
+                height: displayHeight
+            };
+        }
+
+        // Store the original coordinates when the page loads
+        function storeOriginalCoords() {
+            const areas = document.querySelectorAll('area');
+            areas.forEach(area => {
+                if (!area.dataset.originalCoords) {
+                    area.dataset.originalCoords = area.getAttribute('coords');
+                }
+            });
+        }
+
+
+        window.addEventListener('load', () => {
+            const img = document.getElementById('mainImage');
+            if (img.complete) {
+                storeOriginalCoords();
+                adjustImageMap();
+            } else {
+                img.addEventListener('load', () => {
+                    storeOriginalCoords();
+                    adjustImageMap();
+                });
+            }
+        });
+
+        window.addEventListener('resize', adjustImageMap);
+    </script>
+
+</body>
+
+</html>
