@@ -6,8 +6,8 @@ each scene has eight outputs. each output can be configured to a different mode.
 
 | Category  | Button        | Knob          | Shift + Button | Shift + Knob  |
 |-----------|---------------|---------------|----------------|---------------|
-| Manual    |               | voltage       |                | slew          |
-| Pitch     |               | voltage       | listen         | portamento    |
+| Manual    |               | voltage       | reset to zero  | slew          |
+| Pitch     |               | voltage       | reset to zero  | portamento    |
 | Envelope  | trigger       | attack        |                | release       |
 | CC        |               |               | listen         |               |
 | Clock     | tap tempo     | bpm           |                | division      |
