@@ -564,7 +564,26 @@ print("hello world")
   <script src="/static/app.js"></script>
   <!-- add lua minifier from cdn -->
   <script src="/static/luamin.bundle.js"></script>
+  <script src="/static/lua-formatter.js"></script>
+  <script>
+    const code = `print("hello world!")
+a = 1 + 2
+print ( a )
 
+for i = 1 , 10  
+do
+print(i)
+
+end
+  `;
+
+    const minifiedCode = LuaFormatter.minifyLua(code).trim();
+    console.log('Minified Code:', minifiedCode);
+
+    const beautifiedCode = LuaFormatter.beautifyLua(minifiedCode).trim();
+    console.log('Beautified Code:', beautifiedCode);
+
+  </script>
   <script type="text/javascript">
 
 
