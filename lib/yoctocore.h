@@ -158,12 +158,12 @@ void Yoctocore_init(Yoctocore *self) {
 }
 
 void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
-                        char *code, uint16_t code_len) {
+                        char *code, uint16_t code_len, bool append) {
   if (code_len == 0) {
     return;
   }
 
-  if (self->config[scene][output].code == NULL) {
+  if (self->config[scene][output].code == NULL || !append) {
     // Allocate memory and copy the new code
     self->config[scene][output].code = (char *)malloc(code_len);
     if (self->config[scene][output].code == NULL) {
@@ -192,7 +192,9 @@ void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
   }
 }
 
-#define CODE_CHUNK_SIZE 34
+#define CODE_CHUNK_SIZE \
+  36  // Total buffer size including "ZZ", scene, output, and optional "XX"
+
 void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
   if (self->config[scene][output].code == NULL) {
     return;
@@ -202,31 +204,38 @@ void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
   uint16_t i = 0;
 
   while (i < code_len) {
-    // Create a buffer to include "ZZ" at the beginning and "XX" at the end if
-    // it's the last chunk
-    char buffer[CODE_CHUNK_SIZE];  // 2 for "ZZ", 30 for code chunk, 2 for "XX",
-                                   // null terminator not required for raw SysEx
+    // Create a buffer with CODE_CHUNK_SIZE
+    char buffer[CODE_CHUNK_SIZE];
     memset(buffer, 0, sizeof(buffer));
 
     // Prepend with "ZZ"
     buffer[0] = 'Z';
     buffer[1] = 'Z';
 
-    // Calculate the chunk size
-    uint16_t chunk_size = (code_len - i > (CODE_CHUNK_SIZE - 4))
-                              ? (CODE_CHUNK_SIZE - 4)
-                              : code_len - i;
-    memcpy(&buffer[2], &self->config[scene][output].code[i], chunk_size);
+    // Add the scene and output identifiers
+    // convert scene number to string
+    buffer[2] = '0' + scene;
+    buffer[3] = '0' + output;
+
+    // Calculate the chunk size for code data
+    uint16_t chunk_size = (code_len - i > (CODE_CHUNK_SIZE - 6))
+                              ? (CODE_CHUNK_SIZE - 6)
+                              : (code_len - i);
+
+    // Copy code data into the buffer, starting after the header
+    memcpy(&buffer[4], &self->config[scene][output].code[i], chunk_size);
     i += chunk_size;
 
     // Append "XX" if this is the last chunk
     if (i == code_len) {
-      buffer[2 + chunk_size] = 'X';
-      buffer[2 + chunk_size + 1] = 'X';
-      send_buffer_as_sysex(
-          buffer, chunk_size + 4);  // 2 for "ZZ" + chunk_size + 2 for "XX"
+      buffer[4 + chunk_size] = 'X';
+      buffer[4 + chunk_size + 1] = 'X';
+      send_buffer_as_sysex(buffer,
+                           6 + chunk_size);  // 4 for "ZZ", scene, output +
+                                             // chunk_size + 2 for "XX"
     } else {
-      send_buffer_as_sysex(buffer, chunk_size + 2);  // 2 for "ZZ" + chunk_size
+      send_buffer_as_sysex(
+          buffer, 4 + chunk_size);  // 4 for "ZZ", scene, output + chunk_size
     }
   }
 }

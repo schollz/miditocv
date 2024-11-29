@@ -81,6 +81,7 @@ void send_midi_stop() {
 
     // Send the MIDI message
     tud_midi_n_stream_write(0, 0, midi_message, sizeof(midi_message));
+    tud_task();
   }
 }
 
@@ -99,6 +100,7 @@ void send_midi_note_on(uint8_t note, uint8_t velocity) {
 
     // Send the MIDI message
     tud_midi_n_stream_write(0, 0, midi_message, sizeof(midi_message));
+    tud_task();
   }
 }
 

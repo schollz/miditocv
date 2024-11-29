@@ -525,8 +525,7 @@ const app = createApp({
             drawSparkline(index, sparklineData[index], mode);
         }
 
-        function executeLua() {
-            console.log('Executing Lua code...');
+        async function executeLua() {
             let outputElement = document.getElementById('output');
             let code = myCodeMirror.getValue();
             // Clear the outputCodeMirror and outputElement at the start of execution
@@ -537,6 +536,7 @@ const app = createApp({
             let beautify_code = code;
             try {
                 new_code = LuaFormatter.minifyLua(code).trim();
+                console.log(`[executeLua]: ${new_code}`);
                 beautify_code = LuaFormatter.beautifyLua(code).trim();
                 myCodeMirror.setValue(beautify_code);
                 // set the new code to the current output of the current scene
@@ -554,6 +554,23 @@ const app = createApp({
             }
             let returnedText = space_savings + '\n' + outputElement.textContent;
             outputCodeMirror.setValue(returnedText);
+            // upload the code to the device.
+            // split new_code into 32 byte chunks
+            let chunk_size = 32;
+            let num_chunks = Math.ceil(new_code.length / chunk_size);
+            for (let i = 0; i < num_chunks; i++) {
+
+                let chunk = new_code.slice(i * chunk_size, (i + 1) * chunk_size);
+                if (i == 0) {
+                    chunk = `LN${current_scene.value}${current_output.value}${chunk}`;
+                } else {
+                    chunk = `LA${current_scene.value}${current_output.value}${chunk}`;
+                }
+                console.log(`[executeLua] ${chunk}`);
+                // send chunk and wait 10 ms
+                send_sysex(chunk);
+                await new Promise(r => setTimeout(r, 10));
+            }
         }
 
         function doBoardReset() {
@@ -701,6 +718,8 @@ const app = createApp({
             scenes.value[current_scene.value].outputs.forEach((_, index) => {
                 drawSparkline(index, sparklineData[index]); // Initially empty
             });
+            // switch to output mode 7
+            scenes.value[current_scene.value].outputs[current_output.value].mode = 7;
         });
 
         // Debounce function
@@ -734,6 +753,10 @@ const app = createApp({
                 debounceMap.set(
                     key,
                     debounce((sceneIdx, outputIdx, prop, val) => {
+                        // do not update code
+                        if (prop == "code") {
+                            return;
+                        }
                         val = Number(val);
                         sysex_string = `${sceneIdx}_${outputIdx}_${hash_djb(prop)}_${val.toPrecision(4)}`;
                         console.log(`[sending_sysex] ${prop} ${sysex_string}`);

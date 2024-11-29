@@ -89,10 +89,13 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   float val;
   int vali;
   // check if sysex starts with LN (lua new)
-  if (sysex[0] == 'L' && sysex[1] == 'A') {
-    // 34 byte chunks are sent
+  if (sysex[0] == 'L' && (sysex[1] == 'A' || sysex[1] == 'N')) {
+    // 36 byte chunks are sent L[A|N]<scene><output><32bytes>
     printf("LA%d\n", length);
-    Yoctocore_add_code(&yocto, 0, 0, (char *)sysex + 2, length - 2);
+    uint8_t scene = sysex[2] - '0';
+    uint8_t output = sysex[3] - '0';
+    Yoctocore_add_code(&yocto, scene, output, (char *)sysex + 4, length - 4,
+                       sysex[1] == 'A');
   } else if (get_sysex_param_float_value("version", sysex, length, &val)) {
     printf("v1.0.0");
   } else if (get_sysex_param_float_value("diskmode", sysex, length, &val)) {
