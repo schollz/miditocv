@@ -1,10 +1,18 @@
 const { createApp, ref, computed, watch, onMounted, reactive } = Vue;
 var vm;
-
+var outputCodeMirror;
+var myCodeMirror;
 let disableWatchers = false;
 let scenes_updated = [false, false, false, false, false, false, false, false];
 let last_time_of_message_received = 0;
 var midiInputs = {};
+let sequins_lua = "";
+fetch('/static/sequins.lua')
+    .then(response => response.text())
+    .then(data => {
+        sequins_lua = data;
+    });
+
 function addToMidiConsole(message) {
     console.log('MIDI message:', message);
 }
@@ -155,6 +163,8 @@ typedef struct Config {
   uint8_t linked_to;
   uint8_t probability;
   bool sparkline_do_update;
+  char code;
+  uint15_t code_len;
 } Config;
 
 `;
@@ -211,6 +221,10 @@ async function updateLocalScene(scene_num) {
         for (let param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
             let value = vm.scenes[scene_num].outputs[output_num][param];
             sysex_string = `${scene_num}_${output_num}_${hash_djb(param)}`;
+            // skip code and code_len
+            if (param == "code" || param == "code_len") {
+                continue;
+            }
             for (let i = 0; i < 3; i++) {
                 try {
                     console.log(`[sending_sysex] ${param} ${sysex_string}`);
@@ -288,10 +302,10 @@ function setupMidiInputListener() {
 
                     }
                 } else {
-                    addToMidiConsole(sysex);
+                    addToMidiConsole('sysex ' + sysex);
                 }
             } else {
-                addToMidiConsole(midiMessage.data);
+                addToMidiConsole('data ' + midiMessage.data);
             }
         };
     }
@@ -400,6 +414,7 @@ function send_sysex(str) {
 
         // Send the SysEx message
         try {
+            console.log(`[.send] ${str}`);
             window.yoctocoreDevice.send(sysex);
             // console.log("SysEx message sent:", sysex);
         } catch (error) {
@@ -415,19 +430,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.chrome && window.chrome.app) {
         setupMidi();
 
-        // ask for sparkline data (doubles as check if connected)
-        const sparkline_update_time_ms = 50;
-        setTimeout(() => {
-            setInterval(() => {
-                if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
-                    window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
-                }
-                if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
-                    vm.device_connected = false;
-                    setupMidi();
-                }
-            }, sparkline_update_time_ms);
-        }, 2000);
+        // // ask for sparkline data (doubles as check if connected)
+        // const sparkline_update_time_ms = 50;
+        // setTimeout(() => {
+        //     setInterval(() => {
+        //         if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
+        //             window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
+        //         }
+        //         if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
+        //             vm.device_connected = false;
+        //             setupMidi();
+        //         }
+        //     }, sparkline_update_time_ms);
+        // }, 2000);
 
     }
 
@@ -461,6 +476,7 @@ const app = createApp({
                     release: 2.1,
                     linked_to: 0,
                     probability: 100,
+                    code: 'print("Hello, world!")',
                 })),
             }))
         );
@@ -473,6 +489,7 @@ const app = createApp({
         const selected_output = computed(() => {
             return scenes.value[current_scene.value].outputs[current_output.value];
         });
+        const codeMirrorArea = ref(null);
         const device_connected = ref(false);
         const midi_input_active = ref({});
         const midi_input_last_message = ref({});
@@ -508,6 +525,36 @@ const app = createApp({
             drawSparkline(index, sparklineData[index], mode);
         }
 
+        function executeLua() {
+            console.log('Executing Lua code...');
+            let outputElement = document.getElementById('output');
+            let code = myCodeMirror.getValue();
+            // Clear the outputCodeMirror and outputElement at the start of execution
+            outputCodeMirror.setValue(''); // Clear the CodeMirror output
+            outputElement.textContent = ''; // Clear the text content for the buffer
+
+            let new_code = code;
+            let beautify_code = code;
+            try {
+                new_code = LuaFormatter.minifyLua(code).trim();
+                beautify_code = LuaFormatter.beautifyLua(code).trim();
+                myCodeMirror.setValue(beautify_code);
+                // set the new code to the current output of the current scene
+                scenes.value[current_scene.value].outputs[current_output.value].code = new_code;
+            } catch {
+                // Do nothing
+            }
+
+            let space_savings = `-- ${new_code.length} bytes`;
+            try {
+                L.execute(sequins_lua + new_code);
+            } catch (e) {
+                outputCodeMirror.setValue(e.toString());
+                return;
+            }
+            let returnedText = space_savings + '\n' + outputElement.textContent;
+            outputCodeMirror.setValue(returnedText);
+        }
 
         function doBoardReset() {
             send_sysex("diskmode1");
@@ -530,13 +577,13 @@ const app = createApp({
                 case 3:
                     return 'mode-midi-cc';
                 case 4:
-                    return 'mode-midi-clock';
-                case 5:
                     return 'mode-clock';
-                case 6:
+                case 5:
                     return 'mode-lfo';
-                case 7:
+                case 6:
                     return 'mode-sequencer';
+                case 7:
+                    return 'mode-code';
                 default:
                     return '';
             }
@@ -573,6 +620,21 @@ const app = createApp({
 
             },
         };
+
+        // watch output change
+        watch(
+            () => selected_output.value,
+            (newOutput) => {
+                console.log(`[output_change] ${current_scene.value} ${current_output.value}`);
+                // if mode == 7 then update the code mirror
+                if (newOutput.mode == 7) {
+                    Vue.nextTick(() => {
+                        let beautify_code = LuaFormatter.beautifyLua(newOutput.code).trim();
+                        myCodeMirror.setValue(beautify_code);
+                    });
+                }
+            }
+        );
 
         // watch scene change 
         watch(
@@ -614,6 +676,25 @@ const app = createApp({
                 const modeDefaults = defaultValues[newMode] || {};
                 console.log(`Setting defaults for mode ${newMode}:`, modeDefaults);
                 Object.assign(selected_output.value, modeDefaults);
+                if (newMode == 7) {
+                    Vue.nextTick(() => {
+                        myCodeMirror = CodeMirror.fromTextArea(document.getElementById('mytext'));
+                        // Add line numbers
+                        myCodeMirror.setOption("lineNumbers", true);
+                        // Set size
+                        myCodeMirror.setSize("100%", "100%");
+                        outputCodeMirror = CodeMirror.fromTextArea(document.getElementById('output'));
+                        // Add line numbers
+                        outputCodeMirror.setOption("lineNumbers", true);
+                        // Set size
+                        outputCodeMirror.setSize("100%", "100%");
+                        var outputElement = document.getElementById('output');
+                        emscripten.print = function (x) {
+                            // Ensure the content doesn't persist between runs
+                            outputElement.textContent = (outputElement.textContent ? outputElement.textContent + '\n' : '') + x;
+                        };
+                    });
+                }
             }
         );
         onMounted(() => {
@@ -719,6 +800,7 @@ const app = createApp({
             doBoardReset,
             note_names,
             clockDivisions,
+            executeLua,
             updateSparkline,
         };
     },

@@ -100,7 +100,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     CALIBRATION_VOLTAGE_SLOPE=0.991
     CALIBRATION_VOLTAGE_INTERCEPT=0.139
     # # settings
-    # INCLUDE_MIDI=1
+    INCLUDE_MIDI=1
 
     # debugging
     # DEBUG_MIDI=1
@@ -110,18 +110,18 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 )
 
 
-# # if INCLUDE_MIDI
-# target_link_libraries(${PROJECT_NAME} 
-#     tinyusb_device
-#     tinyusb_board
-# )
-# pico_enable_stdio_usb(${PROJECT_NAME} 0)
-# pico_enable_stdio_uart(${PROJECT_NAME} 1)
-# target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-
-# if NOT INCLUDE_MIDI
-pico_enable_stdio_usb(${PROJECT_NAME} 1)
+# if INCLUDE_MIDI
+target_link_libraries(${PROJECT_NAME} 
+    tinyusb_device
+    tinyusb_board
+)
+pico_enable_stdio_usb(${PROJECT_NAME} 0)
 pico_enable_stdio_uart(${PROJECT_NAME} 1)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+
+# # if NOT INCLUDE_MIDI
+# pico_enable_stdio_usb(${PROJECT_NAME} 1)
+# pico_enable_stdio_uart(${PROJECT_NAME} 1)
 
 
 pico_add_extra_outputs(${PROJECT_NAME})

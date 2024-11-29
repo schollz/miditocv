@@ -443,12 +443,12 @@ int main() {
   Yoctocore_init(&yocto);
   // load the yoctocore data
   uint64_t start_time = time_us_64();
-  sleep_ms(1000);
-  if (Yoctocore_load(&yocto)) {
-    printf("loaded data in %lld us\n", time_us_64() - start_time);
-  } else {
-    printf("failed to load data\n");
-  }
+  // sleep_ms(1000);
+  // if (Yoctocore_load(&yocto)) {
+  //   printf("loaded data in %lld us\n", time_us_64() - start_time);
+  // } else {
+  //   printf("failed to load data\n");
+  // }
 
   // initialize timers
   uint32_t ct = to_ms_since_boot(get_absolute_time());

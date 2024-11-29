@@ -81,23 +81,23 @@
       color: black;
     }
 
-    .mode-midi-clock {
+    .mode-clock {
       background-color: #32CD3257;
       color: black;
     }
 
-    .mode-clock {
+    .mode-lfo {
       background-color: #7DF9FF57;
       color: black;
     }
 
-    .mode-lfo {
+    .mode-sequencer {
       background-color: #0096FF57;
       color: black;
     }
 
-    .mode-sequencer {
-      background-color: #CBC3E357;
+    .mode-code {
+      background-color: #CBC3E3;
       color: black;
     }
 
@@ -148,12 +148,15 @@
   <link rel="stylesheet" href="/static/codemirror.css">
   <script src="/static/lua.js"></script>
   <script src="/static/lua.vm.js"></script>
+  <script src="/static/lua-formatter.js"></script>
+
   <style>
     .CodeMirror {
       border: black;
       border-style: solid;
       box-shadow: 6px 6px black;
       border-width: 1.5px;
+      min-height: 5em;
     }
   </style>
 </head>
@@ -221,15 +224,15 @@
             <option value=1>MIDI Pitch</option>
             <option value=2>MIDI Envelope</option>
             <option value=3>MIDI CC</option>
-            <option value=4>MIDI Clock</option>
-            <option value=5>Clock</option>
-            <option value=6>LFO</option>
-            <option value=7>Sequencer</option>
+            <option value=4>Clock</option>
+            <option value=5>LFO</option>
+            <option value=6>Sequencer</option>
+            <option value=7>Code</option>
           </select>
         </div>
       </div>
       <!-- sequencer -->
-      <div class="row" v-if="[7].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[6].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="sequence">
             Duration:
@@ -247,6 +250,21 @@
           <input type="number" v-model.number="selected_output.voltage_setpoint" min="-5" max="10" step="0.01" />
         </div>
       </div>
+      <!-- code -->
+      <div class="row" style="padding-left:1.5em; padding-bottom:1.5em;"
+        v-if="[7].includes(Number(selected_output.mode))">
+        <div class=" col-6">
+          <textarea id="mytext" v-model="selected_output.code"></textarea>
+          <!-- <p>{{ selected_output.code }}</p> -->
+        </div>
+        <div class="col col-1" style="padding-left:1em;">
+          <button @click="executeLua()">Test</button>
+        </div>
+        <div class="col col-4">
+          <textarea id="output"></textarea>
+        </div>
+      </div>
+
       <!-- manual -->
       <div class="row">
         <div class="col col-2 fr">
@@ -503,7 +521,7 @@
 
 
       <!-- clock stuff -->
-      <div class="row" v-if="[5].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[4].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="clock-tempo">
             Clock tempo:
@@ -513,7 +531,7 @@
           <input id="clock-tempo" type="number" v-model.number="selected_output.clock_tempo" min="15" max="300" />
         </div>
       </div>
-      <div class="row" v-if="[4,5].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[4].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="clock-divider">
             Clock division:
@@ -542,81 +560,67 @@
         </div>
       </div>
 
-      <div class="row" style="padding-left:1.5em;">
-        <div class="col-6">
-          <textarea id="mytext">
-print("hello world")
-</textarea>
-        </div>
-        <div class="col col-1" style="padding-left:1em;">
-          <button onclick="executeLua(myCodeMirror.getValue()); return false">Test</button>
-        </div>
-        <div class="col col-4">
-          <textarea id="output"></textarea>
-        </div>
-      </div>
 
     </div>
   </div>
 
   <script src="/static/app.js"></script>
   <!-- add lua minifier from cdn -->
-  <script src="/static/lua-formatter.js"></script>
   <script type="text/javascript">
-    // CodeMirror
-    var myCodeMirror = CodeMirror.fromTextArea(document.getElementById('mytext'));
-    // Add line numbers
-    myCodeMirror.setOption("lineNumbers", true);
-    // Set size
-    myCodeMirror.setSize("100%", "100%");
+    //   // CodeMirror
+    //   var myCodeMirror = CodeMirror.fromTextArea(document.getElementById('mytext'));
+    // // Add line numbers
+    // myCodeMirror.setOption("lineNumbers", true);
+    // // Set size
+    // myCodeMirror.setSize("100%", "100%");
 
-    var outputCodeMirror = CodeMirror.fromTextArea(document.getElementById('output'));
-    // Add line numbers
-    outputCodeMirror.setOption("lineNumbers", true);
-    // Set size
-    outputCodeMirror.setSize("100%", "100%");
+    //   var outputCodeMirror = CodeMirror.fromTextArea(document.getElementById('output'));
+    //   // Add line numbers
+    //   outputCodeMirror.setOption("lineNumbers", true);
+    //   // Set size
+    //   outputCodeMirror.setSize("100%", "100%");
 
-    // Execution
-    var outputElement = document.getElementById('output');
-    emscripten.print = function (x) {
-      // Ensure the content doesn't persist between runs
-      outputElement.textContent = (outputElement.textContent ? outputElement.textContent + '\n' : '') + x;
-    };
+    //   // Execution
+    //   var outputElement = document.getElementById('output');
+    //   emscripten.print = function (x) {
+    //     // Ensure the content doesn't persist between runs
+    //     outputElement.textContent = (outputElement.textContent ? outputElement.textContent + '\n' : '') + x;
+    //   };
 
-    // Load data from /static/sequins.lua
-    let sequins_lua = "";
-    fetch('/static/sequins.lua')
-      .then(response => response.text())
-      .then(data => {
-        sequins_lua = data;
-      });
+    //   // Load data from /static/sequins.lua
+    //   let sequins_lua = "";
+    //   fetch('/static/sequins.lua')
+    //     .then(response => response.text())
+    //     .then(data => {
+    //       sequins_lua = data;
+    //     });
 
-    function executeLua(code, clear) {
-      // Clear the outputCodeMirror and outputElement at the start of execution
-      outputCodeMirror.setValue(''); // Clear the CodeMirror output
-      outputElement.textContent = ''; // Clear the text content for the buffer
+    //   function executeLua(code, clear) {
+    // // Clear the outputCodeMirror and outputElement at the start of execution
+    // outputCodeMirror.setValue(''); // Clear the CodeMirror output
+    // outputElement.textContent = ''; // Clear the text content for the buffer
 
-      let new_code = code;
-      try {
-        new_code = LuaFormatter.minifyLua(code).trim();
-        myCodeMirror.setValue(LuaFormatter.beautifyLua(new_code).trim());
-      } catch {
-        // Do nothing
-      }
+    // let new_code = code;
+    // try {
+    //   new_code = LuaFormatter.minifyLua(code).trim();
+    //   myCodeMirror.setValue(LuaFormatter.beautifyLua(new_code).trim());
+    // } catch {
+    //   // Do nothing
+    // }
 
-      let space_savings = `-- ${new_code.length} bytes`;
-      try {
-        L.execute(sequins_lua + new_code);
-      } catch (e) {
-        outputCodeMirror.setValue(e.toString());
-        return;
-      }
-      let returnedText = space_savings + '\n' + outputElement.textContent;
-      // wrap the returnedText to limit number of characters to 20
-      let wrappedText = returnedText.match(/.{1,20}/g).join('\n');
-      outputCodeMirror.setValue(wrappedText);
-    }
-  </script>
+    // let space_savings = `-- ${new_code.length} bytes`;
+    // try {
+    //   L.execute(sequins_lua + new_code);
+    // } catch (e) {
+    //   outputCodeMirror.setValue(e.toString());
+    //   return;
+    // }
+    // let returnedText = space_savings + '\n' + outputElement.textContent;
+    // // wrap the returnedText to limit number of characters to 20
+    // let wrappedText = returnedText.match(/.{1,20}/g).join('\n');
+    // outputCodeMirror.setValue(wrappedText);
+    //   }
+    // </script>
 </body>
 
 </html>

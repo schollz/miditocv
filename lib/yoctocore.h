@@ -16,9 +16,10 @@
 #define MODE_PITCH 1
 #define MODE_ENVELOPE 2
 #define MODE_CC 3
-#define MODE_MIDI_CLOCK 4
-#define MODE_CLOCK 5
-#define MODE_LFO 6
+#define MODE_CLOCK 4
+#define MODE_LFO 5
+#define MODE_SEQUENCER 6
+#define MODE_CODE 7
 
 #define PARAM_SCENE 274204627
 #define PARAM_MODE 2090515018
@@ -43,6 +44,8 @@
 #define PARAM_RELEASE 1050875750
 #define PARAM_LINKED_TO 303481310
 #define PARAM_PROBABILITY 451533126
+#define PARAM_CODE 2090155648
+#define PARAM_CODE_LEN 709259102
 
 float clock_divisions[19] = {1.0 / 512.0, 1.0 / 256.0, 1.0 / 128.0, 1.0 / 64.0,
                              1.0 / 32.0,  1.0 / 16.0,  1.0 / 8.0,   1.0 / 4.0,
@@ -73,6 +76,8 @@ typedef struct Config {
   float release;
   uint8_t linked_to;
   uint8_t probability;
+  uint16_t code_len;
+  char *code;
 } Config;
 
 typedef struct NoteHeld {
@@ -129,6 +134,8 @@ void Yoctocore_init(Yoctocore *self) {
       self->config[scene][output].release = 0.5;
       self->config[scene][output].linked_to = 0;
       self->config[scene][output].probability = 100;
+      self->config[scene][output].code_len = 0;
+      self->config[scene][output].code = NULL;
     }
     // initialize lfo
     Noise_init(&self->out[output].noise, time_us_32());
@@ -148,6 +155,80 @@ void Yoctocore_init(Yoctocore *self) {
     self->out[output].tuning = false;
   }
   self->debounce_save = 0;
+}
+
+void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
+                        char *code, uint16_t code_len) {
+  if (code_len == 0) {
+    return;
+  }
+
+  if (self->config[scene][output].code == NULL) {
+    // Allocate memory and copy the new code
+    self->config[scene][output].code = (char *)malloc(code_len);
+    if (self->config[scene][output].code == NULL) {
+      // Handle memory allocation failure
+      printf("failed to allocate memory\n");
+      return;
+    }
+    memcpy(self->config[scene][output].code, code, code_len);
+    self->config[scene][output].code_len = code_len;
+  } else {
+    // Append the new code to the existing code
+    uint16_t new_code_len = self->config[scene][output].code_len + code_len;
+    char *new_code = (char *)malloc(new_code_len);
+    if (new_code == NULL) {
+      // Handle memory allocation failure
+      printf("failed to allocate memory\n");
+      return;
+    }
+    memcpy(new_code, self->config[scene][output].code,
+           self->config[scene][output].code_len);
+    memcpy(new_code + self->config[scene][output].code_len, code, code_len);
+    free(self->config[scene][output].code);
+    self->config[scene][output].code = new_code;
+    self->config[scene][output].code_len = new_code_len;
+    printf("newlen: %d\n", new_code_len);
+  }
+}
+
+#define CODE_CHUNK_SIZE 34
+void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
+  if (self->config[scene][output].code == NULL) {
+    return;
+  }
+
+  uint16_t code_len = self->config[scene][output].code_len;
+  uint16_t i = 0;
+
+  while (i < code_len) {
+    // Create a buffer to include "ZZ" at the beginning and "XX" at the end if
+    // it's the last chunk
+    char buffer[CODE_CHUNK_SIZE];  // 2 for "ZZ", 30 for code chunk, 2 for "XX",
+                                   // null terminator not required for raw SysEx
+    memset(buffer, 0, sizeof(buffer));
+
+    // Prepend with "ZZ"
+    buffer[0] = 'Z';
+    buffer[1] = 'Z';
+
+    // Calculate the chunk size
+    uint16_t chunk_size = (code_len - i > (CODE_CHUNK_SIZE - 4))
+                              ? (CODE_CHUNK_SIZE - 4)
+                              : code_len - i;
+    memcpy(&buffer[2], &self->config[scene][output].code[i], chunk_size);
+    i += chunk_size;
+
+    // Append "XX" if this is the last chunk
+    if (i == code_len) {
+      buffer[2 + chunk_size] = 'X';
+      buffer[2 + chunk_size + 1] = 'X';
+      send_buffer_as_sysex(
+          buffer, chunk_size + 4);  // 2 for "ZZ" + chunk_size + 2 for "XX"
+    } else {
+      send_buffer_as_sysex(buffer, chunk_size + 2);  // 2 for "ZZ" + chunk_size
+    }
+  }
 }
 
 void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
@@ -325,6 +406,13 @@ bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
         printf("f_write error: %s (%d)\n", FRESULT_str(fr), fr);
         return false;
       }
+      // write the code char
+      fr = f_write(&file, self->config[scene][output].code,
+                   self->config[scene][output].code_len, &bw);
+      if (FR_OK != fr) {
+        printf("f_write error: %s (%d)\n", FRESULT_str(fr), fr);
+        return false;
+      }
       total_bytes_written += bw;
     }
   }
@@ -365,6 +453,13 @@ bool Yoctocore_load(Yoctocore *self) {
         printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
         return false;
       }
+      // read the code char
+      fr = f_read(&file, self->config[scene][output].code,
+                  self->config[scene][output].code_len, &br);
+      if (FR_OK != fr) {
+        printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
+        return false;
+      }
     }
   }
 
@@ -398,8 +493,12 @@ void Yoctocore_process_sysex(Yoctocore *self, uint8_t *buffer) {
     Yoctocore_set(self, scene, output, param_hash, val);
   } else if (parsed == 3) {
     // get the value if parsed==3
-    printf("%d %d %" PRIu32 " %f\n", scene, output, param_hash,
-           Yoctocore_get(self, scene, output, param_hash));
+    if (param_hash == PARAM_CODE) {
+      Yoctocore_print_code(self, scene, output);
+    } else {
+      printf("%d %d %" PRIu32 " %f\n", scene, output, param_hash,
+             Yoctocore_get(self, scene, output, param_hash));
+    }
   }
 }
 

@@ -23,6 +23,7 @@ uint32_t send_buffer_as_sysex(char* buffer, uint32_t bufsize) {
   sysex_data[bufsize + 1] = 0xF7;  // End of SysEx
 
   uint32_t v = tud_midi_n_stream_write(0, 0, sysex_data, sizeof(sysex_data));
+  tud_task();
   return v;
 }
 
@@ -38,7 +39,7 @@ uint32_t send_text_as_sysex(const char* text) {
 
   // Call the stream write function with the SysEx message
   uint32_t v = tud_midi_n_stream_write(0, 0, sysex_data, sizeof(sysex_data));
-  sleep_ms(1);
+  tud_task();
   return v;
 }
 
@@ -52,6 +53,7 @@ void send_midi_clock() {
 
     // Send the MIDI message
     tud_midi_n_stream_write(0, 0, midi_message, sizeof(midi_message));
+    tud_task();
   }
 }
 
@@ -65,6 +67,7 @@ void send_midi_start() {
 
     // Send the MIDI message
     tud_midi_n_stream_write(0, 0, midi_message, sizeof(midi_message));
+    tud_task();
   }
 }
 
@@ -119,7 +122,7 @@ int printf_sysex(const char* format, ...) {
 typedef void (*midi_comm_callback)(uint8_t, uint8_t, uint8_t, uint8_t);
 
 uint8_t midi_buffer[32];
-uint8_t midi_sysex_buffer[128];
+uint8_t midi_sysex_buffer[1024];
 bool midi_sysex_active = false;
 uint8_t midi_sysex_index = 0;
 
@@ -144,20 +147,31 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
 
   for (int i = 0; i < bytes_read; i++) {
     if (midi_buffer[i] == 0xF0) {
+      // Start of SysEx
       midi_sysex_active = true;
       midi_sysex_index = 0;
     } else if (midi_buffer[i] == 0xF7) {
-      midi_sysex_active = false;
-      if (sysex_callback != NULL) {
-        sysex_callback(midi_sysex_buffer, midi_sysex_index);
+      // End of SysEx
+      if (midi_sysex_active && midi_sysex_index > 0) {
+        midi_sysex_active = false;
+        if (sysex_callback != NULL) {
+          // Call the callback with the completed SysEx message
+          sysex_callback(midi_sysex_buffer, midi_sysex_index);
+        }
       }
-      // clear the sysex buffer
+      // Reset the SysEx buffer
       midi_sysex_index = 0;
       memset(midi_sysex_buffer, 0, sizeof(midi_sysex_buffer));
-      return;
     } else if (midi_sysex_active) {
-      midi_sysex_buffer[midi_sysex_index] = midi_buffer[i];
-      midi_sysex_index++;
+      // Append to the SysEx buffer
+      if (midi_sysex_index < sizeof(midi_sysex_buffer)) {
+        midi_sysex_buffer[midi_sysex_index++] = midi_buffer[i];
+      } else {
+        // Buffer overflow, reset
+        midi_sysex_active = false;
+        midi_sysex_index = 0;
+        memset(midi_sysex_buffer, 0, sizeof(midi_sysex_buffer));
+      }
     }
   }
   if (midi_sysex_active) {
