@@ -562,7 +562,12 @@ print("hello world")
   </div>
 
   <script src="/static/app.js"></script>
-  <script>
+  <!-- add lua minifier from cdn -->
+  <script src="/static/luamin.bundle.js"></script>
+
+  <script type="text/javascript">
+
+
     // CodeMirror
     var myCodeMirror = CodeMirror.fromTextArea(document.getElementById('mytext'));
     // add line numbers
@@ -589,12 +594,16 @@ print("hello world")
         outputElement.style.color = null;
         outputElement.textContent = '';
       }
+      let new_code = window.luamin.default.minify(code);
+      console.log(new_code.length);
+      let space_savings = `- code len: ${code.length} -> minified len: ${new_code.length} -> ${Math.round((new_code.length / code.length) * 100)}%`;
       try {
-        L.execute(sequins_lua + code);
+        L.execute(sequins_lua + new_code);
       } catch (e) {
         outputElement.style.color = " red"; outputElement.textContent = e.toString();
       }
-    } 
+      outputElement.textContent = space_savings + '\n' + outputElement.textContent;
+    }
   </script>
 </body>
 
