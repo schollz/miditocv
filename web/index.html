@@ -549,79 +549,72 @@ print("hello world")
 </textarea>
         </div>
         <div class="col col-1" style="padding-left:1em;">
-          <button onclick=" executeLua(myCodeMirror.getValue(), true); return false">Run</button>
+          <button onclick="executeLua(myCodeMirror.getValue()); return false">Test</button>
         </div>
         <div class="col col-4">
-          <pre id="output"></pre>
+          <textarea id="output"></textarea>
         </div>
       </div>
-      <div class="row">
 
-      </div>
     </div>
   </div>
 
   <script src="/static/app.js"></script>
   <!-- add lua minifier from cdn -->
-  <script src="/static/luamin.bundle.js"></script>
   <script src="/static/lua-formatter.js"></script>
-  <script>
-    const code = `print("hello world!")
-a = 1 + 2
-print ( a )
-
-for i = 1 , 10  
-do
-print(i)
-
-end
-  `;
-
-    const minifiedCode = LuaFormatter.minifyLua(code).trim();
-    console.log('Minified Code:', minifiedCode);
-
-    const beautifiedCode = LuaFormatter.beautifyLua(minifiedCode).trim();
-    console.log('Beautified Code:', beautifiedCode);
-
-  </script>
   <script type="text/javascript">
-
-
     // CodeMirror
     var myCodeMirror = CodeMirror.fromTextArea(document.getElementById('mytext'));
-    // add line numbers
+    // Add line numbers
     myCodeMirror.setOption("lineNumbers", true);
-    // set size
+    // Set size
     myCodeMirror.setSize("100%", "100%");
-    //myCodeMirror.setSize(screen.width*0.6, screen.height*0.2);
+
+    var outputCodeMirror = CodeMirror.fromTextArea(document.getElementById('output'));
+    // Add line numbers
+    outputCodeMirror.setOption("lineNumbers", true);
+    // Set size
+    outputCodeMirror.setSize("100%", "100%");
 
     // Execution
-    var outputElement = document.getElementById('output')
+    var outputElement = document.getElementById('output');
     emscripten.print = function (x) {
+      // Ensure the content doesn't persist between runs
       outputElement.textContent = (outputElement.textContent ? outputElement.textContent + '\n' : '') + x;
-    }
+    };
 
-    // load data from /static/sequins.lua
+    // Load data from /static/sequins.lua
     let sequins_lua = "";
     fetch('/static/sequins.lua')
       .then(response => response.text())
       .then(data => {
         sequins_lua = data;
       });
+
     function executeLua(code, clear) {
-      if (clear) {
-        outputElement.style.color = null;
-        outputElement.textContent = '';
+      // Clear the outputCodeMirror and outputElement at the start of execution
+      outputCodeMirror.setValue(''); // Clear the CodeMirror output
+      outputElement.textContent = ''; // Clear the text content for the buffer
+
+      let new_code = code;
+      try {
+        new_code = LuaFormatter.minifyLua(code).trim();
+        myCodeMirror.setValue(LuaFormatter.beautifyLua(new_code).trim());
+      } catch {
+        // Do nothing
       }
-      let new_code = window.luamin.default.minify(code);
-      console.log(new_code.length);
-      let space_savings = `- code len: ${code.length} -> minified len: ${new_code.length} -> ${Math.round((new_code.length / code.length) * 100)}%`;
+
+      let space_savings = `-- ${new_code.length} bytes`;
       try {
         L.execute(sequins_lua + new_code);
       } catch (e) {
-        outputElement.style.color = " red"; outputElement.textContent = e.toString();
+        outputCodeMirror.setValue(e.toString());
+        return;
       }
-      outputElement.textContent = space_savings + '\n' + outputElement.textContent;
+      let returnedText = space_savings + '\n' + outputElement.textContent;
+      // wrap the returnedText to limit number of characters to 20
+      let wrappedText = returnedText.match(/.{1,20}/g).join('\n');
+      outputCodeMirror.setValue(wrappedText);
     }
   </script>
 </body>
