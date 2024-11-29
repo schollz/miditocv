@@ -44,8 +44,9 @@ void DAC_set_voltage(DAC *self, int channel, float voltage) {
     return;
   }
 #ifndef DEBUG_VOLTAGE_CALIBRATION
-  // calibration
-  voltage = (voltage - 0.126) / 0.988;
+  // calibrated voltage
+  voltage =
+      (voltage - CALIBRATION_VOLTAGE_INTERCEPT) / CALIBRATION_VOLTAGE_SLOPE;
 #endif
   // convert voltage from -5-10 to 0-5
   voltage = (voltage + 5.0f) / 3.0f;
