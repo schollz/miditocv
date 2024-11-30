@@ -718,8 +718,6 @@ const app = createApp({
             scenes.value[current_scene.value].outputs.forEach((_, index) => {
                 drawSparkline(index, sparklineData[index]); // Initially empty
             });
-            // switch to output mode 7
-            scenes.value[current_scene.value].outputs[current_output.value].mode = 7;
         });
 
         // Debounce function
