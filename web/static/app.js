@@ -16,7 +16,7 @@ for (let i = 0; i < 8; i++) {
     }
 }
 let sequins_lua = "";
-fetch('/static/sequins.lua')
+fetch('/static/globals.lua')
     .then(response => response.text())
     .then(data => {
         sequins_lua = data;
@@ -582,7 +582,11 @@ const app = createApp({
 
             let space_savings = `-- ${new_code.length} bytes`;
             try {
-                L.execute(sequins_lua + new_code);
+                L.execute(sequins_lua + new_code + `
+for i=1,10 do 
+    print(main())
+end                    
+`);
             } catch (e) {
                 outputCodeMirror.setValue(e.toString());
                 return;
@@ -744,7 +748,19 @@ const app = createApp({
                 // Ensure the content doesn't persist between runs
                 outputElement.textContent = (outputElement.textContent ? outputElement.textContent + '\n' : '') + x;
             };
-
+            // TODO remove this
+            // switch to mode 7
+            // on next tick
+            Vue.nextTick(() => {
+                scenes.value[current_scene.value].outputs[current_output.value].mode = 7;
+                myCodeMirror.setValue(`function main()
+    return 60
+end`);
+                setTimeout(() => {
+                    myCodeMirror.refresh();
+                    myCodeMirror.focus();
+                }, 50);
+            });
         });
 
         // Debounce function

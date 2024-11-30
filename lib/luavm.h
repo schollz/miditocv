@@ -19,8 +19,7 @@ int _unlink(const char *pathname) {
 #include <lualib.h>
 #endif
 //
-#include "script.h"
-#include "sequins.h"
+#include "web_static_globals.h"
 
 lua_State *L;
 int luaInit() {
@@ -31,7 +30,8 @@ int luaInit() {
   luaL_openlibs(L);     // Open standard libraries
 
   // Load Lua script from embedded string
-  if (luaL_loadbuffer(L, (const char *)lib_script_lua, lib_script_lua_len,
+  if (luaL_loadbuffer(L, (const char *)web_static_globals_lua,
+                      web_static_globals_lua_len,
                       "embedded_script") != LUA_OK) {
     printf("Error loading Lua script: %s\n", lua_tostring(L, -1));
     lua_close(L);
@@ -45,20 +45,6 @@ int luaInit() {
     return 1;
   }
 
-  // Load Lua script from embedded string
-  if (luaL_loadbuffer(L, (const char *)lib_sequins_lua, lib_sequins_lua_len,
-                      "embedded_script") != LUA_OK) {
-    printf("Error loading Lua script: %s\n", lua_tostring(L, -1));
-    lua_close(L);
-    return 1;
-  }
-
-  // Execute the loaded Lua script
-  if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
-    printf("Error executing Lua script: %s\n", lua_tostring(L, -1));
-    lua_close(L);
-    return 1;
-  }
   return 0;
 }
 

@@ -12,8 +12,7 @@ yoctocore: luascripts pico-extras build
 	cp build/*.uf2 yoctocore.uf2
 
 luascripts:
-	xxd -i lib/script.lua > lib/script.h
-	xxd -i lib/sequins.lua > lib/sequins.h
+	xxd -i web/static/globals.lua > lib/web_static_globals.h
 
 build: 
 	mkdir -p build
