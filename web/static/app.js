@@ -15,13 +15,6 @@ for (let i = 0; i < 8; i++) {
         codeTexts[i].push("");
     }
 }
-let global_lua = "";
-fetch('/static/globals.lua')
-    .then(response => response.text())
-    .then(data => {
-        global_lua = data;
-    });
-
 
 
 function addToMidiConsole(message) {
@@ -584,12 +577,19 @@ end`,
 
             let new_code = code;
             let beautify_code = code;
-            new_code = LuaFormatter.minifyLua(code).trim();
+            try {
+                new_code = LuaFormatter.minifyLua(code).trim();
+            } catch (error) {
+                console.log(`[executeLua]: ${error}`);
+                outputCodeMirror.setValue(`${error}`);
+                return;
+            }
+            let output_num = current_output.value + 1;
             if (new_code != code_last) {
                 console.log(`[executeLua]: new state`);
-                luaState = LuaJS.newState();
+
                 luaState.then(async (L) => {
-                    await L.run(global_lua + "\n" + new_code);
+                    await L.run(`update_env(${output_num}, [[${new_code}]])`);
                 });
                 await luaState;
                 code_last = new_code;
@@ -597,7 +597,11 @@ end`,
             }
             luaState.then(async (L) => {
                 let value;
-                value = await L.run("return main()"); //value == [3]
+                try {
+                    value = await L.run(`return test_env_main(${output_num})`); //value == [3]
+                } catch (error) {
+                    value = error;
+                }
                 // wait for promise
                 await value;
                 // get the value

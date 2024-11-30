@@ -1,3 +1,6 @@
+---------------------
+------ SEQUINS ------
+---------------------
 S = {}
 local function a(b)
     if type(b) == 'string' then
@@ -291,6 +294,87 @@ function random_number()
     return math.random(100, 150)
 end
 
+---------------------------
+----- MUSIC LIBRARY -------
+---------------------------
+-- convert strings like 'c4' to midi notes
+-- if the string does not have an octave, use the previous octave
+previous_octave = 4
+function note_to_midi(note)
+    local notes = {
+        c = 0,
+        d = 2,
+        e = 4,
+        f = 5,
+        g = 7,
+        a = 9,
+        b = 11
+    }
+
+    if type(note) ~= "string" or tonumber(note) then
+        error("note_to_midi: 'note' must be musical note string.")
+        do
+            return
+        end
+    end
+
+    local octave = note:match("%d+") or previous_octave
+    previous_octave = octave
+    midi = 12 * (octave + 1) + notes[note:sub(1, 1)] + (note:sub(2, 2) == "#" and 1 or 0) +
+               (note:sub(2, 2) == "b" and -1 or 0) + (note:sub(2, 2) == "s" and 1 or 0)
+    return midi
+end
+
+assert(note_to_midi("c4") == 60)
+assert(note_to_midi("d") == 62)
+assert(note_to_midi("d#4") == 63)
+assert(note_to_midi("db4") == 61)
+
+function midi_to_cv(midi_note, root, v_oct)
+    if (midi_note <= 10) then
+        error("midi_to_cv: 'midi_note' must be a number > 10")
+        do
+            return
+        end
+    end
+    root = root or 60
+    v_oct = v_oct or 1
+    return (midi_note - root) / (12.0 * v_oct)
+end
+
+assert(midi_to_cv(60) == 0)
+assert(midi_to_cv(61) == 1 / 12)
+assert(midi_to_cv(62) == 2 / 12)
+
+function to_cv(val)
+    -- converts a note, midi, or a voltage to a voltage
+    local success, result = pcall(function()
+        return midi_to_cv(val)
+    end)
+    if success then
+        return result
+    end
+    success, result = pcall(function()
+        return midi_to_cv(note_to_midi(val))
+    end)
+    if success then
+        return result
+    end
+    success, result = pcall(function()
+        return tonumber(val)
+    end)
+    if success then
+        return result
+    end
+end
+
+print(to_cv(62))
+print(to_cv("c5"))
+print(to_cv(1.2))
+
+------------------------
+-- environment blocks --
+------------------------
 function new_env(code)
     local env = {}
     setmetatable(env, {
@@ -319,4 +403,10 @@ function env_main(i)
     return envs[i].main()
 end
 
+function test_env_main(i)
+    local v = envs[i].main()
+    return "main()-> " .. v .. ", cv=" .. to_cv(v)
+end
+
 math.randomseed(os.time())
+

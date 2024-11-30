@@ -251,17 +251,27 @@
         </div>
       </div>
       <!-- code -->
-      <div class="row" style="padding-left:1.5em; padding-bottom:1.5em;"
+      <div class="row" style="padding-left:1.5em; padding-bottom:0.5em;"
         v-show="[7].includes(Number(selected_output.mode))">
-        <div class=" col-6">
+        <div class="col col-12">
           <textarea id="mytext" v-model="selected_output.code"></textarea>
           <!-- <p>{{ selected_output.code }}</p> -->
         </div>
-        <div class="col col-1" style="padding-left:1em; text-align:center;">
-          <button @click="executeLua()">Run main()</button>
-          <button @click="clearLua()" style="margin-top:1em;">Reset</button>
+      </div>
+      <div class="row" style="padding-left:1.5em;" v-show="[7].includes(Number(selected_output.mode))">
+        <div class="col col-4" style="text-align:center;">
+          <button @click="executeLua()">Test main()</button>
         </div>
-        <div class="col col-3">
+        <div class="col col-4" style="padding-left:1em; text-align:center;">
+          <button @click="clearLua()">Reset</button>
+        </div>
+        <div class="col col-4" style="padding-left:1em; text-align:center;">
+          <button @click="uploadLoad()">Upload</button>
+        </div>
+      </div>
+      <div class="row" style="padding-left:1.5em; padding-bottom:1.5em; margin-top:0.5em;"
+        v-show="[7].includes(Number(selected_output.mode))">
+        <div class="col col-12">
           <textarea id="output"></textarea>
         </div>
       </div>
@@ -532,7 +542,7 @@
           <input id="clock-tempo" type="number" v-model.number="selected_output.clock_tempo" min="15" max="300" />
         </div>
       </div>
-      <div class="row" v-if="[4].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[4,7].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="clock-divider">
             Clock division:
@@ -570,6 +580,15 @@
     const LuaJS = await emscriptenInit();
     window.LuaJS = LuaJS;
     window.luaState = LuaJS.newState();
+    fetch('/static/globals.lua')
+      .then(response => response.text())
+      .then(data => {
+        console.log(`[LuaJS] setting lua environemnts`);
+        luaState = LuaJS.newState();
+        luaState.then(async (L) => {
+          await L.run(data);
+        });
+      });
   </script>
 
   <script src="/static/app.js"></script>
