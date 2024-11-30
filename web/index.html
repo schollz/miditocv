@@ -252,7 +252,7 @@
       </div>
       <!-- code -->
       <div class="row" style="padding-left:1.5em; padding-bottom:1.5em;"
-        v-if="[7].includes(Number(selected_output.mode))">
+        v-show="[7].includes(Number(selected_output.mode))">
         <div class=" col-6">
           <textarea id="mytext" v-model="selected_output.code"></textarea>
           <!-- <p>{{ selected_output.code }}</p> -->
@@ -565,62 +565,7 @@
   </div>
 
   <script src="/static/app.js"></script>
-  <!-- add lua minifier from cdn -->
-  <script type="text/javascript">
-    //   // CodeMirror
-    //   var myCodeMirror = CodeMirror.fromTextArea(document.getElementById('mytext'));
-    // // Add line numbers
-    // myCodeMirror.setOption("lineNumbers", true);
-    // // Set size
-    // myCodeMirror.setSize("100%", "100%");
 
-    //   var outputCodeMirror = CodeMirror.fromTextArea(document.getElementById('output'));
-    //   // Add line numbers
-    //   outputCodeMirror.setOption("lineNumbers", true);
-    //   // Set size
-    //   outputCodeMirror.setSize("100%", "100%");
-
-    //   // Execution
-    //   var outputElement = document.getElementById('output');
-    //   emscripten.print = function (x) {
-    //     // Ensure the content doesn't persist between runs
-    //     outputElement.textContent = (outputElement.textContent ? outputElement.textContent + '\n' : '') + x;
-    //   };
-
-    //   // Load data from /static/sequins.lua
-    //   let sequins_lua = "";
-    //   fetch('/static/sequins.lua')
-    //     .then(response => response.text())
-    //     .then(data => {
-    //       sequins_lua = data;
-    //     });
-
-    //   function executeLua(code, clear) {
-    // // Clear the outputCodeMirror and outputElement at the start of execution
-    // outputCodeMirror.setValue(''); // Clear the CodeMirror output
-    // outputElement.textContent = ''; // Clear the text content for the buffer
-
-    // let new_code = code;
-    // try {
-    //   new_code = LuaFormatter.minifyLua(code).trim();
-    //   myCodeMirror.setValue(LuaFormatter.beautifyLua(new_code).trim());
-    // } catch {
-    //   // Do nothing
-    // }
-
-    // let space_savings = `-- ${new_code.length} bytes`;
-    // try {
-    //   L.execute(sequins_lua + new_code);
-    // } catch (e) {
-    //   outputCodeMirror.setValue(e.toString());
-    //   return;
-    // }
-    // let returnedText = space_savings + '\n' + outputElement.textContent;
-    // // wrap the returnedText to limit number of characters to 20
-    // let wrappedText = returnedText.match(/.{1,20}/g).join('\n');
-    // outputCodeMirror.setValue(wrappedText);
-    //   }
-    // </script>
 </body>
 
 </html>

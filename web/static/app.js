@@ -2,16 +2,27 @@ const { createApp, ref, computed, watch, onMounted, reactive } = Vue;
 var vm;
 var outputCodeMirror;
 var myCodeMirror;
+
 let disableWatchers = false;
 let scenes_updated = [false, false, false, false, false, false, false, false];
 let last_time_of_message_received = 0;
 var midiInputs = {};
+// create an array of 8 arrays for codeTexts
+let codeTexts = [];
+for (let i = 0; i < 8; i++) {
+    codeTexts.push([]);
+    for (let j = 0; j < 8; j++) {
+        codeTexts[i].push("");
+    }
+}
 let sequins_lua = "";
 fetch('/static/sequins.lua')
     .then(response => response.text())
     .then(data => {
         sequins_lua = data;
     });
+
+
 
 function addToMidiConsole(message) {
     console.log('MIDI message:', message);
@@ -222,7 +233,7 @@ async function updateLocalScene(scene_num) {
             let value = vm.scenes[scene_num].outputs[output_num][param];
             sysex_string = `${scene_num}_${output_num}_${hash_djb(param)}`;
             // skip code and code_len
-            if (param == "code" || param == "code_len") {
+            if (param == "code_len") {
                 continue;
             }
             for (let i = 0; i < 3; i++) {
@@ -238,6 +249,7 @@ async function updateLocalScene(scene_num) {
             }
         }
     }
+
     disableWatchers = false;
 }
 
@@ -253,20 +265,42 @@ function setupMidiInputListener() {
                 for (var i = 1; i < midiMessage.data.length - 1; i++) {
                     sysex += String.fromCharCode(midiMessage.data[i]);
                 }
-                // console.log(`[recv] ${sysex}`);
+                console.log(`[recv] ${sysex}`);
                 fields = sysex.split(" ");
                 fields_ = sysex.split("_");
                 // see if it starts with version=
-                if (sysex.startsWith("v")) {
-                    //console.log(`[version] ${sysex}`);
-                    return;
-                    // } else if (sysex.startsWith("scene")) {
-                    //     // extract number from string
-                    //     console.log(`[sysex_receieved] ${sysex}`);
-                    //     let scene_num = Number(sysex.match(/\d+/)[0]);
-                    //     // update the scene
-                    //     vm.current_scene = scene_num;
-                    //     updateLocalScene(scene_num);
+                if (sysex.startsWith("LS") || sysex.startsWith("LN") || sysex.startsWith("LE")) {
+                    // code starting, continuing, and ending needs to appended to codeTexts
+                    // get the scene number from the third character
+                    let scene_num = Number(sysex[2]);
+                    let output_num = Number(sysex[3]);
+                    let code = sysex.slice(4);
+                    if (sysex[1] == "S") {
+                        // starting a new code
+                        codeTexts[scene_num][output_num] = code;
+                    } else if (sysex[1] == "N") {
+                        // continuing the code
+                        codeTexts[scene_num][output_num] += code;
+                    } else if (sysex[1] == "E") {
+                        // ending the code
+                        codeTexts[scene_num][output_num] += code;
+                        let code_new = codeTexts[scene_num][output_num];
+                        // update the code in the vm
+                        vm.scenes[scene_num].outputs[output_num].code = code_new;
+                        // update the code mirror if it is visible
+                        if (vm.current_scene == scene_num && vm.current_output == output_num) {
+                            Vue.nextTick(() => {
+                                console.log(`[output_change] ${code_new}`);
+                                let beautify_code = LuaFormatter.beautifyLua(code_new).trim();
+                                console.log(`[output_change] ${beautify_code}`);
+                                myCodeMirror.setValue(beautify_code);
+                                // clear the output code
+                                outputCodeMirror.setValue("");
+
+                            });
+                        }
+                        externalTrigger();
+                    }
                 } else if (fields_.length == 8) {
                     // update sparkline with each value
                     // iterate over every field
@@ -430,19 +464,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.chrome && window.chrome.app) {
         setupMidi();
 
-        // ask for sparkline data (doubles as check if connected)
-        const sparkline_update_time_ms = 50;
-        setTimeout(() => {
-            setInterval(() => {
-                if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
-                    window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
-                }
-                if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
-                    vm.device_connected = false;
-                    setupMidi();
-                }
-            }, sparkline_update_time_ms);
-        }, 2000);
+        // // ask for sparkline data (doubles as check if connected)
+        // const sparkline_update_time_ms = 50;
+        // setTimeout(() => {
+        //     setInterval(() => {
+        //         if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
+        //             window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
+        //         }
+        //         // need to fix this to prevent multiple connects
+        //         // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
+        //         //     vm.device_connected = false;
+        //         //     setupMidi();
+        //         // }
+        //     }, sparkline_update_time_ms);
+        // }, 2000);
 
     }
 
@@ -643,13 +678,11 @@ const app = createApp({
             () => selected_output.value,
             (newOutput) => {
                 console.log(`[output_change] ${current_scene.value} ${current_output.value}`);
-                // if mode == 7 then update the code mirror
-                if (newOutput.mode == 7) {
-                    Vue.nextTick(() => {
-                        let beautify_code = LuaFormatter.beautifyLua(newOutput.code).trim();
-                        myCodeMirror.setValue(beautify_code);
-                    });
-                }
+                Vue.nextTick(() => {
+                    let beautify_code = LuaFormatter.beautifyLua(newOutput.code).trim();
+                    console.log(`[output_change] ${beautify_code}`);
+                    myCodeMirror.setValue(beautify_code);
+                });
             }
         );
 
@@ -693,31 +726,25 @@ const app = createApp({
                 const modeDefaults = defaultValues[newMode] || {};
                 console.log(`Setting defaults for mode ${newMode}:`, modeDefaults);
                 Object.assign(selected_output.value, modeDefaults);
-                if (newMode == 7) {
-                    Vue.nextTick(() => {
-                        myCodeMirror = CodeMirror.fromTextArea(document.getElementById('mytext'));
-                        // Add line numbers
-                        myCodeMirror.setOption("lineNumbers", true);
-                        // Set size
-                        myCodeMirror.setSize("100%", "100%");
-                        outputCodeMirror = CodeMirror.fromTextArea(document.getElementById('output'));
-                        // Add line numbers
-                        outputCodeMirror.setOption("lineNumbers", true);
-                        // Set size
-                        outputCodeMirror.setSize("100%", "100%");
-                        var outputElement = document.getElementById('output');
-                        emscripten.print = function (x) {
-                            // Ensure the content doesn't persist between runs
-                            outputElement.textContent = (outputElement.textContent ? outputElement.textContent + '\n' : '') + x;
-                        };
-                    });
-                }
             }
         );
         onMounted(() => {
             scenes.value[current_scene.value].outputs.forEach((_, index) => {
                 drawSparkline(index, sparklineData[index]); // Initially empty
             });
+            // setup code mirror
+            myCodeMirror = CodeMirror.fromTextArea(document.getElementById('mytext'));
+            myCodeMirror.setOption("lineNumbers", true);
+            myCodeMirror.setSize("100%", "100%");
+            outputCodeMirror = CodeMirror.fromTextArea(document.getElementById('output'));
+            outputCodeMirror.setOption("lineNumbers", true);
+            outputCodeMirror.setSize("100%", "100%");
+            var outputElement = document.getElementById('output');
+            emscripten.print = function (x) {
+                // Ensure the content doesn't persist between runs
+                outputElement.textContent = (outputElement.textContent ? outputElement.textContent + '\n' : '') + x;
+            };
+
         });
 
         // Debounce function

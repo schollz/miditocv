@@ -28,6 +28,9 @@ uint32_t send_buffer_as_sysex(char* buffer, uint32_t bufsize) {
 }
 
 uint32_t send_text_as_sysex(const char* text) {
+  while (!tud_ready()) {
+    tud_task();
+  }
   uint32_t text_length = strlen(text);  // Get the length of the text
   uint8_t sysex_data[text_length + 2];  // +2 for SysEx start and end bytes
 
