@@ -197,6 +197,7 @@ void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
 
 void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
   if (self->config[scene][output].code == NULL) {
+    printf("LE%d%d\n", scene, output);
     return;
   }
 
