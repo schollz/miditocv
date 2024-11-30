@@ -64,3 +64,4 @@ lib/tests/scales/out
 lib/script.h
 lib/sequins.h
 lib/web_static_globals.h
+lib/lua_globals.h
