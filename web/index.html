@@ -297,7 +297,7 @@
         </div>
       </div>
       <!-- lfo stuff -->
-      <div class="row" v-if="[6].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[5].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="lfo-waveform">
             LFO waveform:
@@ -377,7 +377,7 @@
           </select>
         </div>
       </div>
-      <div class="row" v-if="[0,1,6,7].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[0,1,5,6,7].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="quantization">
             Quantize:
