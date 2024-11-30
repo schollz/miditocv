@@ -19,9 +19,27 @@ int _unlink(const char *pathname) {
 #include <lualib.h>
 #endif
 //
-#include "web_static_globals.h"
+#include "lua_globals.h"
 
 lua_State *L;
+
+/**
+function update_env(i, code)
+    envs[i] = new_env(code)
+end
+**/
+int luaUpdateEnvironment(int index, const char *code) {
+  lua_getglobal(L, "update_env");
+  lua_pushinteger(L, index);
+  lua_pushstring(L, code);
+  if (lua_pcall(L, 2, 0, 0) != LUA_OK) {
+    printf("[luaUpdateEnvironment] error: %s\n", lua_tostring(L, -1));
+    lua_close(L);
+    return 1;
+  }
+  return 0;
+}
+
 int luaInit() {
   if (L != NULL) {
     return 0;
@@ -30,8 +48,7 @@ int luaInit() {
   luaL_openlibs(L);     // Open standard libraries
 
   // Load Lua script from embedded string
-  if (luaL_loadbuffer(L, (const char *)web_static_globals_lua,
-                      web_static_globals_lua_len,
+  if (luaL_loadbuffer(L, (const char *)globals_lua, globals_lua_len,
                       "embedded_script") != LUA_OK) {
     printf("Error loading Lua script: %s\n", lua_tostring(L, -1));
     lua_close(L);
@@ -45,23 +62,11 @@ int luaInit() {
     return 1;
   }
 
-  return 0;
-}
-
-/**
-function update_env(i, code)
-    envs[i] = new_env(code)
-end
-**/
-int luaUpdateEnvironment(int index, const char *code) {
-  lua_getglobal(L, "update_env");
-  lua_pushinteger(L, index);
-  lua_pushstring(L, code);
-  if (lua_pcall(L, 2, 0, 0) != LUA_OK) {
-    printf("Error: %s\n", lua_tostring(L, -1));
-    lua_close(L);
-    return 1;
+  // create 8 environments with a main() function that returns -10
+  for (int i = 0; i < 8; i++) {
+    luaUpdateEnvironment(i, "function main() return -10 end");
   }
+
   return 0;
 }
 
@@ -101,14 +106,12 @@ int luaTest() {
       "    return a\n"
       "end";
   luaUpdateEnvironment(1, code2);
-  printf("Result: %f\n", luaRunMain(0));
-  printf("Result: %f\n", luaRunMain(0));
-  printf("Result: %f\n", luaRunMain(0));
-  printf("Result: %f\n", luaRunMain(0));
-  printf("Result: %f\n", luaRunMain(1));
-  printf("Result: %f\n", luaRunMain(1));
-  printf("Result: %f\n", luaRunMain(1));
-  printf("Result: %f\n", luaRunMain(1));
+  for (uint8_t i = 0; i < 8; i++) {
+    printf("Result: %f\n", luaRunMain(0));
+  }
+  for (uint8_t i = 0; i < 8; i++) {
+    printf("Result: %f\n", luaRunMain(1));
+  }
   const char *code3 =
       "a = 1\n"
       "function main()\n"
@@ -116,10 +119,12 @@ int luaTest() {
       "    return a\n"
       "end";
   luaUpdateEnvironment(1, code3);
-  printf("Result: %f\n", luaRunMain(1));
-  printf("Result: %f\n", luaRunMain(1));
-  printf("Result: %f\n", luaRunMain(1));
-  printf("Result: %f\n", luaRunMain(1));
+  for (uint8_t i = 0; i < 8; i++) {
+    printf("Result: %f\n", luaRunMain(1));
+  }
+  for (uint8_t i = 0; i < 8; i++) {
+    printf("Result: %f\n", luaRunMain(2));
+  }
 
   return 0;
 }

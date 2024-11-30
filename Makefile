@@ -12,7 +12,10 @@ yoctocore: luascripts pico-extras build
 	cp build/*.uf2 yoctocore.uf2
 
 luascripts:
-	xxd -i web/static/globals.lua > lib/web_static_globals.h
+	npm install -g luamin
+	luamin -f web/static/globals.lua > globals.lua
+	xxd -i globals.lua > lib/lua_globals.h
+	rm globals.lua
 
 build: 
 	mkdir -p build
@@ -45,8 +48,7 @@ clean:
 	rm -rf build
 	rm -rf *.wav
 	rm -rf lib/biquad.h
-	rm -rf lib/script.h
-	rm -rf lib/sequins.h
+	rm -rf lib/lua_globals.h
 
 cloc:
 	cloc --exclude-list-file=dev/.clocignore --exclude-lang="make,CMake,D,Markdown,JSON,INI,Bourne Shell,TOML,TypeScript,YAML,Assembly" *

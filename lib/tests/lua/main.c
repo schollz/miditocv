@@ -6,7 +6,9 @@
 #include <unistd.h>  // For sleep
 
 #define __linux__ 1
+
 #include "../../luavm.h"
+
 int main() {
   luaInit();
   luaTest();
