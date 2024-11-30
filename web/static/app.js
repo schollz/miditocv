@@ -15,11 +15,11 @@ for (let i = 0; i < 8; i++) {
         codeTexts[i].push("");
     }
 }
-let sequins_lua = "";
+let global_lua = "";
 fetch('/static/globals.lua')
     .then(response => response.text())
     .then(data => {
-        sequins_lua = data;
+        global_lua = data;
     });
 
 
@@ -294,7 +294,6 @@ function setupMidiInputListener() {
                                 let beautify_code = LuaFormatter.beautifyLua(code_new).trim();
                                 console.log(`[output_change] ${beautify_code}`);
                                 myCodeMirror.setValue(beautify_code);
-                                // clear the output code
                                 outputCodeMirror.setValue("");
 
                             });
@@ -511,7 +510,9 @@ const app = createApp({
                     release: 2.1,
                     linked_to: 0,
                     probability: 100,
-                    code: 'print("Hello, world!")',
+                    code: `function main()
+	return 60
+end`,
                 })),
             }))
         );
@@ -560,55 +561,74 @@ const app = createApp({
             drawSparkline(index, sparklineData[index], mode);
         }
 
+        let code_last = "";
+        async function clearLua() {
+            console.log(`[clearLua]`);
+            code_last = "Zzzz";
+            // clear the output 
+            outputCodeMirror.setValue(''); // Clear the CodeMirror output
+            document.getElementById('output').textContent = ''; // Clear the text content for the buffer
+            // beautify the current code
+            let code = scenes.value[current_scene.value].outputs[current_output.value].code;
+            let beautify_code = LuaFormatter.beautifyLua(code).trim();
+            myCodeMirror.setValue(beautify_code);
+            setTimeout(() => {
+                myCodeMirror.refresh();
+                outputCodeMirror.refresh();
+            }, 50);
+        }
         async function executeLua() {
+            // using https://github.com/Doridian/LuaJS
             let outputElement = document.getElementById('output');
             let code = myCodeMirror.getValue();
-            // Clear the outputCodeMirror and outputElement at the start of execution
-            outputCodeMirror.setValue(''); // Clear the CodeMirror output
-            outputElement.textContent = ''; // Clear the text content for the buffer
 
             let new_code = code;
             let beautify_code = code;
-            try {
-                new_code = LuaFormatter.minifyLua(code).trim();
-                console.log(`[executeLua]: ${new_code}`);
-                beautify_code = LuaFormatter.beautifyLua(code).trim();
-                myCodeMirror.setValue(beautify_code);
-                // set the new code to the current output of the current scene
-                scenes.value[current_scene.value].outputs[current_output.value].code = new_code;
-            } catch {
-                // Do nothing
+            new_code = LuaFormatter.minifyLua(code).trim();
+            if (new_code != code_last) {
+                console.log(`[executeLua]: new state`);
+                luaState = LuaJS.newState();
+                luaState.then(async (L) => {
+                    await L.run(global_lua + "\n" + new_code);
+                });
+                await luaState;
+                code_last = new_code;
+                outputCodeMirror.setValue(`-- ${new_code.length} bytes`);
             }
+            luaState.then(async (L) => {
+                let value;
+                value = await L.run("return main()"); //value == [3]
+                // wait for promise
+                await value;
+                // get the value
+                console.log(`[executeLua]: ${value}`);
+                // append to output
+                outputCodeMirror.setValue(outputCodeMirror.getValue() + '\n' + value);
+            });
+            // console.log(`[executeLua]: ${new_code}`);
+            beautify_code = LuaFormatter.beautifyLua(code).trim();
+            myCodeMirror.setValue(beautify_code);
+            // set the new code to the current output of the current scene
+            scenes.value[current_scene.value].outputs[current_output.value].code = new_code;
 
-            let space_savings = `-- ${new_code.length} bytes`;
-            try {
-                L.execute(sequins_lua + new_code + `
-for i=1,10 do 
-    print(main())
-end                    
-`);
-            } catch (e) {
-                outputCodeMirror.setValue(e.toString());
-                return;
-            }
-            let returnedText = space_savings + '\n' + outputElement.textContent;
-            outputCodeMirror.setValue(returnedText);
-            // upload the code to the device.
-            // split new_code into 32 byte chunks
-            let chunk_size = 32;
-            let num_chunks = Math.ceil(new_code.length / chunk_size);
-            for (let i = 0; i < num_chunks; i++) {
+            if (window.yoctocoreDevice) {
+                // upload the code to the device.
+                // split new_code into 32 byte chunks
+                let chunk_size = 32;
+                let num_chunks = Math.ceil(new_code.length / chunk_size);
+                for (let i = 0; i < num_chunks; i++) {
 
-                let chunk = new_code.slice(i * chunk_size, (i + 1) * chunk_size);
-                if (i == 0) {
-                    chunk = `LN${current_scene.value}${current_output.value}${chunk}`;
-                } else {
-                    chunk = `LA${current_scene.value}${current_output.value}${chunk}`;
+                    let chunk = new_code.slice(i * chunk_size, (i + 1) * chunk_size);
+                    if (i == 0) {
+                        chunk = `LN${current_scene.value}${current_output.value}${chunk}`;
+                    } else {
+                        chunk = `LA${current_scene.value}${current_output.value}${chunk}`;
+                    }
+                    console.log(`[executeLua] ${chunk}`);
+                    // send chunk and wait 10 ms
+                    send_sysex(chunk);
+                    await new Promise(r => setTimeout(r, 10));
                 }
-                console.log(`[executeLua] ${chunk}`);
-                // send chunk and wait 10 ms
-                send_sysex(chunk);
-                await new Promise(r => setTimeout(r, 10));
             }
         }
 
@@ -673,7 +693,9 @@ end
                 quantization: 0,
             },
             7: {
-
+                code: `function main()
+	return 60
+end`,
             },
         };
 
@@ -686,6 +708,7 @@ end
                     let beautify_code = LuaFormatter.beautifyLua(newOutput.code).trim();
                     console.log(`[output_change] ${beautify_code}`);
                     myCodeMirror.setValue(beautify_code);
+                    clearLua();
                 });
             }
         );
@@ -727,9 +750,13 @@ end
         watch(
             () => selected_output.value.mode,
             (newMode) => {
-                const modeDefaults = defaultValues[newMode] || {};
-                console.log(`Setting defaults for mode ${newMode}:`, modeDefaults);
-                Object.assign(selected_output.value, modeDefaults);
+                console.log(`Mode changed to ${newMode}`);
+                if (newMode == 7) {
+                    clearLua();
+                }
+                // const modeDefaults = defaultValues[newMode] || {};
+                // console.log(`Setting defaults for mode ${newMode}:`, modeDefaults);
+                // Object.assign(selected_output.value, modeDefaults);
             }
         );
         onMounted(() => {
@@ -743,11 +770,11 @@ end
             outputCodeMirror = CodeMirror.fromTextArea(document.getElementById('output'));
             outputCodeMirror.setOption("lineNumbers", true);
             outputCodeMirror.setSize("100%", "100%");
-            var outputElement = document.getElementById('output');
-            emscripten.print = function (x) {
-                // Ensure the content doesn't persist between runs
-                outputElement.textContent = (outputElement.textContent ? outputElement.textContent + '\n' : '') + x;
-            };
+            // var outputElement = document.getElementById('output');
+            // emscripten.print = function (x) {
+            //     // Ensure the content doesn't persist between runs
+            //     outputElement.textContent = (outputElement.textContent ? outputElement.textContent + '\n' : '') + x;
+            // };
             // TODO remove this
             // switch to mode 7
             // on next tick
@@ -865,6 +892,7 @@ end`);
             note_names,
             clockDivisions,
             executeLua,
+            clearLua,
             updateSparkline,
         };
     },

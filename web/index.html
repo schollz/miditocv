@@ -147,7 +147,7 @@
   <script src="/static/codemirror.js"></script>
   <link rel="stylesheet" href="/static/codemirror.css">
   <script src="/static/lua.js"></script>
-  <script src="/static/lua.vm.js"></script>
+  <!--<script src="/static/lua.vm.js"></script> -->
   <script src="/static/lua-formatter.js"></script>
 
   <style>
@@ -257,8 +257,9 @@
           <textarea id="mytext" v-model="selected_output.code"></textarea>
           <!-- <p>{{ selected_output.code }}</p> -->
         </div>
-        <div class="col col-1" style="padding-left:1em;">
+        <div class="col col-1" style="padding-left:1em; text-align:center;">
           <button @click="executeLua()">Run main()</button>
+          <button @click="clearLua()">Reset</button>
         </div>
         <div class="col col-3">
           <textarea id="output"></textarea>
@@ -563,6 +564,13 @@
 
     </div>
   </div>
+
+  <script type="module">
+    import emscriptenInit from '/static/dist/luajs.mjs';
+    const LuaJS = await emscriptenInit();
+    window.LuaJS = LuaJS;
+    window.luaState = LuaJS.newState();
+  </script>
 
   <script src="/static/app.js"></script>
 
