@@ -72,14 +72,13 @@
         a {
             color: #ECFFDC !important;
             text-decoration: none;
-    
+
         }
+
         a:hover {
             color: #dcffde !important;
             text-decoration: underline;
         }
-
-
     </style>
 </head>
 
@@ -128,8 +127,11 @@
                 method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate"
                 target="_self" novalidate="">
                 <div id="mc_embed_signup_scroll">
-                    <h2>yoctocore. <a href="https://www.youtube.com/watch?v=9bbGdvTweDQ" target="_blank">a box between</a>. by <a href="https://infinitedigits.co" target="_blank">infinite digits</a>.</h2>
-                    <h3><a href="https://github.com/schollz/yoctocore" target="_blank">open-source</a>. midi to cv. envelopes. lfos. clocks. live code. all between -5 v and +10 v.</h3>
+                    <h2>yoctocore. <a href="https://www.youtube.com/watch?v=9bbGdvTweDQ" target="_blank">a box
+                            between</a>. by <a href="https://infinitedigits.co" target="_blank">infinite digits</a>.
+                    </h2>
+                    <h3><a href="https://github.com/schollz/yoctocore" target="_blank">open-source</a>. midi to cv.
+                        envelopes. lfos. clocks. live code. all between -5 v and +10 v.</h3>
                     <!-- <div class="indicates-required"><span class="asterisk">*</span> indicates required</div> -->
                     <div class="mc-field-group">
                         <label for="mce-EMAIL">enter email</label>
@@ -162,14 +164,12 @@
         // for eac area add a mouse over and a click event
         const areas = document.querySelectorAll('area');
         areas.forEach((area, index) => {
-            console.log(area);
             area.addEventListener('mouseover', () => {
                 // get x and y of this area
                 const coords = area.getAttribute('coords').split(',').map(Number);
                 const y = (coords[0] + coords[2]) / 2 - 50;
                 const x = (coords[1] + coords[3]) / 2 - 50;
                 const title = area.getAttribute('title');
-                console.log(`Mouse over area at index ${index}`, area);
                 // show a text box at that location
                 const textBox = document.createElement('div');
                 textBox.style.position = 'absolute';
@@ -195,10 +195,10 @@
                 document.body.appendChild(textBox);
             });
             area.addEventListener('mouseout', () => {
-                console.log(`Mouse out area at index ${index}`, area);
+                // console.log(`Mouse out area at index ${index}`, area);
             });
             area.addEventListener('click', () => {
-                console.log(`Clicked area at index ${index}`, area);
+                // console.log(`Clicked area at index ${index}`, area);
             });
         });
 
@@ -230,7 +230,7 @@
                         return Math.round((coord * scaleY) + offsetY);
                     }
                 });
-                console.log(adjustedCoords);
+                // console.log(adjustedCoords);
                 area.setAttribute('coords', adjustedCoords.join(','));
             });
         }

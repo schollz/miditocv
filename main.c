@@ -372,9 +372,6 @@ int main() {
   uint offset = pio_add_program(pio0, &uart_rx_program);
   uart_rx_program_init(pio0, 0, offset, MIDI_RX_PIN, 31250);
 
-  // // // load the Scene data
-  // Scene_load_data();
-
   // Implicitly called by disk_initialize,
   // but called here to set up the GPIOs
   // before enabling the card detect interrupt:
@@ -443,12 +440,11 @@ int main() {
   Yoctocore_init(&yocto);
   // load the yoctocore data
   uint64_t start_time = time_us_64();
-  // sleep_ms(1000);
-  // if (Yoctocore_load(&yocto)) {
-  //   printf("loaded data in %lld us\n", time_us_64() - start_time);
-  // } else {
-  //   printf("failed to load data\n");
-  // }
+  if (Yoctocore_load(&yocto)) {
+    printf("loaded data in %lld us\n", time_us_64() - start_time);
+  } else {
+    printf("failed to load data\n");
+  }
 
   // initialize timers
   uint32_t ct = to_ms_since_boot(get_absolute_time());
@@ -615,7 +611,7 @@ int main() {
           out->voltage_current =
               Slew_process(&out->portamento, out->voltage_current, ct);
           if (out->tuning) {
-            out->voltage_current = 0;
+            out->voltage_current = 3.0;
           }
           break;
         case MODE_CLOCK:

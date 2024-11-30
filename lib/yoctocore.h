@@ -193,7 +193,7 @@ void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
 }
 
 #define CODE_CHUNK_SIZE \
-  36  // Total buffer size including "ZZ", scene, output, and optional "XX"
+  36  // Total buffer size including "LS"/"LE"/"LN", scene, and output
 
 void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
   if (self->config[scene][output].code == NULL) {
@@ -208,35 +208,42 @@ void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
     char buffer[CODE_CHUNK_SIZE];
     memset(buffer, 0, sizeof(buffer));
 
-    // Prepend with "ZZ"
-    buffer[0] = 'Z';
-    buffer[1] = 'Z';
+    // Determine prefix: LS, LE, or LN
+    if (i == 0 && code_len - i <= (CODE_CHUNK_SIZE - 4)) {
+      // First and last chunk
+      buffer[0] = 'L';
+      buffer[1] = 'E';
+    } else if (i == 0) {
+      // First chunk
+      buffer[0] = 'L';
+      buffer[1] = 'S';
+    } else if (code_len - i <= (CODE_CHUNK_SIZE - 4)) {
+      // Last chunk
+      buffer[0] = 'L';
+      buffer[1] = 'E';
+    } else {
+      // Intermediate chunk
+      buffer[0] = 'L';
+      buffer[1] = 'N';
+    }
 
     // Add the scene and output identifiers
-    // convert scene number to string
     buffer[2] = '0' + scene;
     buffer[3] = '0' + output;
 
     // Calculate the chunk size for code data
-    uint16_t chunk_size = (code_len - i > (CODE_CHUNK_SIZE - 6))
-                              ? (CODE_CHUNK_SIZE - 6)
+    uint16_t chunk_size = (code_len - i > (CODE_CHUNK_SIZE - 4))
+                              ? (CODE_CHUNK_SIZE - 4)
                               : (code_len - i);
 
     // Copy code data into the buffer, starting after the header
     memcpy(&buffer[4], &self->config[scene][output].code[i], chunk_size);
     i += chunk_size;
 
-    // Append "XX" if this is the last chunk
-    if (i == code_len) {
-      buffer[4 + chunk_size] = 'X';
-      buffer[4 + chunk_size + 1] = 'X';
-      send_buffer_as_sysex(buffer,
-                           6 + chunk_size);  // 4 for "ZZ", scene, output +
-                                             // chunk_size + 2 for "XX"
-    } else {
-      send_buffer_as_sysex(
-          buffer, 4 + chunk_size);  // 4 for "ZZ", scene, output + chunk_size
-    }
+    // Send the buffer as SysEx
+    send_buffer_as_sysex(
+        buffer,
+        4 + chunk_size);  // 4 for "LS"/"LE"/"LN", scene, output + chunk_size
   }
 }
 
