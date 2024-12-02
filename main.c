@@ -180,9 +180,11 @@ void timer_callback_ws2812(bool on, int user_data) {
     if (out->tuning && blink_on) {
       WS2812_fill(&ws2812, leds_second_8[i - 8] + 8, 0, 0, 0);
     } else {
+      uint8_t brightness = 20;
       WS2812_fill(&ws2812, leds_second_8[i - 8] + 8,
-                  const_colors[config->mode][0], const_colors[config->mode][1],
-                  const_colors[config->mode][2]);
+                  const_colors[config->mode][0] * brightness / 100,
+                  const_colors[config->mode][1] * brightness / 100,
+                  const_colors[config->mode][2] * brightness / 100);
     }
   }
   WS2812_show(&ws2812);

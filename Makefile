@@ -57,12 +57,20 @@ ignore:
 	git status --porcelain | grep '^??' | cut -c4- >> .gitignore
 	git commit -am "update gitignore"
 
+web/localhost.pem:
+	go install -v filippo.io/mkcert@latest
+	cd web && mkcert -install 
+	cd web && mkcert localhost
+
 
 .PHONY: web
-BROWSERSYNC_CMD = cd web && browsersync 
-SSL_PROXY_CMD = cd web && local-ssl-proxy --key localhost-key.pem --cert localhost.pem --source 8000 --target 8003
-web:
+BROWSERSYNC_CMD = cd web && browser-sync
+SSL_PROXY_CMD = cd web && local-ssl-proxy --key localhost-key.pem --cert localhost.pem --source 8000 --target 3000
+web: web/localhost.pem
 	-pkill -f -9 browsersync
+	-pkill -f -9 browser-sync
+	-pkill -f -9 local-ssl-proxy
+	npm install -g browser-sync local-ssl-proxy
 	@echo "Starting BrowserSync in the background..."
 	@($(BROWSERSYNC_CMD) &) && \
 	echo "Starting local SSL proxy..." && \

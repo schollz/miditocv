@@ -779,19 +779,19 @@ end`,
             //     // Ensure the content doesn't persist between runs
             //     outputElement.textContent = (outputElement.textContent ? outputElement.textContent + '\n' : '') + x;
             // };
-            // TODO remove this
-            // switch to mode 7
-            // on next tick
-            Vue.nextTick(() => {
-                scenes.value[current_scene.value].outputs[current_output.value].mode = 7;
-                myCodeMirror.setValue(`function main()
-    return 60
-end`);
-                setTimeout(() => {
-                    myCodeMirror.refresh();
-                    myCodeMirror.focus();
-                }, 50);
-            });
+            //             // TODO remove this
+            //             // switch to mode 7
+            //             // on next tick
+            //             Vue.nextTick(() => {
+            //                 scenes.value[current_scene.value].outputs[current_output.value].mode = 7;
+            //                 myCodeMirror.setValue(`function main()
+            //     return 60
+            // end`);
+            //                 setTimeout(() => {
+            //                     myCodeMirror.refresh();
+            //                     myCodeMirror.focus();
+            //                 }, 50);
+            //             });
         });
 
         // Debounce function
