@@ -636,6 +636,12 @@ end`,
             }
         }
 
+        function darkMode() {
+            document.body.classList.toggle('dark-mode');
+            // code mirror dark mode
+            myCodeMirror.setOption("theme", document.body.classList.contains('dark-mode') ? "material" : "default");
+            outputCodeMirror.setOption("theme", document.body.classList.contains('dark-mode') ? "material" : "default");
+        }
         function doBoardReset() {
             send_sysex("diskmode1");
         }
@@ -893,6 +899,7 @@ end`,
             midi_input_last_message,
             toggleActivation,
             doBoardReset,
+            darkMode,
             note_names,
             clockDivisions,
             executeLua,
