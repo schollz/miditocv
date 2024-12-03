@@ -1,6 +1,8 @@
 import mido
 from digital_multimeter.main import DigitalMultimeter
 from icecream import ic
+from scipy.stats import linregress
+import matplotlib.pyplot as plt
 
 import glob
 
@@ -85,9 +87,31 @@ def run():
         print("No multimeter found.")
         return
 
-    # read voltage
-    reading = multimeter.get_reading()
-    ic(reading)
+    # for each of the 8 ouputs, measure 15 voltages
+    # make subplots 2x4
+    (fig, axs) = plt.subplots(2, 4)
+    for channel in range(1, 9):
+        voltages = [-4.8, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9.9]
+        measured_voltages = []
+        for voltage in voltages:
+            send_voltage(channel, voltage, output)
+            # measure voltage
+            voltage = multimeter.measure_voltage()
+            ic(channel, voltage)
+            measured_voltages.append(voltage)
+        # compute regression between measured voltages and expected voltages
+        slope, intercept, r_value, p_value, std_err = linregress(
+            voltages, measured_voltages
+        )
+        # plot the points and the regression
+        axs[(channel - 1) // 4, (channel - 1) % 4].scatter(voltages, measured_voltages)
+        axs[(channel - 1) // 4, (channel - 1) % 4].plot(
+            voltages, [slope * x + intercept for x in voltages]
+        )
+        axs[(channel - 1) // 4, (channel - 1) % 4].set_title(f"Channel {channel}")
+        axs[(channel - 1) // 4, (channel - 1) % 4].set_xlabel("Expected voltage (V)")
+        axs[(channel - 1) // 4, (channel - 1) % 4].set_ylabel("Measured voltage (V)")
+    plt.show()
 
 
 if __name__ == "__main__":
