@@ -88,6 +88,8 @@ typedef struct NoteHeld {
 typedef struct Out {
   float voltage_set;
   float voltage_current;
+  float voltage_override;
+  bool voltage_do_override;
   ADSR adsr;
   Slew slew;
   Slew portamento;
@@ -153,6 +155,8 @@ void Yoctocore_init(Yoctocore *self) {
     self->out[output].note_on.note = 0;
     self->out[output].note_on.time_on = 0;
     self->out[output].tuning = false;
+    self->out[output].voltage_override = 0;
+    self->out[output].voltage_do_override = false;
   }
   self->debounce_save = 0;
 }

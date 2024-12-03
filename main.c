@@ -305,6 +305,24 @@ void midi_note_on(int channel, int note, int velocity) {
   }
 }
 
+void midi_cc(int channel, int cc, int value) {
+  channel++;  // 1-indexed
+  printf("ch=%d cc=%d val=%d\n", channel, cc, value);
+  if (channel >= 9) {
+    // voltage override
+    uint8_t output = channel - 9;
+    yocto.out[output].voltage_do_override = (cc > 0 || value > 0);
+    if (yocto.out[output].voltage_do_override) {
+      // calcuate the 14-bit number using the cc as high bits and value as low
+      // bits
+      float voltage01 = (float)((cc << 7) + value) / 16383.0f;
+      // scale voltage to -5 to 10
+      yocto.out[output].voltage_override =
+          linlin(voltage01, 0.0f, 1.0f, -5.0f, 10.0f);
+    }
+  }
+}
+
 void midi_event_note_on(char chan, char data1, char data2) {
   midi_note_on(chan, data1, data2);
 }
@@ -495,7 +513,7 @@ int main() {
   while (true) {
 #ifdef INCLUDE_MIDI
     tud_task();
-    midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off, NULL,
+    midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off, midi_cc,
                    midi_start, midi_continue, midi_stop, midi_timing);
 #endif
 
@@ -642,9 +660,14 @@ int main() {
         default:
           break;
       }
+
       // clamp voltages
       out->voltage_current = util_clamp(
           out->voltage_current, config->min_voltage, config->max_voltage);
+      // check for voltage override
+      if (out->voltage_do_override) {
+        out->voltage_current = out->voltage_override;
+      }
     }
   }
 }

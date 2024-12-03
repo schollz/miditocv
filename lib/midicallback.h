@@ -107,12 +107,6 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   }
 }
 
-void midi_cc(int channel, int cc, int value) {
-#ifdef DEBUG_MIDI
-  printf("cc: %d\n", cc);
-#endif
-}
-
 void midi_start() {
 #ifdef DEBUG_MIDI
   printf("[midicallback] midi start\n");

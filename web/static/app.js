@@ -421,7 +421,33 @@ function setupMidi() {
         });
 }
 
+function floatTo14Bit(floatValue) {
+    if (floatValue < 0 || floatValue > 1) {
+        throw new Error("Input float must be in the range 0 to 1.");
+    }
 
+    // Scale float to 14-bit range (0 to 16383)
+    const scaledValue = Math.round(floatValue * 16383);
+
+    // Extract the high 7 bits (most significant bits)
+    const high7Bits = (scaledValue >> 7) & 0x7F;
+
+    // Extract the low 7 bits (least significant bits)
+    const low7Bits = scaledValue & 0x7F;
+
+    // Return the two 7-bit numbers
+    return { high7Bits, low7Bits };
+}
+
+function send_voltage(channel, scaled_voltage) {
+    // Convert the scaled voltage to 14-bit
+    const { high7Bits, low7Bits } = floatTo14Bit(scaled_voltage);
+
+    // Construct the SysEx message
+    if (window.yoctocoreDevice) {
+        window.yoctocoreDevice.send([0xB0 + (channel - 1 + 8), high7Bits, low7Bits]);
+    }
+}
 
 function send_sysex(str) {
     if (window.yoctocoreDevice) {
