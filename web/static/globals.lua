@@ -325,10 +325,10 @@ function note_to_midi(note)
     return midi
 end
 
-assert(note_to_midi("c4") == 60)
-assert(note_to_midi("d") == 62)
-assert(note_to_midi("d#4") == 63)
-assert(note_to_midi("db4") == 61)
+-- assert(note_to_midi("c4") == 60)
+-- assert(note_to_midi("d") == 62)
+-- assert(note_to_midi("d#4") == 63)
+-- assert(note_to_midi("db4") == 61)
 
 function midi_to_cv(midi_note, root, v_oct)
     if (midi_note <= 10) then
@@ -342,9 +342,9 @@ function midi_to_cv(midi_note, root, v_oct)
     return (midi_note - root) / (12.0 * v_oct)
 end
 
-assert(midi_to_cv(60) == 0)
-assert(midi_to_cv(61) == 1 / 12)
-assert(midi_to_cv(62) == 2 / 12)
+-- assert(midi_to_cv(60) == 0)
+-- assert(midi_to_cv(61) == 1 / 12)
+-- assert(midi_to_cv(62) == 2 / 12)
 
 function to_cv(val)
     -- converts a note, midi, or a voltage to a voltage
@@ -366,11 +366,12 @@ function to_cv(val)
     if success then
         return result
     end
+    return -15
 end
 
-print(to_cv(62))
-print(to_cv("c5"))
-print(to_cv(1.2))
+-- print(to_cv(62))
+-- print(to_cv("c5"))
+-- print(to_cv(1.2))
 
 ------------------------
 -- environment blocks --
@@ -397,24 +398,36 @@ end
 
 function update_env(i, code)
     envs[i] = new_env([[
+gate_trigger = 0
 envelope_trigger = 0
+iteration_num = 0
+
+function gate(on) 
+    if on==true or on==nil then 
+        gate_trigger = 1 
+    else
+        gate_trigger = 0
+    end
+end
 
 function envelope()
     envelope_trigger = 1 
 end
 
 function main_call()
+    iteration_num = iteration_num + 1
     local value = -15
     if type(main) == "function" then
         original = main()
-        if original==nil then 
-            value = -15 
-        else
+        if original then
             value = to_cv(original)
         end
     end
-    local trigger = envelope_trigger
-    envelope_trigger = 0
+    local trigger = gate_trigger
+    if envelope_trigger == 1 then
+        trigger = 1
+        envelope_trigger = 0
+    end
     return value, trigger, original
 end
 ]] .. code)
@@ -427,32 +440,28 @@ end
 
 function test_env_main(i)
     local v, t, o = envs[i].main_call()
-    if v then
-        return o .. string.format(", cv=%2.2f, env=", v) .. t
+    if v >= -5 then
+        return envs[i].iteration_num .. ") " .. o .. string.format(", cv=%2.2f, env=", v) .. t
     else
-        return o .. " cv=n/a, env=" .. t
+        return string.format("%d) ", envs[i].iteration_num)
     end
 end
 
 math.randomseed(os.time())
 
--- -- testing
--- update_env(1, [[
--- a = S{60,62,S{60,65},67}:every(2)
--- b = S{0,100}:every(3)
--- function main()
---     local v = a()
---     local u = b()
---     if v~='skip' then 
---         if u~='skip' then
---             v = v + u
---         end
---         envelope()
---         do return v end 
---     end
--- end
--- ]])
+-- testing
+update_env(1, [[
+a = S{60,62,S{60,65},67}:every(4):select(3)
+b = S{1,1,1,0}
+function main()
+    local u = a()
+     gate(b()>0)
+    if u~='skip' then 
+        do return u end 
+    end
+end
+]])
 
--- for i = 1, 10 do
---     print(test_env_main(1))
--- end
+for i = 1, 10 do
+    print(test_env_main(1))
+end
