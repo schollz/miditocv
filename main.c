@@ -538,7 +538,9 @@ int main() {
     for (uint8_t i = 0; i < button_num; i++) {
       bool val = 1 - gpio_get(button_pins[i]);
       if (val != button_values[i]) {
-        printf("Button %d: %d\n", i, val);
+        uint8_t unique_id;
+        flash_get_unique_id(&unique_id);
+        printf("Button %d: %d (%d)\n", i, val, unique_id);
         button_values[i] = val;
         if (i < 8) {
           // process button press
