@@ -396,17 +396,63 @@ for i = 1, 8 do
 end
 
 function update_env(i, code)
-    envs[i] = new_env(code)
+    envs[i] = new_env([[
+envelope_trigger = 0
+
+function envelope()
+    envelope_trigger = 1 
+end
+
+function main_call()
+    local value = -15
+    if type(main) == "function" then
+        original = main()
+        if original==nil then 
+            value = -15 
+        else
+            value = to_cv(original)
+        end
+    end
+    local trigger = envelope_trigger
+    envelope_trigger = 0
+    return value, trigger, original
+end
+]] .. code)
 end
 
 function env_main(i)
-    return envs[i].main()
+    local v, t, _ = envs[i].main_call()
+    return v, t
 end
 
 function test_env_main(i)
-    local v = envs[i].main()
-    return "main()-> " .. v .. ", cv=" .. to_cv(v)
+    local v, t, o = envs[i].main_call()
+    if v then
+        return o .. string.format(", cv=%2.2f, env=", v) .. t
+    else
+        return o .. " cv=n/a, env=" .. t
+    end
 end
 
 math.randomseed(os.time())
 
+-- -- testing
+-- update_env(1, [[
+-- a = S{60,62,S{60,65},67}:every(2)
+-- b = S{0,100}:every(3)
+-- function main()
+--     local v = a()
+--     local u = b()
+--     if v~='skip' then 
+--         if u~='skip' then
+--             v = v + u
+--         end
+--         envelope()
+--         do return v end 
+--     end
+-- end
+-- ]])
+
+-- for i = 1, 10 do
+--     print(test_env_main(1))
+-- end
