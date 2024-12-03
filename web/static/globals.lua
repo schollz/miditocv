@@ -414,11 +414,11 @@ function envelope()
     envelope_trigger = 1 
 end
 
-function main_call()
+function main_call(beat)
     iteration_num = iteration_num + 1
     local value = -15
     if type(main) == "function" then
-        original = main()
+        original = main(beat)
         if original then
             value = to_cv(original)
         end
@@ -433,13 +433,13 @@ end
 ]] .. code)
 end
 
-function env_main(i)
-    local v, t, _ = envs[i].main_call()
+function env_main(i, beat)
+    local v, t, _ = envs[i].main_call(beat)
     return v, t
 end
 
-function test_env_main(i)
-    local v, t, o = envs[i].main_call()
+function test_env_main(i, beat)
+    local v, t, o = envs[i].main_call(beat)
     if v >= -5 then
         return envs[i].iteration_num .. ") " .. o .. string.format(", cv=%2.2f, env=", v) .. t
     else
@@ -451,11 +451,15 @@ math.randomseed(os.time())
 
 -- testing
 update_env(1, [[
-a = S{60,62,S{60,65},67}:every(4)
+a = S{60,62,S{70,75},67}
 b = S{1,1,1,0}
-function main()
-    local u = a()
-     gate(b()>0)
+c = S{10,13,15,S{17,20}}
+function main(beat)
+    a:select(beat)
+    b:select(beat)
+    c:select(beat)
+    local u = a() + c()
+    gate(b()>0)
     if u~='skip' then 
         do return u end 
     end
@@ -463,10 +467,6 @@ end
 ]])
 
 for i = 1, 10 do
-    print(test_env_main(1))
+    print(test_env_main(1, i))
 end
 
-a = S {60, 62, S {60, 65}, 67}:every(4)
-for i = 1, 10 do
-    print(a())
-end
