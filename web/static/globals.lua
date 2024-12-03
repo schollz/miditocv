@@ -451,7 +451,7 @@ math.randomseed(os.time())
 
 -- testing
 update_env(1, [[
-a = S{60,62,S{60,65},67}:every(4):select(3)
+a = S{60,62,S{60,65},67}:every(4)
 b = S{1,1,1,0}
 function main()
     local u = a()
@@ -464,4 +464,9 @@ end
 
 for i = 1, 10 do
     print(test_env_main(1))
+end
+
+a = S {60, 62, S {60, 65}, 67}:every(4)
+for i = 1, 10 do
+    print(a())
 end
