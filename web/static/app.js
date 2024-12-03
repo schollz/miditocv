@@ -169,6 +169,8 @@ typedef struct Config {
   bool sparkline_do_update;
   char code;
   uint15_t code_len;
+  float duration;
+  float setpoint_voltage;
 } Config;
 
 `;
@@ -506,6 +508,8 @@ const app = createApp({
                     code: `function main()
 	return 60
 end`,
+                    duration: 1,
+                    setpoint_voltage: 0,
                 })),
             }))
         );
@@ -639,8 +643,8 @@ end`,
         function darkMode() {
             document.body.classList.toggle('dark-mode');
             // code mirror dark mode
-            myCodeMirror.setOption("theme", document.body.classList.contains('dark-mode') ? "material" : "default");
-            outputCodeMirror.setOption("theme", document.body.classList.contains('dark-mode') ? "material" : "default");
+            myCodeMirror.setOption("theme", document.body.classList.contains('dark-mode') ? "material-darker" : "default");
+            outputCodeMirror.setOption("theme", document.body.classList.contains('dark-mode') ? "material-darker" : "default");
         }
         function doBoardReset() {
             send_sysex("diskmode1");
