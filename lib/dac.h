@@ -8,6 +8,8 @@ typedef struct DAC {
   MCP4728 mcp4728[2];
   float voltages[8];
   float voltages_last[8];
+  float voltage_calibration_slope[8];
+  float voltage_calibration_intercept[8];
 } DAC;
 
 void DAC_init(DAC *self) {
@@ -17,6 +19,8 @@ void DAC_init(DAC *self) {
   for (int i = 0; i < 8; i++) {
     self->voltages[i] = 0;
     self->voltages_last[i] = -1;
+    self->voltage_calibration_slope[i] = 0;
+    self->voltage_calibration_intercept[i] = 0;
   }
 }
 
@@ -44,9 +48,14 @@ void DAC_set_voltage(DAC *self, int channel, float voltage) {
     return;
   }
 #ifndef DEBUG_VOLTAGE_CALIBRATION
-  // calibrated voltage
-  voltage =
-      (voltage - CALIBRATION_VOLTAGE_INTERCEPT) / CALIBRATION_VOLTAGE_SLOPE;
+  if (self->voltage_calibration_slope[channel] != 0) {
+    voltage = voltage * self->voltage_calibration_slope[channel] +
+              self->voltage_calibration_intercept[channel];
+  } else {
+    // calibrated voltage
+    voltage =
+        (voltage - CALIBRATION_VOLTAGE_INTERCEPT) / CALIBRATION_VOLTAGE_SLOPE;
+  }
 #endif
   // convert voltage from -5-10 to 0-5
   voltage = (voltage + 5.0f) / 3.0f;

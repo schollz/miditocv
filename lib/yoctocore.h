@@ -97,6 +97,8 @@ typedef struct Out {
   NoteHeld note_on;
   Noise noise;
   bool tuning;
+  float voltage_calibration_intercept;
+  float voltage_calibration_slope;
 } Out;
 
 typedef struct Yoctocore {
@@ -519,6 +521,75 @@ void Yoctocore_process_sysex(Yoctocore *self, uint8_t *buffer) {
     } else {
       printf("%d %d %" PRIu32 " %f\n", scene, output, param_hash,
              Yoctocore_get(self, scene, output, param_hash));
+    }
+  }
+}
+
+bool Yoctocore_set_calibration(Yoctocore *self, int output,
+                               float voltage_calibration_slope,
+                               float voltage_calibration_intercept) {
+  FRESULT fr;
+  FIL file;
+  UINT bw;
+  char fname[32];
+  sprintf(fname, "calibration%d", output);
+
+  fr = f_open(&file, fname, FA_WRITE | FA_CREATE_ALWAYS);
+  if (FR_OK != fr) {
+    printf("f_open error: %s (%d)\n", FRESULT_str(fr), fr);
+    return false;
+  }
+  uint32_t total_bytes_written = 0;
+
+  // write the calibration values
+  fr = f_write(&file, &voltage_calibration_slope, sizeof(float), &bw);
+  if (FR_OK != fr) {
+    printf("f_write error: %s (%d)\n", FRESULT_str(fr), fr);
+    return false;
+  }
+  fr = f_write(&file, &voltage_calibration_intercept, sizeof(float), &bw);
+  if (FR_OK != fr) {
+    printf("f_write error: %s (%d)\n", FRESULT_str(fr), fr);
+    return false;
+  }
+
+  fr = f_close(&file);
+  if (FR_OK != fr) {
+    printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
+    return false;
+  }
+  return true;
+}
+
+void Yoctocore_get_calibrations(Yoctocore *self) {
+  for (uint8_t i = 0; i < 8; i++) {
+    FRESULT fr;
+    FIL file;
+    UINT br;
+    char fname[32];
+    sprintf(fname, "calibration%d", i);
+
+    fr = f_open(&file, fname, FA_READ);
+    if (FR_OK != fr) {
+      printf("f_open error: %s (%d)\n", FRESULT_str(fr), fr);
+      return;
+    }
+    fr = f_read(&file, &self->out[i].voltage_calibration_slope, sizeof(float),
+                &br);
+    if (FR_OK != fr) {
+      printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
+      return;
+    }
+    fr = f_read(&file, &self->out[i].voltage_calibration_intercept,
+                sizeof(float), &br);
+    if (FR_OK != fr) {
+      printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
+      return;
+    }
+    fr = f_close(&file);
+    if (FR_OK != fr) {
+      printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
+      return;
     }
   }
 }

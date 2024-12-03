@@ -437,6 +437,16 @@ int main() {
     // big_file_test("test.bin", 2, 0);  // perform read/write test
   }
 
+  // initialize the yoctocore
+  Yoctocore_init(&yocto);
+  // load the yoctocore data
+  uint64_t start_time = time_us_64();
+  if (Yoctocore_load(&yocto)) {
+    printf("loaded data in %lld us\n", time_us_64() - start_time);
+  } else {
+    printf("failed to load data\n");
+  }
+
   // initialize dac
   DAC_init(&dac);
 #ifdef DEBUG_VOLTAGE_CALIBRATION
@@ -451,20 +461,17 @@ int main() {
     sleep_ms(5000);
   }
 #endif
+#ifdef USE_VOLTAGE_CALIBRATIONS
+  Yoctocore_get_calibrations(&yocto);
+  for (uint8_t i = 0; i < 8; i++) {
+    DAC_set_calibration(&dac, i, yocto.out[i].voltage_calibration_slope,
+                        yocto.out[i].voltage_calibration_intercept);
+  }
+#endif
   for (uint8_t i = 0; i < 8; i++) {
     DAC_set_voltage(&dac, i, 0);
   }
   DAC_update(&dac);
-
-  // initialize the yoctocore
-  Yoctocore_init(&yocto);
-  // load the yoctocore data
-  uint64_t start_time = time_us_64();
-  if (Yoctocore_load(&yocto)) {
-    printf("loaded data in %lld us\n", time_us_64() - start_time);
-  } else {
-    printf("failed to load data\n");
-  }
 
   // initialize timers
   uint32_t ct = to_ms_since_boot(get_absolute_time());

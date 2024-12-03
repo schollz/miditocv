@@ -44,6 +44,7 @@ resetpico2:
 upload: resetpico2 changebaud yoctocore
 	./dev/upload.sh 
 
+
 clean:
 	rm -rf build
 	rm -rf *.wav
@@ -61,7 +62,6 @@ web/localhost.pem:
 	go install -v filippo.io/mkcert@latest
 	cd web && mkcert -install 
 	cd web && mkcert localhost
-
 
 .PHONY: web
 BROWSERSYNC_CMD = cd web && browsersync

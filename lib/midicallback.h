@@ -43,6 +43,51 @@ bool get_sysex_param_float_value(const char *param_name, const uint8_t *sysex,
   // Return false if the parameter name is not found or the message is invalid
   return false;
 }
+
+bool get_sysex_param_int_and_two_float_values(const char *param_name,
+                                              const uint8_t *sysex,
+                                              size_t length, int *out_int,
+                                              float *out_value1,
+                                              float *out_value2) {
+  size_t param_len = strlen(param_name);
+
+  // Check if the SysEx message is long enough and contains the parameter name
+  if (length > param_len && memcmp(sysex, param_name, param_len) == 0) {
+    // Allocate a temporary buffer for the rest of the message
+    char value_str[length - param_len + 1];
+
+    // Copy the rest of the message into the buffer
+    for (size_t i = param_len; i < length; i++) {
+      value_str[i - param_len] = sysex[i];
+    }
+
+    // Null-terminate the string
+    value_str[length - param_len] = '\0';
+
+    // Tokenize the string to extract the integer and two float values
+    char *token = strtok(value_str, ",");
+    if (token == NULL) return false;
+
+    // Parse the integer
+    *out_int = strtol(token, NULL, 10);
+
+    // Parse the first float
+    token = strtok(NULL, ",");
+    if (token == NULL) return false;
+    *out_value1 = strtof(token, NULL);
+
+    // Parse the second float
+    token = strtok(NULL, ",");
+    if (token == NULL) return false;
+    *out_value2 = strtof(token, NULL);
+
+    return true;
+  }
+
+  // Return false if the parameter name is not found or the message is invalid
+  return false;
+}
+
 bool get_sysex_param_int_value(const char *param_name, const uint8_t *sysex,
                                size_t length, int *out_value) {
   size_t param_len = strlen(param_name);
@@ -87,6 +132,7 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   send_buffer_as_sysex(sysex_str, length + 7 + 1);
 #endif
   float val;
+  float val2;
   int vali;
   // check if sysex starts with LN (lua new)
   if (sysex[0] == 'L' && (sysex[1] == 'A' || sysex[1] == 'N')) {
@@ -101,6 +147,9 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   } else if (get_sysex_param_float_value("diskmode", sysex, length, &val)) {
     sleep_ms(10);
     reset_usb_boot(0, 0);
+  } else if (get_sysex_param_int_and_two_float_values(
+                 "calibration", sysex, length, &vali, &val, &val2)) {
+    Yoctocore_set_calibration(&yocto, vali, val, val2);
   } else {
     Yoctocore_process_sysex(&yocto, sysex);
     // clear the sysex buffer
