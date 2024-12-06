@@ -115,4 +115,21 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    # list usb devices using pyusb
+    usb_devices = list_tty_usb_devices()
+    ic(usb_devices)
+    if len(usb_devices) == 0:
+        print("No USB devices found.")
+
+    # find multimeters
+    multimeter = None
+    for device in usb_devices:
+        try:
+            multimeter = DigitalMultimeter(connect=device)
+            ic(multimeter)
+            break
+        except Exception as e:
+            ic(e)
+
+    if multimeter is None:
+        print("No multimeter found.")
