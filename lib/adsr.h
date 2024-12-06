@@ -1,4 +1,3 @@
-
 #ifndef ADSR_LIB
 #define ADSR_LIB 1
 
@@ -43,12 +42,13 @@ void ADSR_gate(ADSR *adsr, bool gate, uint32_t current_time_ms) {
     return;
   }
   adsr->gate = gate;
-  adsr->start_time = current_time_ms;
   if (gate) {
     adsr->state = env_attack;
+    adsr->level_start = adsr->level;  // Start from the current level
   } else {
     adsr->state = env_release;
   }
+  adsr->start_time = current_time_ms;
 }
 
 float ADSR_process(ADSR *adsr, float current_time_ms) {
@@ -80,7 +80,7 @@ float ADSR_process(ADSR *adsr, float current_time_ms) {
   }
 
   if (adsr->state == env_sustain) {
-    adsr->level = adsr->level_release;
+    adsr->level = adsr->sustain;
   }
 
   if (adsr->state == env_release) {
