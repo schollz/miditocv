@@ -671,6 +671,21 @@ end`,
             // code mirror dark mode
             myCodeMirror.setOption("theme", document.body.classList.contains('dark-mode') ? "material-darker" : "default");
             outputCodeMirror.setOption("theme", document.body.classList.contains('dark-mode') ? "material-darker" : "default");
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
+        }
+        // Function to initialize dark mode based on saved preference
+        function initializeDarkMode() {
+            const darkModePreference = localStorage.getItem('darkMode');
+
+            // Check the preference and apply the dark mode if enabled
+            if (darkModePreference === 'enabled') {
+                document.body.classList.add('dark-mode');
+                myCodeMirror.setOption("theme", "material-darker");
+                outputCodeMirror.setOption("theme", "material-darker");
+            } else {
+                myCodeMirror.setOption("theme", "default");
+                outputCodeMirror.setOption("theme", "default");
+            }
         }
         function doBoardReset() {
             send_sysex("diskmode1");
@@ -828,6 +843,9 @@ end`,
             //                     myCodeMirror.focus();
             //                 }, 50);
             //             });
+            initializeDarkMode();
+
+
         });
 
         // Debounce function
