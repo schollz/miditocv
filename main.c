@@ -116,6 +116,10 @@ const uint8_t const_colors[8][3] = {
     {97, 0, 97},      // Violet
 };
 
+void timer_callback_beat(bool on, int user_data) {
+  printf("%d: %d\n", user_data, on);
+}
+
 void timer_callback_ws2812(bool on, int user_data) {
   for (uint8_t i = 0; i < 8; i++) {
     // uint8_t jj =
@@ -478,8 +482,7 @@ int main() {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   // first 8 timers are for each output and disabled by default
   for (uint8_t i = 0; i < 16; i++) {
-    SimpleTimer_init(&pool_timer[i], 1000.0f / (100.0f + i * 10) * 30, 1.0f, 0,
-                     NULL, i);
+    SimpleTimer_init(&pool_timer[i], 60.0f, 1.0f, 0, timer_callback_beats, i);
   }
   // setup a timer at 5 milliseconds to sample the knobs
   SimpleTimer_init(&pool_timer[8], 1000.0f / 11.0f * 30, 1.0f, 0,
@@ -645,6 +648,8 @@ int main() {
           }
           break;
         case MODE_CLOCK:
+          break;
+        case MODE_CODE:
           break;
         case MODE_ENVELOPE:
           // mode envelope will trigger the envelope based on button press
