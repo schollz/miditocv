@@ -78,18 +78,17 @@ void SimpleTimer_reset(SimpleTimer *self, float current_time) {
 }
 
 // Function to stop the SimpleTimer
-void SimpleTimer_stop(SimpleTimer *self) { self->next_time = 0; }
+void SimpleTimer_stop(SimpleTimer *self) {
+  self->next_time = 0;
+  self->on = false;
+}
 
 // Function to start the SimpleTimer
 void SimpleTimer_start(SimpleTimer *self, float current_time) {
-  SimpleTimer_reset(self, current_time);
-}
-
-void SimpleTimer_on(SimpleTimer *self, float current_time) {
   if (self->on) {
     return;
   }
-  SimpleTimer_start(self, current_time);
+  SimpleTimer_reset(self, current_time);
 }
 
 // Main processing function for generating timer pulses

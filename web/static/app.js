@@ -486,18 +486,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // // ask for sparkline data (doubles as check if connected)
         const sparkline_update_time_ms = 50;
-        setTimeout(() => {
-            setInterval(() => {
-                if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
-                    window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
-                }
-                // need to fix this to prevent multiple connects
-                // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
-                //     vm.device_connected = false;
-                //     setupMidi();
-                // }
-            }, sparkline_update_time_ms);
-        }, 2000);
+        // setTimeout(() => {
+        //     setInterval(() => {
+        //         if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
+        //             window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
+        //         }
+        //         // need to fix this to prevent multiple connects
+        //         // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
+        //         //     vm.device_connected = false;
+        //         //     setupMidi();
+        //         // }
+        //     }, sparkline_update_time_ms);
+        // }, 2000);
 
     }
 
