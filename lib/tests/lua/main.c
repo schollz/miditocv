@@ -10,7 +10,6 @@
 #include "../../luavm.h"
 
 int main() {
-  luaInit();
   luaTest();
   return 0;
 }

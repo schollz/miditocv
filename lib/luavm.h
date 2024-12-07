@@ -30,11 +30,19 @@ end
 **/
 int luaUpdateEnvironment(int index, const char *code) {
   lua_getglobal(L, "update_env");
+  if (!lua_isfunction(L, -1)) {
+    printf(
+        "[luaUpdateEnvironment] update_env not defined or not a function.\n");
+    lua_pop(L, 1);
+    return 1;
+  }
+
   lua_pushinteger(L, index);
   lua_pushstring(L, code);
+
   if (lua_pcall(L, 2, 0, 0) != LUA_OK) {
     printf("[luaUpdateEnvironment] error: %s\n", lua_tostring(L, -1));
-    lua_close(L);
+    lua_pop(L, 1);  // Remove error message
     return 1;
   }
   return 0;
@@ -64,66 +72,87 @@ int luaInit() {
 
   // create 8 environments with a main() function that returns -10
   for (int i = 0; i < 8; i++) {
-    luaUpdateEnvironment(i, "function main() return -10 end");
+    luaUpdateEnvironment(i, "function main() return -10,0 end");
   }
 
   return 0;
 }
 
-float luaRunMain(int index) {
+int luaRunMain(int index, int beat, float *voltage, int *gate) {
   lua_getglobal(L, "env_main");
-  lua_pushinteger(L, index);
-  if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
-    printf("Error: %s\n", lua_tostring(L, -1));
-    lua_close(L);
+  if (!lua_isfunction(L, -1)) {
+    printf("[luaRunMain] env_main not defined or not a function.\n");
+    lua_pop(L, 1);
     return 0;
   }
-  return lua_tonumber(L, -1);
+
+  lua_pushinteger(L, index);
+  lua_pushinteger(L, beat);
+
+  if (lua_pcall(L, 2, 2, 0) != LUA_OK) {
+    printf("[luaRunMain] error: %s\n", lua_tostring(L, -1));
+    lua_pop(L, 1);
+    return 0;
+  }
+
+  if (lua_gettop(L) < 2) {
+    printf("[luaRunMain] Not enough return values from env_main.\n");
+    lua_settop(L, 0);  // Clear the stack
+    return 0;
+  }
+
+  *gate = lua_tonumber(L, -1);
+  lua_pop(L, 1);
+  *voltage = lua_tonumber(L, -1);
+  lua_pop(L, 1);
+
+  return 1;
 }
 
 int luaTest() {
-  /**
-  -- a = 10
--- function main()
---     a = a + 1
---     return a
--- end
-  **/
-  // add above code as update environment
-  const char *code =
-      "a = 10\n"
-      "function main()\n"
-      "    a = a + 1\n"
-      "    return a\n"
-      "end";
-  luaUpdateEnvironment(0, code);
+  luaInit();
 
-  // add another environment
-  const char *code2 =
-      "a = 20\n"
-      "function main()\n"
-      "    a = a + random_number()\n"
-      "    return a\n"
+  /*
+  a = S{60,62,S{70,75},67}
+  b = S{1,1,1,0}
+  c = S{10,13,15,S{17,20}}
+  function main(beat)
+      a:select(beat)
+      b:select(beat)
+      c:select(beat)
+      local u = a() + c()
+      -- gate(b()>0)
+      if (b()>0) then
+          trig()
+      end
+      -- trig()
+      if u~='skip' then
+          do return u end
+      end
+  end
+  */
+  const char *code0 =
+      "a = S{60,62,S{70,75},67}\n"
+      "b = S{1,1,1,0}\n"
+      "c = S{10,13,15,S{17,20}}\n"
+      "function main(beat)\n"
+      "    a:select(beat)\n"
+      "    b:select(beat)\n"
+      "    c:select(beat)\n"
+      "    local u = a() + c()\n"
+      "    if (b()>0) then\n"
+      "        trig()\n"
+      "    end\n"
+      "    if u~='skip' then\n"
+      "        return u\n"
+      "    end\n"
       "end";
-  luaUpdateEnvironment(1, code2);
+  luaUpdateEnvironment(0, code0);
   for (uint8_t i = 0; i < 8; i++) {
-    printf("Result: %f\n", luaRunMain(0));
-  }
-  for (uint8_t i = 0; i < 8; i++) {
-    printf("Result: %f\n", luaRunMain(1));
-  }
-  const char *code3 =
-      "a = 1\n"
-      "function main()\n"
-      "    a = a + 2\n"
-      "    return a\n"
-      "end";
-  luaUpdateEnvironment(1, code3);
-  for (uint8_t i = 0; i < 8; i++) {
-    printf("Result: %f\n", luaRunMain(1));
-  }
-  for (uint8_t i = 0; i < 8; i++) {
-    printf("Result: %f\n", luaRunMain(2));
+    float v;
+    int gate;
+    luaRunMain(0, i, &v, &gate);
+    printf("Result: %f %d\n", v, gate);
   }
 
   return 0;
