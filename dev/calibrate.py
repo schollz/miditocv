@@ -1,16 +1,38 @@
-import mido
-from digital_multimeter.main import DigitalMultimeter
+import time
+import os
+
+import pygame.midi
 from icecream import ic
-from scipy.stats import linregress
+import nidaqmx
+from nidaqmx.constants import TerminalConfiguration
 import matplotlib.pyplot as plt
+from scipy.stats import linregress
+import numpy as np
 
-import glob
+
+def read_all_voltages(task, num_channels):
+    # Read all channels in one go
+    data = task.read(number_of_samples_per_channel=1)
+    return data
 
 
-def list_tty_usb_devices():
-    # Look for devices under the standard TTY USB path
-    devices = glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*")
-    return devices
+def read_voltages():
+    # Specify channels to read
+    channels_to_read = list(range(8))  # Reading ai0 to ai7
+
+    # Create and configure the task outside the loop
+    with nidaqmx.Task() as task:
+        # Add multiple channels to the task with single-ended configuration
+        for ch in channels_to_read:
+            task.ai_channels.add_ai_voltage_chan(
+                f"Dev1/ai{ch}",
+                terminal_config=TerminalConfiguration.RSE,  # Single-ended configuration
+            )
+        task.timing.cfg_samp_clk_timing(10)
+
+        # Read voltages
+        voltages = read_all_voltages(task, len(channels_to_read))
+        return [v[0] for v in voltages]
 
 
 def float_to_14bit(float_value):
@@ -30,89 +52,113 @@ def float_to_14bit(float_value):
     return high7_bits, low7_bits
 
 
-def send_voltage(channel, voltage, midi_device):
+def send_voltage(output, channel, voltage):
     """
     Send the scaled voltage as a MIDI SysEx message.
 
     :param channel: MIDI channel (1-indexed)
     :param scaled_voltage: A float between 0 and 1
-    :param midi_device: A MIDI output object (e.g., provided by mido)
     """
+    # find midi output with "yoctocore" in name
+
     scaled_voltage = (voltage + 5.0) / 15.0
     # Convert the scaled voltage to 14-bit
     high7_bits, low7_bits = float_to_14bit(scaled_voltage)
 
-    # Create the Control Change message
-    message = mido.Message(
-        "control_change", channel=channel - 1 + 8, control=high7_bits, value=low7_bits
-    )
+    # Create the Control Change message and send it with pygame
+    message = [0xB0 + channel - 1 + 8, high7_bits, low7_bits]
 
-    # Send the message using the provided MIDI device
-    ic(channel, voltage, message)
-    midi_device.send(message)
+    # ic(output, message)
+    output.write_short(message[0], message[1], message[2])
+
+
+def set_all_voltage(voltage):
+    not_done = True
+    while not_done:
+        output = None
+        try:
+            pygame.midi.init()
+            for device_id in range(pygame.midi.get_count()):
+                interface, name, is_input, is_output, opened = (
+                    pygame.midi.get_device_info(device_id)
+                )
+                if not is_output:
+                    continue
+                if "yoctocore" in name.decode("utf-8"):
+                    output = pygame.midi.Output(device_id)
+                    break
+            for i in range(8):
+                send_voltage(output, i + 1, voltage)
+            time.sleep(0.05)
+            not_done = False
+        except:
+            pygame.midi.quit()
+            time.sleep(0.05)
+            continue
 
 
 def run():
-    output = None
-    for device in mido.get_output_names():
-        if "yoctocore" in device:
-            output = mido.open_output(device)
-            break
+    voltages = [
+        -4,
+        -3,
+        -2,
+        -1,
+        0,
+        0.5,
+        1,
+        1.5,
+        2,
+        2.5,
+        3,
+        3.5,
+        4,
+        4.5,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+    ]
+    num_channels = 8  # Assuming 8 channels
+    num_trials = 5
+    # make numpy matrix of measured voltages
+    measured = np.zeros((len(voltages), num_channels, num_trials))
+    for trial in range(num_trials):
+        for i, voltage in enumerate(voltages):
+            set_all_voltage(voltage)
+            measured_voltages = read_voltages()
+            measured[i, :, trial] = measured_voltages
 
-    if output is None:
-        print("No yoctocore device found.")
-        return
-
-    ic(device)
-    # send_voltage(1, 2.12, output)
-
-    # list usb devices using pyusb
-    usb_devices = list_tty_usb_devices()
-    ic(usb_devices)
-    if len(usb_devices) == 0:
-        print("No USB devices found.")
-        return
-
-    # find multimeters
-    multimeter = None
-    for device in usb_devices:
-        try:
-            multimeter = DigitalMultimeter(connect=device)
-            ic(multimeter)
-            break
-        except Exception as e:
-            ic(e)
-
-    if multimeter is None:
-        print("No multimeter found.")
-        return
-
-    # for each of the 8 ouputs, measure 15 voltages
-    # make subplots 2x4
+    # make 8 plots showing a scatter plot for each channel
     (fig, axs) = plt.subplots(2, 4)
-    for channel in range(1, 9):
-        voltages = [-4.8, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9.9]
-        measured_voltages = []
-        for voltage in voltages:
-            send_voltage(channel, voltage, output)
-            # measure voltage
-            voltage = multimeter.measure_voltage()
-            ic(channel, voltage)
-            measured_voltages.append(voltage)
-        # compute regression between measured voltages and expected voltages
-        slope, intercept, r_value, p_value, std_err = linregress(
-            voltages, measured_voltages
+    for i in range(num_channels):
+        # concatenate all trials
+        x = []
+        y = []
+        for trial in range(num_trials):
+            x.extend(voltages)
+            y.extend(measured[:, i, trial])
+
+        # plot with confidence intervals
+        axs[i // 4, i % 4].scatter(x, y, color="black")
+
+        # create regression with 95% confidence interval
+        slope, intercept, r_value, p_value, std_err = linregress(x, y)
+        x = np.array(x)
+        axs[i // 4, i % 4].plot(x, slope * x + intercept, color="red")
+        axs[i // 4, i % 4].fill_between(
+            x,
+            slope * x + intercept - 1.96 * std_err,
+            slope * x + intercept + 1.96 * std_err,
+            alpha=0.2,
+            color="red",
         )
-        # plot the points and the regression
-        axs[(channel - 1) // 4, (channel - 1) % 4].scatter(voltages, measured_voltages)
-        axs[(channel - 1) // 4, (channel - 1) % 4].plot(
-            voltages, [slope * x + intercept for x in voltages]
-        )
-        axs[(channel - 1) // 4, (channel - 1) % 4].set_title(f"Channel {channel}")
-        axs[(channel - 1) // 4, (channel - 1) % 4].set_xlabel("Expected voltage (V)")
-        axs[(channel - 1) // 4, (channel - 1) % 4].set_ylabel("Measured voltage (V)")
+        axs[i // 4, i % 4].set_title(f"Channel {i+1} {slope:.3f}x + {intercept:.3f}")
+        axs[i // 4, i % 4].set_xlabel("Voltage")
+        axs[i // 4, i % 4].set_ylabel("Measured Voltage")
+
     plt.show()
 
 
-if __name__ == "__main__":
-    run()
+run()
