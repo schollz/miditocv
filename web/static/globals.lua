@@ -410,7 +410,7 @@ function gate(on)
     end
 end
 
-function envelope()
+function trig()
     envelope_trigger = 1 
 end
 
@@ -459,7 +459,11 @@ function main(beat)
     b:select(beat)
     c:select(beat)
     local u = a() + c()
-    gate(b()>0)
+    -- gate(b()>0)
+    if (b()>0) then
+        trig()
+    end
+    -- trig()
     if u~='skip' then 
         do return u end 
     end
