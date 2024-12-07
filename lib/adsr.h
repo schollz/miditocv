@@ -80,7 +80,11 @@ float ADSR_process(ADSR *adsr, float current_time_ms) {
   }
 
   if (adsr->state == env_sustain) {
-    adsr->level = adsr->sustain;
+    // stay at the level
+    // this prevents discontinuities when the decay is
+    // over, which should get close to the adsr->susatin level
+    // but sometimes not quite all the way
+    // adsr->level = adsr->sustain;
   }
 
   if (adsr->state == env_release) {
