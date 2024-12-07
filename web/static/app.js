@@ -485,19 +485,19 @@ document.addEventListener('DOMContentLoaded', () => {
         setupMidi();
 
         // // ask for sparkline data (doubles as check if connected)
-        // const sparkline_update_time_ms = 50;
-        // setTimeout(() => {
-        //     setInterval(() => {
-        //         if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
-        //             window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
-        //         }
-        //         // need to fix this to prevent multiple connects
-        //         // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
-        //         //     vm.device_connected = false;
-        //         //     setupMidi();
-        //         // }
-        //     }, sparkline_update_time_ms);
-        // }, 2000);
+        const sparkline_update_time_ms = 50;
+        setTimeout(() => {
+            setInterval(() => {
+                if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
+                    window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
+                }
+                // need to fix this to prevent multiple connects
+                // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
+                //     vm.device_connected = false;
+                //     setupMidi();
+                // }
+            }, sparkline_update_time_ms);
+        }, 2000);
 
     }
 
@@ -671,6 +671,21 @@ end`,
             // code mirror dark mode
             myCodeMirror.setOption("theme", document.body.classList.contains('dark-mode') ? "material-darker" : "default");
             outputCodeMirror.setOption("theme", document.body.classList.contains('dark-mode') ? "material-darker" : "default");
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
+        }
+        // Function to initialize dark mode based on saved preference
+        function initializeDarkMode() {
+            const darkModePreference = localStorage.getItem('darkMode');
+
+            // Check the preference and apply the dark mode if enabled
+            if (darkModePreference === 'enabled') {
+                document.body.classList.add('dark-mode');
+                myCodeMirror.setOption("theme", "material-darker");
+                outputCodeMirror.setOption("theme", "material-darker");
+            } else {
+                myCodeMirror.setOption("theme", "default");
+                outputCodeMirror.setOption("theme", "default");
+            }
         }
         function doBoardReset() {
             send_sysex("diskmode1");
@@ -828,6 +843,9 @@ end`,
             //                     myCodeMirror.focus();
             //                 }, 50);
             //             });
+            initializeDarkMode();
+
+
         });
 
         // Debounce function

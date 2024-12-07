@@ -8,7 +8,7 @@
 int main() {
   // Define the ADSR parameters: attack, decay, sustain, release, shape
   ADSR adsr;
-  ADSR_init(&adsr, 100.0f, 200.0f, 0.5f, 300.0f, 5.0f);
+  ADSR_init(&adsr, 1000.0f, 2000.0f, 0.5f, 2000.0f, 5.0f);
 
   // Open the output CSV file
   FILE *file = fopen("adsr_output.csv", "w");
@@ -36,14 +36,13 @@ int main() {
     if (current_time == 500) {
       ADSR_gate(&adsr, true, current_time);
     }
-    if (current_time == 1000) {
+    if (current_time == 4500) {
       ADSR_gate(&adsr, false, current_time);
     }
-    if (current_time == 5000) {
-      adsr.attack = 1000.0f;
+    if (current_time == 5700) {
       ADSR_gate(&adsr, true, current_time);
     }
-    if (current_time == 5300) {
+    if (current_time == 8000) {
       ADSR_gate(&adsr, false, current_time);
     }
   }
