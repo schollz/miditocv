@@ -482,7 +482,11 @@ int main() {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   // first 8 timers are for each output and disabled by default
   for (uint8_t i = 0; i < 16; i++) {
-    SimpleTimer_init(&pool_timer[i], 60.0f, 1.0f, 0, timer_callback_beats, i);
+    SimpleTimer_init(&pool_timer[i], 60.0f, 1.0f, 0, NULL, i);
+  }
+  for (uint8_t i = 0; i < 8; i++) {
+    SimpleTimer_init(&pool_timer[i], 60.0f, 1.0f, 0, timer_callback_beat, i);
+    SimpleTimer_start(&pool_timer[i], ct);
   }
   // setup a timer at 5 milliseconds to sample the knobs
   SimpleTimer_init(&pool_timer[8], 1000.0f / 11.0f * 30, 1.0f, 0,
@@ -512,8 +516,8 @@ int main() {
   uint32_t time_last_midi = ct;
   bool button_shift = false;
 
-  // sleep_ms(2000);
-  // print_memory_usage();
+  sleep_ms(2000);
+  print_memory_usage();
   // runlua();
   // print_memory_usage();
   // sleep_ms(2000);
@@ -592,7 +596,7 @@ int main() {
       float knob_val = (float)KnobChange_get(&pool_knobs[i]);
       // check mode
       // make sure modes are up to date
-      if (config->mode == MODE_CLOCK) {
+      if (config->mode == MODE_CLOCK || config->mode == MODE_CODE) {
         SimpleTimer_on(&pool_timer[i], ct);
       } else {
         SimpleTimer_stop(&pool_timer[i]);

@@ -247,10 +247,12 @@ void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
     memcpy(&buffer[4], &self->config[scene][output].code[i], chunk_size);
     i += chunk_size;
 
+#ifdef INCLUDE_MIDI
     // Send the buffer as SysEx
     send_buffer_as_sysex(
         buffer,
         4 + chunk_size);  // 4 for "LS"/"LE"/"LN", scene, output + chunk_size
+#endif
   }
 }
 
