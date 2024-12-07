@@ -312,6 +312,7 @@ void midi_cc(int channel, int cc, int value) {
     // voltage override
     uint8_t output = channel - 9;
     yocto.out[output].voltage_do_override = (cc > 0 || value > 0);
+    dac.use_raw[output] = (cc > 0 || value > 0);
     if (yocto.out[output].voltage_do_override) {
       // calcuate the 14-bit number using the cc as high bits and value as low
       // bits
