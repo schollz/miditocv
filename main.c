@@ -81,7 +81,6 @@ SimpleTimer pool_timer[16];
 KnobChange pool_knobs[8];
 MCP3208 mcp3208;
 bool blink_on = false;
-bool sparkline_do_update = false;
 const uint8_t button_num = 9;
 const uint8_t button_pins[9] = {1, 8, 20, 21, 22, 26, 27, 28, 29};
 uint8_t button_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -279,7 +278,7 @@ void midi_note_on(int channel, int note, int velocity) {
   // special commands
   // 9F 01 01
   if (channel == 16 && note == 1 && velocity == 1) {
-    char sparkline_update[42];
+    char sparkline_update[48];
     sparkline_update[0] = '\0';
     for (uint8_t i = 0; i < 8; i++) {
       if (i == 0) {
@@ -292,6 +291,9 @@ void midi_note_on(int channel, int note, int velocity) {
                                    0.0f, 9999.0f)));
       }
     }
+    // add the current bpm
+    sprintf(sparkline_update, "%s_%d", sparkline_update,
+            (int)yocto.global_tempo);
     printf("%s\n", sparkline_update);
     return;
   }
@@ -395,6 +397,7 @@ void midi_timing() {
 
     // Print the BPM
     printf("bpm: %2.1f\n", bpm);
+    yocto.global_tempo = bpm;
   }
 }
 

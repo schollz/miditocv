@@ -295,7 +295,7 @@ function setupMidiInputListener() {
                         }
                         externalTrigger();
                     }
-                } else if (fields_.length == 8) {
+                } else if (fields_.length == 9) {
                     // update sparkline with each value
                     // iterate over every field
                     last_time_of_message_received = Date.now();
@@ -304,6 +304,8 @@ function setupMidiInputListener() {
                         // convert range 0-999 to -5 to 10
                         vm.updateSparkline(i, value / 9999.0 * 15.0 - 5);
                     }
+                    // last field is the current BPM value
+                    vm.current_bpm = parseFloat(fields_[8]);
                     // is connected
                     vm.device_connected = true
                 } else if (fields.length == 4) {
@@ -493,18 +495,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // // ask for sparkline data (doubles as check if connected)
         const sparkline_update_time_ms = 50;
-        // setTimeout(() => {
-        //     setInterval(() => {
-        //         if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
-        //             window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
-        //         }
-        //         // need to fix this to prevent multiple connects
-        //         // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
-        //         //     vm.device_connected = false;
-        //         //     setupMidi();
-        //         // }
-        //     }, sparkline_update_time_ms);
-        // }, 2000);
+        setTimeout(() => {
+            setInterval(() => {
+                if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
+                    window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
+                }
+                // need to fix this to prevent multiple connects
+                // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
+                //     vm.device_connected = false;
+                //     setupMidi();
+                // }
+            }, sparkline_update_time_ms);
+        }, 2000);
 
     }
 

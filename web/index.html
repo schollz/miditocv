@@ -560,7 +560,7 @@
     <!-- check if MIDI is routing -->
     <span v-if="Array.from(Object.values(midi_input_active)).filter(value => value).length>0">
       <div style="padding-top:1em;" v-if="midi_input_active">
-        <h3>Global BPM source</h3>
+        <h3>BPM source <span v-if="current_bpm">(currently: {{current_bpm}} bpm)</span></h3>
       </div>
       <div class="row routing" style="padding-bottom:1em;">
         <!-- Create a button for each active MIDI routing -->
