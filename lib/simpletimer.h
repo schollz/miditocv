@@ -20,6 +20,7 @@ typedef struct SimpleTimer {
   float time_diff;
   int user_data;
   bool on;
+  bool active;
   callback_bool_int pulse_callback;
 } SimpleTimer;
 
@@ -55,13 +56,22 @@ void SimpleTimer_init(SimpleTimer *self, float bpm, float division,
   self->first_time = current_time;
   self->last_time = current_time;
   self->bpm = bpm;
+  self->active = false;
   SimpleTimer_set_division(self, division);
 }
+
+// Function to start the timer
+void SimpleTimer_start(SimpleTimer *self, float current_time) {
+  self->active = true;
+}
+
+// Function to stop the timer
+void SimpleTimer_stop(SimpleTimer *self) { self->active = false; }
 
 // Main processing function for generating timer pulses
 bool SimpleTimer_process(SimpleTimer *self, float current_time) {
   self->last_time = current_time;
-  if (current_time < self->next_time) {
+  if (!self->active || current_time < self->next_time) {
     return false;
   }
   // Calculate the time difference, considering possible overflow

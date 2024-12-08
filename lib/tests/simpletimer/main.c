@@ -33,11 +33,14 @@ int main() {
 
   // Initialize two timers
   SimpleTimer timer1, timer2, timer3;
-  SimpleTimer_init(&timer1, 237.0f, 1, 100.0, timer1_callback, 0,
+  SimpleTimer_init(&timer1, 237.0f, 1, 0.0, timer1_callback, 0,
                    0);  // 120 BPM, quarter note
   SimpleTimer_init(&timer2, 90.0f, 1, 0, timer2_callback, 1,
                    0);  // 90 BPM, half note
   SimpleTimer_init(&timer3, 190.0f, 1, 0.0, timer3_callback, 2, 0);
+  SimpleTimer_start(&timer1, 0);
+  SimpleTimer_start(&timer2, 0);
+  SimpleTimer_start(&timer3, 0);
 
   for (current_time = 0; current_time <= DURATION_MS;
        current_time += TIMESTEP_MS) {
@@ -53,6 +56,10 @@ int main() {
       // set the bpm of timer2 to 190
       SimpleTimer_set_bpm(&timer1, 190.0f);
       SimpleTimer_set_bpm(&timer2, 190.0f);
+      SimpleTimer_stop(&timer3);
+    }
+    if (current_time == 5000) {
+      SimpleTimer_start(&timer3, current_time);
     }
     if (current_time == 6000) {
       SimpleTimer_set_bpm(&timer1, 60.0f);
