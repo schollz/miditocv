@@ -354,6 +354,50 @@ void midi_cc(int channel, int cc, int value) {
   }
 }
 
+#define MIDI_DELTA_COUNT_MAX 24
+uint32_t midi_timing_count = 0;
+uint64_t midi_last_time = 0;
+int64_t midi_timing_differences[MIDI_DELTA_COUNT_MAX] = {0};
+
+void midi_timing() {
+  if (midi_last_time == 0) {
+    midi_last_time = time_us_64();
+    return;
+  }
+
+  midi_timing_count++;
+  uint64_t now_time = time_us_64();
+  int index = midi_timing_count % MIDI_DELTA_COUNT_MAX;
+
+  // Store the time difference between consecutive MIDI Clock messages
+  midi_timing_differences[index] = now_time - midi_last_time;
+
+  // Update the last time to the current time
+  midi_last_time = now_time;
+
+  // Only recalculate BPM when the buffer wraps around
+  if (index == 0) {
+    float total_time_us = 0.0f;
+
+    // Sum all the time differences in the buffer
+    for (uint8_t i = 0; i < MIDI_DELTA_COUNT_MAX; i++) {
+      total_time_us += midi_timing_differences[i];
+    }
+
+    // Calculate the average time per tick
+    float average_interval_us = total_time_us / MIDI_DELTA_COUNT_MAX;
+
+    // Calculate BPM
+    float bpm = (60000000.0f / average_interval_us) / 24.0f;
+
+    // Round to the nearest 10th
+    bpm = roundf(bpm);
+
+    // Print the BPM
+    printf("bpm: %2.1f\n", bpm);
+  }
+}
+
 void midi_event_note_on(char chan, char data1, char data2) {
   midi_note_on(chan, data1, data2);
 }
@@ -526,7 +570,7 @@ int main() {
   // setup a timer at 1 second to print memory usage
   SimpleTimer_init(&pool_timer[10], 1000.0f / 1000.0f * 30, 1.0f, 0,
                    timer_callback_print_memory_usage, 0, ct);
-  SimpleTimer_start(&pool_timer[10]);
+  // SimpleTimer_start(&pool_timer[10]);
   // setup a timer at 4 ms intervals to update voltages
   SimpleTimer_init(&pool_timer[11], 1000.0f / 4.0f * 30, 1.0f, 0,
                    timer_callback_update_voltage, 0, ct);

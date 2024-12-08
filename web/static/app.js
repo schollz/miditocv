@@ -373,6 +373,13 @@ function setupMidi() {
                             } else if (messageType === 0x80 || (messageType === 0x90 && velocity === 0)) {
                                 console.log(`[${input.name}] note_off ch=${channel + 1}, note=${note}, vel=${velocity}`);
                             }
+                            // check if it is a f8 timing message
+                            if (status == 0xF8) {
+                                // check that the input name matches the current bpm source
+                                if (vm.currentBPMSource != input.name) {
+                                    return;
+                                }
+                            }
 
                             // convert the data to hex string
                             let hexString = "";
@@ -543,6 +550,7 @@ end`,
             "/512", "/256", "/128", "/64", "/32", "/16", "/8", "/4", "/2",
             "x1", "x2", "x3", "x4", "x6", "x8", "x12", "x16", "x24", "x48"
         ];
+        const current_bpm = ref(0);
         const current_scene = ref(0);
         const current_output = ref(0);
         const selected_output = computed(() => {
@@ -699,6 +707,16 @@ end`,
             console.log(`Toggling activation for ${inputName}`);
             midi_input_active.value[inputName] = !midi_input_active.value[inputName];
             console.log(`Activated: ${midi_input_active.value[inputName]}`);
+        }
+        const currentBPMSource = ref("");
+        function toggleBPMSource(inputName) {
+            if (currentBPMSource.value == inputName) {
+                console.log(`Toggling BPM source for ${inputName} to none`);
+                currentBPMSource.value = "";
+                return;
+            }
+            console.log(`Toggling BPM source for ${inputName}`);
+            currentBPMSource.value = inputName;
         }
 
         function getButtonClass(mode) {
@@ -959,6 +977,9 @@ end`,
             clearLua,
             updateSparkline,
             clockTempos,
+            toggleBPMSource,
+            currentBPMSource,
+            current_bpm,
         };
     },
 });

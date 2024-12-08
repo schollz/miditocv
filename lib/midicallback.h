@@ -154,7 +154,6 @@ void midi_start() {
 #ifdef DEBUG_MIDI
   printf("[midicallback] midi start\n");
 #endif
-  midi_timing_count = 24 * MIDI_RESET_EVERY_BEAT - 1;
 }
 void midi_continue() {
 #ifdef DEBUG_MIDI
@@ -166,47 +165,6 @@ void midi_stop() {
 #ifdef DEBUG_MIDI
   printf("[midicallback] midi stop\n");
 #endif
-  midi_timing_count = 24 * MIDI_RESET_EVERY_BEAT - 1;
 }
 
-// Comparator function for qsort
-int compare_ints(const void *a, const void *b) {
-  return (*(int *)a - *(int *)b);
-}
-
-// Function to find the median of an array with 7 elements
-int findMedian(int arr[], uint8_t size) {
-  // Create a copy of the array to avoid modifying the original
-  int arrCopy[size];
-  memcpy(arrCopy, arr, sizeof(int) * size);
-
-  // Sort the copy of the array
-  qsort(arrCopy, size, sizeof(int), compare_ints);
-
-  // Return the middle element from the sorted copy
-
-  return arrCopy[size / 2];
-}
-
-#define MIDI_DELTA_COUNT_MAX 32
-uint32_t midi_timing_count = 0;
-uint64_t midi_last_time;
-int64_t midi_timing_differences[MIDI_DELTA_COUNT_MAX];
-
-void midi_timing() {
-  midi_timing_count++;
-  uint64_t now_time = time_us_64();
-  midi_last_time = now_time;
-  int i = midi_timing_count % MIDI_DELTA_COUNT_MAX;
-  midi_timing_differences[i] = now_time - midi_last_time;
-  if (i == 0) {
-    // recalculate the bpm
-    float bpm;
-    for (uint8_t i = 0; i < MIDI_DELTA_COUNT_MAX; i++) {
-      bpm += 60000000.0f / midi_timing_differences[i];
-    }
-    bpm /= MIDI_DELTA_COUNT_MAX;
-    printf("bpm: %f\n", bpm);
-  }
-}
 #endif
