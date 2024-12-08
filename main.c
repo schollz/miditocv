@@ -487,6 +487,7 @@ int main() {
   for (uint8_t i = 0; i < 8; i++) {
     SimpleTimer_init(&pool_timer[i], 60.0f, 1.0f, 0, timer_callback_beat, i);
     SimpleTimer_start(&pool_timer[i], ct);
+    SimpleTimer_off(&pool_timer[i]);
   }
   // setup a timer at 5 milliseconds to sample the knobs
   SimpleTimer_init(&pool_timer[8], 1000.0f / 11.0f * 30, 1.0f, 0,
@@ -597,9 +598,9 @@ int main() {
       // check mode
       // make sure modes are up to date
       if (config->mode == MODE_CLOCK || config->mode == MODE_CODE) {
-        SimpleTimer_start(&pool_timer[i], ct);
+        SimpleTimer_on(&pool_timer[i], ct);
       } else {
-        SimpleTimer_stop(&pool_timer[i]);
+        SimpleTimer_off(&pool_timer[i]);
       }
       // update slews
       Slew_set_duration(&out->portamento, roundf(config->portamento * 1000));

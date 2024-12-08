@@ -110,6 +110,7 @@ typedef struct Yoctocore {
   Out out[8];
   // debounces
   uint32_t debounce_save;
+  float global_tempo;
 } Yoctocore;
 
 void Yoctocore_init(Yoctocore *self) {
@@ -161,6 +162,8 @@ void Yoctocore_init(Yoctocore *self) {
     self->out[output].voltage_do_override = false;
   }
   self->debounce_save = 0;
+  self->i = 0;
+  self->global_tempo = 120;
 }
 
 void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
@@ -299,6 +302,9 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       config->midi_cc = (uint8_t)val;
       break;
     case PARAM_CLOCK_TEMPO:
+      if (val > 0) {
+        val += 29;
+      }
       config->clock_tempo = val;
       break;
     case PARAM_CLOCK_DIVISION:
@@ -370,7 +376,11 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
     case PARAM_MIDI_CC:
       return config->midi_cc;
     case PARAM_CLOCK_TEMPO:
-      return config->clock_tempo;
+      float val = config->clock_tempo;
+      if (val > 0) {
+        val -= 29;
+      }
+      return val;
     case PARAM_CLOCK_DIVISION:
       return config->clock_division;
     case PARAM_LFO_PERIOD:

@@ -552,6 +552,11 @@ end`,
         const device_connected = ref(false);
         const midi_input_active = ref({});
         const midi_input_last_message = ref({});
+        const clockTempos = ref([]);
+        clockTempos.value.push("Global");
+        for (let i = 30; i < 300; i++) {
+            clockTempos.value.push(i);
+        }
         const note_names = computed(() => {
             const noteNames = [
                 "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
@@ -953,6 +958,7 @@ end`,
             executeLua,
             clearLua,
             updateSparkline,
+            clockTempos,
         };
     },
 });
