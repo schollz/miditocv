@@ -598,7 +598,7 @@ int main() {
       // check mode
       // make sure modes are up to date
       if (config->mode == MODE_CLOCK || config->mode == MODE_CODE) {
-        SimpleTimer_on(&pool_timer[i], ct);
+        SimpleTimer_start(&pool_timer[i]);
       } else {
         SimpleTimer_off(&pool_timer[i]);
       }

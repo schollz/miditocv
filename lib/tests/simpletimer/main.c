@@ -66,6 +66,9 @@ int main() {
       SimpleTimer_set_bpm(&timer2, 60.0f);
       SimpleTimer_set_bpm(&timer3, 60.0f);
     }
+    if (current_time == 7000) {
+      SimpleTimer_reset(&timer1, current_time);
+    }
     // Increment time step
     current_time += TIMESTEP_MS;
   }

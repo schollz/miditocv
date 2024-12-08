@@ -61,12 +61,20 @@ void SimpleTimer_init(SimpleTimer *self, float bpm, float division,
 }
 
 // Function to start the timer
-void SimpleTimer_start(SimpleTimer *self, float current_time) {
-  self->active = true;
-}
+void SimpleTimer_start(SimpleTimer *self) { self->active = true; }
 
 // Function to stop the timer
 void SimpleTimer_stop(SimpleTimer *self) { self->active = false; }
+
+void SimpleTimer_reset(SimpleTimer *self, float current_time) {
+  self->first_time = current_time;
+  self->last_time = current_time;
+  self->next_time = current_time + self->offset + self->time_diff;
+  self->on = true;
+  if (self->pulse_callback != NULL) {
+    self->pulse_callback(self->on, self->user_data);
+  }
+}
 
 // Main processing function for generating timer pulses
 bool SimpleTimer_process(SimpleTimer *self, float current_time) {
