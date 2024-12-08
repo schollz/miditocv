@@ -39,6 +39,14 @@ void SimpleTimer_set_bpm(SimpleTimer *self, float bpm) {
   }
 }
 
+void SimpleTimer_update_bpm(SimpleTimer *self, float bpm, float division) {
+  if (self->bpm == bpm && self->division == division) {
+    return;
+  }
+  self->division = division;
+  SimpleTimer_set_bpm(self, bpm);
+}
+
 // Function to set the division, ensuring it is within valid range
 void SimpleTimer_set_division(SimpleTimer *self, float division) {
   self->division = division;

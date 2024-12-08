@@ -47,12 +47,6 @@
 #define PARAM_CODE 2090155648
 #define PARAM_CODE_LEN 709259102
 
-float clock_divisions[19] = {1.0 / 512.0, 1.0 / 256.0, 1.0 / 128.0, 1.0 / 64.0,
-                             1.0 / 32.0,  1.0 / 16.0,  1.0 / 8.0,   1.0 / 4.0,
-                             1.0 / 2.0,   1.0,         2.0,         3.0,
-                             4.0,         6.0,         8.0,         12.0,
-                             16.0,        24.0,        48.0};
-
 typedef struct Config {
   uint8_t mode;
   float min_voltage;

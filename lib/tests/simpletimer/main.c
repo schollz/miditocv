@@ -38,9 +38,8 @@ int main() {
   SimpleTimer_init(&timer2, 90.0f, 1, 0, timer2_callback, 1,
                    0);  // 90 BPM, half note
   SimpleTimer_init(&timer3, 190.0f, 1, 0.0, timer3_callback, 2, 0);
-  SimpleTimer_start(&timer1, 0);
-  SimpleTimer_start(&timer2, 0);
-  SimpleTimer_start(&timer3, 0);
+  SimpleTimer_start(&timer2);
+  SimpleTimer_start(&timer3);
 
   for (current_time = 0; current_time <= DURATION_MS;
        current_time += TIMESTEP_MS) {
@@ -59,15 +58,16 @@ int main() {
       SimpleTimer_stop(&timer3);
     }
     if (current_time == 5000) {
-      SimpleTimer_start(&timer3, current_time);
+      SimpleTimer_start(&timer3);
     }
     if (current_time == 6000) {
       SimpleTimer_set_bpm(&timer1, 60.0f);
       SimpleTimer_set_bpm(&timer2, 60.0f);
       SimpleTimer_set_bpm(&timer3, 60.0f);
     }
-    if (current_time == 7000) {
+    if (current_time == 3000) {
       SimpleTimer_reset(&timer1, current_time);
+      SimpleTimer_start(&timer1);
     }
     // Increment time step
     current_time += TIMESTEP_MS;
