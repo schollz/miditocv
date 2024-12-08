@@ -86,6 +86,7 @@ const uint8_t button_num = 9;
 const uint8_t button_pins[9] = {1, 8, 20, 21, 22, 26, 27, 28, 29};
 uint8_t button_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 uint32_t time_per_iteration = 0;
+uint32_t timer_per[32];
 // const clockDivisions = [
 //   "/512", "/256", "/128", "/64", "/32", "/16", "/8", "/4", "/2", "x1", "x2",
 //   "x3", "x4", "x6", "x8", "x12", "x16", "x24", "x48"
@@ -128,7 +129,6 @@ const uint8_t const_colors[8][3] = {
 };
 
 void timer_callback_beat(bool on, int user_data) {
-  printf("%d: %d\n", user_data, on);
   Config *config = &yocto.config[yocto.i][user_data];
   Out *out = &yocto.out[user_data];
   if (config->mode == MODE_CLOCK) {
@@ -217,7 +217,11 @@ void timer_callback_ws2812(bool on, int user_data) {
 
 void timer_callback_print_memory_usage(bool on, int user_data) {
   print_memory_usage();
-  printf("time per iteration: %d\n", time_per_iteration);
+  printf("time per iteration: %d %d %d %d\n", time_per_iteration, timer_per[0],
+         timer_per[1], timer_per[2]);
+  for (uint8_t i = 0; i < 16; i++) {
+    printf("timer[%d]: %d\n", i, timer_per[i + 3]);
+  }
 }
 
 void timer_callback_update_voltage(bool on, int user_data) {
@@ -522,11 +526,11 @@ int main() {
   // setup a timer at 1 second to print memory usage
   SimpleTimer_init(&pool_timer[10], 1000.0f / 1000.0f * 30, 1.0f, 0,
                    timer_callback_print_memory_usage, 0, ct);
-  SimpleTimer_start(&pool_timer[10]);
+  // SimpleTimer_start(&pool_timer[10]);
   // setup a timer at 4 ms intervals to update voltages
   SimpleTimer_init(&pool_timer[11], 1000.0f / 4.0f * 30, 1.0f, 0,
                    timer_callback_update_voltage, 0, ct);
-  SimpleTimer_start(&pool_timer[11]);
+  // SimpleTimer_start(&pool_timer[11]);
   // blinking timer
   SimpleTimer_init(&pool_timer[13], 1000.0f / 370.0f * 30, 1.0f, 0,
                    timer_callback_blink, 0, ct);
@@ -552,21 +556,29 @@ int main() {
   while (true) {
     time_per_iteration = time_us_32() - start_time_us;
     start_time_us = time_us_32();
+    uint32_t us = time_us_32();
 #ifdef INCLUDE_MIDI
     tud_task();
     midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off, midi_cc,
                    midi_start, midi_continue, midi_stop, midi_timing);
 #endif
+    timer_per[0] = time_us_32() - us;
 
+    us = time_us_32();
     if (!pio_sm_is_rx_fifo_empty(pio0, 0)) {
       uint8_t ch = uart_rx_program_getc(pio0, 0);
       midi_receive_byte(ch);
     }
+    timer_per[1] = time_us_32() - us;
 
     // process timers
+    us = time_us_32();
     for (uint8_t i = 0; i < 16; i++) {
+      us = time_us_32();
       SimpleTimer_process(&pool_timer[i], ct);
+      timer_per[3 + i] = time_us_32() - us;
     }
+    timer_per[2] = time_us_32() - us;
 
     // read buttons
     for (uint8_t i = 0; i < button_num; i++) {
