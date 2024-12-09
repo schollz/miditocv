@@ -65,3 +65,4 @@ lib/script.h
 lib/sequins.h
 lib/web_static_globals.h
 lib/lua_globals.h
+dev/channel_plots.pdf
