@@ -1,13 +1,17 @@
 import time
 import os
+from datetime import datetime
 
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame.midi
 from icecream import ic
 import nidaqmx
 from nidaqmx.constants import TerminalConfiguration
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 from scipy.stats import linregress
 import numpy as np
+from tqdm import tqdm
 
 
 def read_all_voltages(task, num_channels):
@@ -120,45 +124,61 @@ def run():
         9,
         10,
     ]
+    voltages = [-4, 0, 5]
     num_channels = 8  # Assuming 8 channels
     num_trials = 5
     # make numpy matrix of measured voltages
     measured = np.zeros((len(voltages), num_channels, num_trials))
-    for trial in range(num_trials):
+    for trial in tqdm(range(num_trials)):
         for i, voltage in enumerate(voltages):
             set_all_voltage(voltage)
             measured_voltages = read_voltages()
             measured[i, :, trial] = measured_voltages
 
-    # make 8 plots showing a scatter plot for each channel
-    (fig, axs) = plt.subplots(2, 4)
+    # Create 8 plots: one for each channel
+    fig, axs = plt.subplots(
+        4, 2, figsize=(8.5, 11)
+    )  # Adjust figure size for better layout
+    fig.subplots_adjust(
+        left=0.1, right=0.9, top=0.9, bottom=0.1, hspace=0.5, wspace=0.4
+    )
+
+    axs = axs.flatten()  # Flatten to simplify indexing
+
     for i in range(num_channels):
-        # concatenate all trials
-        x = []
-        y = []
-        for trial in range(num_trials):
-            x.extend(voltages)
-            y.extend(measured[:, i, trial])
+        # Gather all trial data
+        x = np.repeat(voltages, num_trials)  # Repeat voltages for all trials
+        y = measured[:, i, :].flatten()  # Flatten measured data for channel i
 
-        # plot with confidence intervals
-        axs[i // 4, i % 4].scatter(x, y, color="black")
+        # Plot scatter points
+        axs[i].scatter(x, y, color="black", label="Measured Data")
 
-        # create regression with 95% confidence interval
+        # Perform linear regression
         slope, intercept, r_value, p_value, std_err = linregress(x, y)
-        x = np.array(x)
-        axs[i // 4, i % 4].plot(x, slope * x + intercept, color="red")
-        axs[i // 4, i % 4].fill_between(
-            x,
-            slope * x + intercept - 1.96 * std_err,
-            slope * x + intercept + 1.96 * std_err,
-            alpha=0.2,
-            color="red",
-        )
-        axs[i // 4, i % 4].set_title(f"Channel {i+1} {slope:.3f}x + {intercept:.3f}")
-        axs[i // 4, i % 4].set_xlabel("Voltage")
-        axs[i // 4, i % 4].set_ylabel("Measured Voltage")
+        regression_line = slope * x + intercept
 
-    plt.show()
+        # Plot regression line and confidence intervals
+        axs[i].plot(x, regression_line, color="red", label="Regression Line")
+        axs[i].fill_between(
+            x,
+            regression_line - 2.54 * std_err,
+            regression_line + 2.54 * std_err,
+            color="red",
+            alpha=0.2,
+            label="95% Confidence Interval",
+        )
+
+        # Set plot titles and labels
+        axs[i].set_title(f"Channel {i+1}: {slope:.3f}x + {intercept:.3f}")
+        axs[i].set_xlabel("Voltage")
+        axs[i].set_ylabel("Measured Voltage")
+        # axs[i].legend(loc="best")
+
+    plt.suptitle(f"Calibration on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    with PdfPages("channel_plots.pdf") as pdf:
+        fig.tight_layout(rect=[0.025, 0.025, 0.975, 0.975])
+        pdf.savefig(fig)  # Save the figure to the PDF
+        plt.close(fig)  # Close the figure after saving
 
 
 run()
