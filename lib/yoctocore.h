@@ -47,12 +47,6 @@
 #define PARAM_CODE 2090155648
 #define PARAM_CODE_LEN 709259102
 
-float clock_divisions[19] = {1.0 / 512.0, 1.0 / 256.0, 1.0 / 128.0, 1.0 / 64.0,
-                             1.0 / 32.0,  1.0 / 16.0,  1.0 / 8.0,   1.0 / 4.0,
-                             1.0 / 2.0,   1.0,         2.0,         3.0,
-                             4.0,         6.0,         8.0,         12.0,
-                             16.0,        24.0,        48.0};
-
 typedef struct Config {
   uint8_t mode;
   float min_voltage;
@@ -110,6 +104,7 @@ typedef struct Yoctocore {
   Out out[8];
   // debounces
   uint32_t debounce_save;
+  float global_tempo;
 } Yoctocore;
 
 void Yoctocore_init(Yoctocore *self) {
@@ -161,6 +156,8 @@ void Yoctocore_init(Yoctocore *self) {
     self->out[output].voltage_do_override = false;
   }
   self->debounce_save = 0;
+  self->i = 0;
+  self->global_tempo = 120;
 }
 
 void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
@@ -247,10 +244,12 @@ void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
     memcpy(&buffer[4], &self->config[scene][output].code[i], chunk_size);
     i += chunk_size;
 
+#ifdef INCLUDE_MIDI
     // Send the buffer as SysEx
     send_buffer_as_sysex(
         buffer,
         4 + chunk_size);  // 4 for "LS"/"LE"/"LN", scene, output + chunk_size
+#endif
   }
 }
 
@@ -297,6 +296,9 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       config->midi_cc = (uint8_t)val;
       break;
     case PARAM_CLOCK_TEMPO:
+      if (val > 0) {
+        val += 29;
+      }
       config->clock_tempo = val;
       break;
     case PARAM_CLOCK_DIVISION:
@@ -368,7 +370,11 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
     case PARAM_MIDI_CC:
       return config->midi_cc;
     case PARAM_CLOCK_TEMPO:
-      return config->clock_tempo;
+      float val = config->clock_tempo;
+      if (val > 0) {
+        val -= 29;
+      }
+      return val;
     case PARAM_CLOCK_DIVISION:
       return config->clock_division;
     case PARAM_LFO_PERIOD:

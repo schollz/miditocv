@@ -81,10 +81,21 @@ SimpleTimer pool_timer[16];
 KnobChange pool_knobs[8];
 MCP3208 mcp3208;
 bool blink_on = false;
-bool sparkline_do_update = false;
 const uint8_t button_num = 9;
 const uint8_t button_pins[9] = {1, 8, 20, 21, 22, 26, 27, 28, 29};
 uint8_t button_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint32_t time_per_iteration = 0;
+uint32_t timer_per[32];
+// const clockDivisions = [
+//   "/512", "/256", "/128", "/64", "/32", "/16", "/8", "/4", "/2", "x1", "x2",
+//   "x3", "x4", "x6", "x8", "x12", "x16", "x24", "x48"
+// ];
+
+const float division_values[19] = {
+    1.0f / 512.0f, 1.0f / 256.0f, 1.0f / 128.0f, 1.0f / 64.0f, 1.0f / 32.0f,
+    1.0f / 16.0f,  1.0f / 8.0f,   1.0f / 4.0f,   1.0f / 2.0f,  1.0f,
+    2.0f,          3.0f,          4.0f,          6.0f,         8.0f,
+    12.0f,         16.0f,         24.0f,         48.0f};
 
 #ifdef INCLUDE_MIDI
 #include "lib/midi_comm.h"
@@ -115,6 +126,19 @@ const uint8_t const_colors[8][3] = {
     {0, 0, 244},      // Blue
     {97, 0, 97},      // Violet
 };
+
+void timer_callback_beat(bool on, int user_data) {
+  Config *config = &yocto.config[yocto.i][user_data];
+  Out *out = &yocto.out[user_data];
+  if (config->mode == MODE_CLOCK) {
+    if (on) {
+      // trigger the clock
+      out->voltage_current = config->max_voltage;
+    } else {
+      out->voltage_current = config->min_voltage;
+    }
+  }
+}
 
 void timer_callback_ws2812(bool on, int user_data) {
   for (uint8_t i = 0; i < 8; i++) {
@@ -191,7 +215,12 @@ void timer_callback_ws2812(bool on, int user_data) {
 }
 
 void timer_callback_print_memory_usage(bool on, int user_data) {
-  print_memory_usage();
+  // print_memory_usage();
+  printf("time per iteration: %d %d %d %d\n", time_per_iteration, timer_per[0],
+         timer_per[1], timer_per[2]);
+  // for (uint8_t i = 0; i < 16; i++) {
+  //   printf("timer[%d]: %d\n", i, timer_per[i + 3]);
+  // }
 }
 
 void timer_callback_update_voltage(bool on, int user_data) {
@@ -249,7 +278,7 @@ void midi_note_on(int channel, int note, int velocity) {
   // special commands
   // 9F 01 01
   if (channel == 16 && note == 1 && velocity == 1) {
-    char sparkline_update[42];
+    char sparkline_update[48];
     sparkline_update[0] = '\0';
     for (uint8_t i = 0; i < 8; i++) {
       if (i == 0) {
@@ -262,6 +291,9 @@ void midi_note_on(int channel, int note, int velocity) {
                                    0.0f, 9999.0f)));
       }
     }
+    // add the current bpm
+    sprintf(sparkline_update, "%s_%d", sparkline_update,
+            (int)yocto.global_tempo);
     printf("%s\n", sparkline_update);
     return;
   }
@@ -312,6 +344,7 @@ void midi_cc(int channel, int cc, int value) {
     // voltage override
     uint8_t output = channel - 9;
     yocto.out[output].voltage_do_override = (cc > 0 || value > 0);
+    dac.use_raw[output] = (cc > 0 || value > 0);
     if (yocto.out[output].voltage_do_override) {
       // calcuate the 14-bit number using the cc as high bits and value as low
       // bits
@@ -320,6 +353,51 @@ void midi_cc(int channel, int cc, int value) {
       yocto.out[output].voltage_override =
           linlin(voltage01, 0.0f, 1.0f, -5.0f, 10.0f);
     }
+  }
+}
+
+#define MIDI_DELTA_COUNT_MAX 24
+uint32_t midi_timing_count = 0;
+uint64_t midi_last_time = 0;
+int64_t midi_timing_differences[MIDI_DELTA_COUNT_MAX] = {0};
+
+void midi_timing() {
+  if (midi_last_time == 0) {
+    midi_last_time = time_us_64();
+    return;
+  }
+
+  midi_timing_count++;
+  uint64_t now_time = time_us_64();
+  int index = midi_timing_count % MIDI_DELTA_COUNT_MAX;
+
+  // Store the time difference between consecutive MIDI Clock messages
+  midi_timing_differences[index] = now_time - midi_last_time;
+
+  // Update the last time to the current time
+  midi_last_time = now_time;
+
+  // Only recalculate BPM when the buffer wraps around
+  if (index == 0) {
+    float total_time_us = 0.0f;
+
+    // Sum all the time differences in the buffer
+    for (uint8_t i = 0; i < MIDI_DELTA_COUNT_MAX; i++) {
+      total_time_us += midi_timing_differences[i];
+    }
+
+    // Calculate the average time per tick
+    float average_interval_us = total_time_us / MIDI_DELTA_COUNT_MAX;
+
+    // Calculate BPM
+    float bpm = (60000000.0f / average_interval_us) / 24.0f;
+
+    // Round to the nearest 10th
+    bpm = roundf(bpm);
+
+    // Print the BPM
+    printf("bpm: %2.1f\n", bpm);
+    yocto.global_tempo = bpm;
   }
 }
 
@@ -477,29 +555,33 @@ int main() {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   // first 8 timers are for each output and disabled by default
   for (uint8_t i = 0; i < 16; i++) {
-    SimpleTimer_init(&pool_timer[i], 1000.0f / (100.0f + i * 10) * 30, 1.0f, 0,
-                     NULL, i);
+    if (i < 8) {
+      SimpleTimer_init(&pool_timer[i], 60.0f, 1.0f, 0, timer_callback_beat, i,
+                       ct);
+    } else {
+      SimpleTimer_init(&pool_timer[i], 60.0f, 1.0f, 0, NULL, i, ct);
+    }
   }
   // setup a timer at 5 milliseconds to sample the knobs
   SimpleTimer_init(&pool_timer[8], 1000.0f / 11.0f * 30, 1.0f, 0,
-                   timer_callback_sample_knob, 0);
-  SimpleTimer_start(&pool_timer[8], ct);
+                   timer_callback_sample_knob, 0, ct);
+  SimpleTimer_start(&pool_timer[8]);
   // setup a timer at 33 hz to update the ws2812
-  SimpleTimer_init(&pool_timer[9], 1000.0f / 100.0f * 30, 1.0f, 0,
-                   timer_callback_ws2812, 0);
-  SimpleTimer_start(&pool_timer[9], ct);
+  SimpleTimer_init(&pool_timer[9], 1000.0f / 30.0f * 30.0f, 1.0f, 0,
+                   timer_callback_ws2812, 0, ct);
+  SimpleTimer_start(&pool_timer[9]);
   // setup a timer at 1 second to print memory usage
   SimpleTimer_init(&pool_timer[10], 1000.0f / 1000.0f * 30, 1.0f, 0,
-                   timer_callback_print_memory_usage, 0);
-  // SimpleTimer_start(&pool_timer[10], ct);
+                   timer_callback_print_memory_usage, 0, ct);
+  // SimpleTimer_start(&pool_timer[10]);
   // setup a timer at 4 ms intervals to update voltages
   SimpleTimer_init(&pool_timer[11], 1000.0f / 4.0f * 30, 1.0f, 0,
-                   timer_callback_update_voltage, 0);
-  SimpleTimer_start(&pool_timer[11], ct);
+                   timer_callback_update_voltage, 0, ct);
+  SimpleTimer_start(&pool_timer[11]);
   // blinking timer
   SimpleTimer_init(&pool_timer[13], 1000.0f / 370.0f * 30, 1.0f, 0,
-                   timer_callback_blink, 0);
-  SimpleTimer_start(&pool_timer[13], ct);
+                   timer_callback_blink, 0, ct);
+  SimpleTimer_start(&pool_timer[13]);
 
   uint32_t ct_last = ct;
 
@@ -508,31 +590,42 @@ int main() {
   uint32_t time_last_midi = ct;
   bool button_shift = false;
 
-  // sleep_ms(2000);
-  // print_memory_usage();
+  sleep_ms(2000);
+  print_memory_usage();
   // runlua();
   // print_memory_usage();
   // sleep_ms(2000);
   // runlua();
   // print_memory_usage();
   // sleep_ms(2000);
+  uint32_t start_time_us = time_us_32();
 
   while (true) {
+    time_per_iteration = time_us_32() - start_time_us;
+    start_time_us = time_us_32();
+    uint32_t us = time_us_32();
 #ifdef INCLUDE_MIDI
     tud_task();
     midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off, midi_cc,
                    midi_start, midi_continue, midi_stop, midi_timing);
 #endif
+    timer_per[0] = time_us_32() - us;
 
+    us = time_us_32();
     if (!pio_sm_is_rx_fifo_empty(pio0, 0)) {
       uint8_t ch = uart_rx_program_getc(pio0, 0);
       midi_receive_byte(ch);
     }
+    timer_per[1] = time_us_32() - us;
 
     // process timers
+    us = time_us_32();
     for (uint8_t i = 0; i < 16; i++) {
+      us = time_us_32();
       SimpleTimer_process(&pool_timer[i], ct);
+      timer_per[3 + i] = time_us_32() - us;
     }
+    timer_per[2] = time_us_32() - us;
 
     // read buttons
     for (uint8_t i = 0; i < button_num; i++) {
@@ -588,8 +681,17 @@ int main() {
       float knob_val = (float)KnobChange_get(&pool_knobs[i]);
       // check mode
       // make sure modes are up to date
-      if (config->mode == MODE_CLOCK) {
-        SimpleTimer_on(&pool_timer[i], ct);
+      if (config->mode == MODE_CLOCK || config->mode == MODE_CODE) {
+        SimpleTimer_start(&pool_timer[i]);
+        // check bpm
+        if (config->clock_tempo > 0) {
+          SimpleTimer_update_bpm(&pool_timer[i], config->clock_tempo,
+                                 division_values[config->clock_division]);
+        } else {
+          // set to global tempo
+          SimpleTimer_update_bpm(&pool_timer[i], yocto.global_tempo,
+                                 division_values[config->clock_division]);
+        }
       } else {
         SimpleTimer_stop(&pool_timer[i]);
       }
@@ -644,6 +746,8 @@ int main() {
           }
           break;
         case MODE_CLOCK:
+          break;
+        case MODE_CODE:
           break;
         case MODE_ENVELOPE:
           // mode envelope will trigger the envelope based on button press

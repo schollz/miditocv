@@ -410,7 +410,7 @@ function gate(on)
     end
 end
 
-function envelope()
+function trig()
     envelope_trigger = 1 
 end
 
@@ -449,24 +449,27 @@ end
 
 math.randomseed(os.time())
 
--- testing
-update_env(1, [[
-a = S{60,62,S{70,75},67}
-b = S{1,1,1,0}
-c = S{10,13,15,S{17,20}}
-function main(beat)
-    a:select(beat)
-    b:select(beat)
-    c:select(beat)
-    local u = a() + c()
-    gate(b()>0)
-    if u~='skip' then 
-        do return u end 
-    end
-end
-]])
+-- -- testing
+-- update_env(1, [[
+-- a = S{60,62,S{70,75},67}
+-- b = S{1,1,1,0}
+-- c = S{10,13,15,S{17,20}}
+-- function main(beat)
+--     a:select(beat)
+--     b:select(beat)
+--     c:select(beat)
+--     local u = a() + c()
+--     -- gate(b()>0)
+--     if (b()>0) then
+--         trig()
+--     end
+--     -- trig()
+--     if u~='skip' then 
+--         do return u end 
+--     end
+-- end
+-- ]])
 
-for i = 1, 10 do
-    print(test_env_main(1, i))
-end
-
+-- for i = 1, 10 do
+--     print(test_env_main(1, i))
+-- end

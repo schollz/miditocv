@@ -295,7 +295,7 @@ function setupMidiInputListener() {
                         }
                         externalTrigger();
                     }
-                } else if (fields_.length == 8) {
+                } else if (fields_.length == 9) {
                     // update sparkline with each value
                     // iterate over every field
                     last_time_of_message_received = Date.now();
@@ -304,6 +304,8 @@ function setupMidiInputListener() {
                         // convert range 0-999 to -5 to 10
                         vm.updateSparkline(i, value / 9999.0 * 15.0 - 5);
                     }
+                    // last field is the current BPM value
+                    vm.current_bpm = parseFloat(fields_[8]);
                     // is connected
                     vm.device_connected = true
                 } else if (fields.length == 4) {
@@ -372,6 +374,13 @@ function setupMidi() {
                                 console.log(`[${input.name}] note_on ch=${channel + 1}, note=${note}, vel=${velocity}`);
                             } else if (messageType === 0x80 || (messageType === 0x90 && velocity === 0)) {
                                 console.log(`[${input.name}] note_off ch=${channel + 1}, note=${note}, vel=${velocity}`);
+                            }
+                            // check if it is a f8 timing message
+                            if (status == 0xF8) {
+                                // check that the input name matches the current bpm source
+                                if (vm.currentBPMSource != input.name) {
+                                    return;
+                                }
                             }
 
                             // convert the data to hex string
@@ -543,6 +552,7 @@ end`,
             "/512", "/256", "/128", "/64", "/32", "/16", "/8", "/4", "/2",
             "x1", "x2", "x3", "x4", "x6", "x8", "x12", "x16", "x24", "x48"
         ];
+        const current_bpm = ref(0);
         const current_scene = ref(0);
         const current_output = ref(0);
         const selected_output = computed(() => {
@@ -552,6 +562,11 @@ end`,
         const device_connected = ref(false);
         const midi_input_active = ref({});
         const midi_input_last_message = ref({});
+        const clockTempos = ref([]);
+        clockTempos.value.push("Global");
+        for (let i = 30; i < 300; i++) {
+            clockTempos.value.push(i);
+        }
         const note_names = computed(() => {
             const noteNames = [
                 "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
@@ -694,6 +709,16 @@ end`,
             console.log(`Toggling activation for ${inputName}`);
             midi_input_active.value[inputName] = !midi_input_active.value[inputName];
             console.log(`Activated: ${midi_input_active.value[inputName]}`);
+        }
+        const currentBPMSource = ref("");
+        function toggleBPMSource(inputName) {
+            if (currentBPMSource.value == inputName) {
+                console.log(`Toggling BPM source for ${inputName} to none`);
+                currentBPMSource.value = "";
+                return;
+            }
+            console.log(`Toggling BPM source for ${inputName}`);
+            currentBPMSource.value = inputName;
         }
 
         function getButtonClass(mode) {
@@ -953,6 +978,10 @@ end`,
             executeLua,
             clearLua,
             updateSparkline,
+            clockTempos,
+            toggleBPMSource,
+            currentBPMSource,
+            current_bpm,
         };
     },
 });

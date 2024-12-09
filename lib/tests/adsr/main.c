@@ -40,6 +40,8 @@ int main() {
       ADSR_gate(&adsr, false, current_time);
     }
     if (current_time == 5700) {
+      adsr.sustain = 0.2f;
+      adsr.decay = 500.0f;
       ADSR_gate(&adsr, true, current_time);
     }
     if (current_time == 8000) {
