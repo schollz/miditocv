@@ -218,7 +218,7 @@ def create_printout():
             plt.close(fig)
 
 
-def run_one_by_one(start):
+def run_one_by_one(start,test_only=False):
     first = True
     for i in range(8):
         if i + 1 < start:
@@ -228,7 +228,8 @@ def run_one_by_one(start):
         else:
             print(f"Running calibration for channel {i+1}, press enter to continue")
             input()
-        run_calibration(i, True)
+        if not test_only:
+            run_calibration(i, True)
         run_calibration(i, False)
         create_printout()
         # reset all of them
@@ -239,6 +240,7 @@ def run_one_by_one(start):
 if __name__ == "__main__":
     if len(sys.argv) >= 2:
         start_channel = int(sys.argv[1])
-        run_one_by_one(start_channel)
+
+        run_one_by_one(start_channel,sys.argv[2]=="test")
     else:
         create_printout()

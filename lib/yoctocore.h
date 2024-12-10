@@ -545,7 +545,7 @@ bool Yoctocore_set_calibration(Yoctocore *self, int output,
 
   fr = f_open(&file, fname, FA_WRITE | FA_CREATE_ALWAYS);
   if (FR_OK != fr) {
-    printf("f_open error: %s (%d)\n", FRESULT_str(fr), fr);
+    printf("f_open error: %s (%d) (%s)\n", FRESULT_str(fr), fr,fname);
     return false;
   }
   uint32_t total_bytes_written = 0;
