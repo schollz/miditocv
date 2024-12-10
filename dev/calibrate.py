@@ -103,12 +103,13 @@ def set_voltage(i, voltage, use_raw=False):
             continue
 
 
-NUM_TRIALS = 5
-NUM_POINTS = 30
+NUM_TRIALS = 1
+NUM_POINTS = 10
 
 
 def run_calibration(output_num, use_raw):
-    voltages = np.linspace(-4.5, 10, NUM_POINTS)
+    voltages = np.linspace(0, 5, NUM_POINTS)
+    voltages = [-4.5,-3.5,-2.5,-1.5,-0.5] + voltages.tolist() + [5.5,6.5,7.5,8.5,9.5]
     measured = np.zeros((len(voltages), NUM_TRIALS))
     for trial in tqdm(range(NUM_TRIALS)):
         for i, voltage in enumerate(voltages):
@@ -149,7 +150,6 @@ def create_printout():
             try:
                 voltages = np.load(f"voltages_{i}_{mode}.npy")
                 measured = np.load(f"measured_{i}_{mode}.npy")
-                print(voltages.shape, measured.shape)
                 y = measured.flatten()
                 x = np.repeat(voltages, measured.shape[1])
                 axs[i].scatter(x, y, label=f"Measured Data ({mode})", color="black")
@@ -178,7 +178,7 @@ def create_printout():
                 )
                 axs[i].set_xlim(-5, 10)
                 axs[i].set_ylim(-5, 10)
-                axs[i].set_xlabel("Voltage")
+                axs[i].set_xlabel("Set Voltage")
                 axs[i].set_ylabel("Measured Voltage")
                 # axs[i].legend(loc="best")
             except FileNotFoundError:
