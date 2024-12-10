@@ -564,6 +564,7 @@ bool Yoctocore_set_calibration(Yoctocore *self, int output,
     printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
     return false;
   }
+  printf("set cali for %d\n", output);
   return true;
 }
 

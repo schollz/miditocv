@@ -360,7 +360,6 @@ void midi_cc(int channel, int cc, int value) {
 uint32_t midi_timing_count = 0;
 uint64_t midi_last_time = 0;
 int64_t midi_timing_differences[MIDI_DELTA_COUNT_MAX] = {0};
-
 void midi_timing() {
   if (midi_last_time == 0) {
     midi_last_time = time_us_64();
@@ -590,8 +589,6 @@ int main() {
   uint32_t time_last_midi = ct;
   bool button_shift = false;
 
-  sleep_ms(2000);
-  print_memory_usage();
   // runlua();
   // print_memory_usage();
   // sleep_ms(2000);

@@ -59,26 +59,25 @@ bool get_sysex_param_int_and_two_float_values(const char *param_name,
     value_str[length - param_len] = '\0';
 
     // Tokenize the string to extract the integer and two float values
-    char *token = strtok(value_str, ",");
+    char *token = strtok(value_str, "_");
     if (token == NULL) return false;
 
     // Parse the integer
     *out_int = strtol(token, NULL, 10);
 
     // Parse the first float
-    token = strtok(NULL, ",");
+    token = strtok(NULL, "_");
     if (token == NULL) return false;
     *out_value1 = strtof(token, NULL);
 
     // Parse the second float
-    token = strtok(NULL, ",");
+    token = strtok(NULL, "_");
     if (token == NULL) return false;
     *out_value2 = strtof(token, NULL);
 
     return true;
   }
 
-  // Return false if the parameter name is not found or the message is invalid
   return false;
 }
 
@@ -141,9 +140,19 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   } else if (get_sysex_param_float_value("diskmode", sysex, length, &val)) {
     sleep_ms(10);
     reset_usb_boot(0, 0);
-  } else if (get_sysex_param_int_and_two_float_values(
-                 "calibration", sysex, length, &vali, &val, &val2)) {
-    Yoctocore_set_calibration(&yocto, vali, val, val2);
+  } else if (get_sysex_param_int_and_two_float_values("cali", sysex, length,
+                                                      &vali, &val, &val2)) {
+    if (val != 0 && val2 != 0) {
+      // set calibration
+      Yoctocore_set_calibration(&yocto, vali, val, val2);
+    } else {
+      // get calibration
+      Yoctocore_get_calibrations(&yocto);
+      for (uint8_t i = 0; i < 8; i++) {
+        printf("cali %d %f %f\n", i, yocto.out[i].voltage_calibration_slope,
+               yocto.out[i].voltage_calibration_intercept);
+      }
+    }
   } else {
     Yoctocore_process_sysex(&yocto, sysex);
     // clear the sysex buffer
