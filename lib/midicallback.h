@@ -177,31 +177,27 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
     if (yocto.out[output].voltage_do_override) {
       yocto.out[output].voltage_override = val;
     }
-  } else if (get_sysex_param_int_float_values("setraw", sysex, length, &vali,
-                                              &val)) {
-    // voltset_<channel>_<volts>
-    // voltage override
-    uint8_t output = vali - 1;
-    yocto.out[output].voltage_do_override = val >= -5.0f && val <= 10.0f;
-    if (yocto.out[output].voltage_do_override) {
-      yocto.out[output].voltage_override = val;
+  } else if (get_sysex_param_float_value("useraw", sysex, length, &val)) {
+    for (uint8_t i = 0; i < 8; i++) {
+      dac.use_raw[i] = val >= 0.5f;
     }
-} else if (get_sysex_param_float_value("useraw", sysex, length, &val)) {
-  for (uint8_t i = 0; i < 8; i++) {
-    dac.use_raw[i] = val >= 0.5f;
-  }
+    if (val >= 0.5f) {
+      printf("using raw\n");
+    } else {
+      printf("using calibrated\n");
+    }
   } else if (get_sysex_param_int_and_two_float_values("cali", sysex, length,
                                                       &vali, &val, &val2)) {
-    if (val != 0 && val2 != 0) {
-      // set calibration
-      Yoctocore_set_calibration(&yocto, vali, val, val2);
-    } else {
+    if (val == 0 && val2 == 0) {
       // get calibration
       Yoctocore_get_calibrations(&yocto);
       for (uint8_t i = 0; i < 8; i++) {
         printf("cali %d %f %f\n", i, yocto.out[i].voltage_calibration_slope,
                yocto.out[i].voltage_calibration_intercept);
       }
+    } else {
+      // set calibration
+      Yoctocore_set_calibration(&yocto, vali, val, val2);
     }
   } else {
     Yoctocore_process_sysex(&yocto, sysex);

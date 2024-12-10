@@ -44,11 +44,7 @@ def send_voltage(output, channel, voltage):
     send_sysex(output, f"setvolt_{channel:d}_{voltage:.4f}")
 
 
-def send_raw_voltage(output, channel, voltage):
-    send_sysex(output, f"setraw_{channel:d}_{voltage:.4f}")
-
-
-def set_voltage(i, voltage, use_raw=False):
+def set_voltage(i, voltage):
     not_done = True
     while not_done:
         output = None
@@ -63,10 +59,7 @@ def set_voltage(i, voltage, use_raw=False):
                 if "yoctocore" in name.decode("utf-8"):
                     output = pygame.midi.Output(device_id)
                     break
-            if use_raw:
-                send_raw_voltage(output, i + 1, voltage)
-            else:
-                send_voltage(output, i + 1, voltage)
+            send_voltage(output, i + 1, voltage)
             time.sleep(0.005)
             not_done = False
         except:
@@ -101,19 +94,48 @@ def send_calibration(channel, slope, intercept):
             continue
 
 
+def send_use_raw(use_raw=False):
+    not_done = True
+    while not_done:
+        output = None
+        try:
+            pygame.midi.init()
+            for device_id in range(pygame.midi.get_count()):
+                interface, name, is_input, is_output, opened = (
+                    pygame.midi.get_device_info(device_id)
+                )
+                if not is_output:
+                    continue
+                if "yoctocore" in name.decode("utf-8"):
+                    output = pygame.midi.Output(device_id)
+                    break
+            sysex_string = f"useraw 1"
+            if not use_raw:
+                sysex_string = f"useraw 0"
+            print(sysex_string)
+            send_sysex(output, sysex_string)
+            time.sleep(0.005)
+            not_done = False
+        except:
+            pygame.midi.quit()
+            time.sleep(0.05)
+            continue
+
+
 NUM_TRIALS = 1
 NUM_POINTS = 30
 
 
 def run_calibration(output_num, use_raw):
+    send_use_raw(use_raw)
     voltages = np.linspace(-4.5, 9.5, NUM_POINTS)
     measured = np.zeros((len(voltages), NUM_TRIALS))
     for trial in tqdm(range(NUM_TRIALS)):
         for i, voltage in enumerate(voltages):
-            set_voltage(output_num, voltage, use_raw)
+            set_voltage(output_num, voltage)
             for j in range(8):
                 if j != output_num and random.random() < 0.01:
-                    set_voltage(j, np.random.uniform(-5, 10), use_raw)
+                    set_voltage(j, np.random.uniform(-5, 10))
             measured_voltages = read_voltages()
             measured[i, trial] = measured_voltages[0]
 
@@ -189,7 +211,7 @@ def create_printout():
             plt.close(fig)
 
 
-def run_one_by_one(start,test_only=False):
+def run_one_by_one(start, test_only=False):
     first = True
     for i in range(8):
         if i + 1 < start:
@@ -212,6 +234,6 @@ if __name__ == "__main__":
     if len(sys.argv) >= 2:
         start_channel = int(sys.argv[1])
 
-        run_one_by_one(start_channel,sys.argv[2]=="test")
+        run_one_by_one(start_channel, sys.argv[2] == "test")
     else:
         create_printout()
