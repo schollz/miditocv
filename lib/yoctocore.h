@@ -534,6 +534,9 @@ void Yoctocore_process_sysex(Yoctocore *self, uint8_t *buffer) {
 bool Yoctocore_set_calibration(Yoctocore *self, int output,
                                float voltage_calibration_slope,
                                float voltage_calibration_intercept) {
+
+                                self->out[output].voltage_calibration_slope = voltage_calibration_slope;
+                                self->out[output].voltage_calibration_intercept = voltage_calibration_intercept;
   FRESULT fr;
   FIL file;
   UINT bw;

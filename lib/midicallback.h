@@ -174,7 +174,7 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
     // voltage override
     uint8_t output = vali - 1;
     dac.use_raw[output] = false;
-    yocto.out[output].voltage_do_override = val >= -5 && val <= 10;
+    yocto.out[output].voltage_do_override = val >= -5.0f && val <= 10.0f;
     if (yocto.out[output].voltage_do_override) {
       yocto.out[output].voltage_override = val;
     }
@@ -183,7 +183,7 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
     // voltset_<channel>_<volts>
     // voltage override
     uint8_t output = vali - 1;
-    yocto.out[output].voltage_do_override = val >= -5 && val <= 10;
+    yocto.out[output].voltage_do_override = val >= -5.0f && val <= 10.0f;
     if (yocto.out[output].voltage_do_override) {
       dac.use_raw[output] = true;
       yocto.out[output].voltage_override = val;

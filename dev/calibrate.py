@@ -103,6 +103,32 @@ def set_voltage(i, voltage, use_raw=False):
             continue
 
 
+def send_calibration(channel, slope, intercept):
+    not_done = True
+    while not_done:
+        output = None
+        try:
+            pygame.midi.init()
+            for device_id in range(pygame.midi.get_count()):
+                interface, name, is_input, is_output, opened = (
+                    pygame.midi.get_device_info(device_id)
+                )
+                if not is_output:
+                    continue
+                if "yoctocore" in name.decode("utf-8"):
+                    output = pygame.midi.Output(device_id)
+                    break
+            sysex_string = f"cali_{channel:d}_{slope:.4f}_{intercept:.4f}"
+            print(sysex_string)
+            send_sysex(output, sysex_string)
+            time.sleep(0.005)
+            not_done = False
+        except:
+            pygame.midi.quit()
+            time.sleep(0.05)
+            continue
+
+
 NUM_TRIALS = 1
 NUM_POINTS = 30
 
@@ -115,7 +141,7 @@ def run_calibration(output_num, use_raw):
             set_voltage(output_num, voltage, use_raw)
             for j in range(8):
                 if j != output_num:
-                    if random.random() < 0.1:
+                    if random.random() < 0.01:
                         set_voltage(j, np.random.uniform(-5, 10), use_raw)
             measured_voltages = read_voltages()
             measured[i, trial] = measured_voltages[0]
@@ -131,9 +157,7 @@ def run_calibration(output_num, use_raw):
         slope, intercept, r_value, p_value, std_err = linregress(x, y)
         print(f"Slope: {slope}, Intercept: {intercept}")
         # send the calibration values to the device
-        send_sysex(
-            pygame.midi.Output(0), f"cali_{output_num:d}_{slope:.4f}_{intercept:.4f}"
-        )
+        send_calibration(output_num + 1, slope, intercept)
 
 
 def create_printout():
@@ -207,6 +231,9 @@ def run_one_by_one(start):
         run_calibration(i, True)
         run_calibration(i, False)
         create_printout()
+        # reset all of them
+        for j in range(8):
+            set_voltage(j, -10, False)
 
 
 if __name__ == "__main__":
