@@ -104,11 +104,11 @@ def set_voltage(i, voltage, use_raw=False):
 
 
 NUM_TRIALS = 1
-NUM_POINTS = 10
+NUM_POINTS = 30
 
 
 def run_calibration(output_num, use_raw):
-    voltages = np.linspace(-3, 3, NUM_POINTS)
+    voltages = np.linspace(-4.5, 9.5, NUM_POINTS)
     measured = np.zeros((len(voltages), NUM_TRIALS))
     for trial in tqdm(range(NUM_TRIALS)):
         for i, voltage in enumerate(voltages):
@@ -155,7 +155,7 @@ def create_printout():
                 slope, intercept, r_value, p_value, std_err = linregress(x, y)
 
                 regression_line = slope * x + intercept
-                total_error = np.sum(np.sum(y - x))
+                total_error = np.sum(np.abs(y - x))
                 axs[i].plot(
                     x,
                     regression_line,
