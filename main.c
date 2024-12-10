@@ -340,20 +340,6 @@ void midi_note_on(int channel, int note, int velocity) {
 void midi_cc(int channel, int cc, int value) {
   channel++;  // 1-indexed
   printf("ch=%d cc=%d val=%d\n", channel, cc, value);
-  if (channel >= 9) {
-    // voltage override
-    uint8_t output = channel - 9;
-    yocto.out[output].voltage_do_override = (cc > 0 || value > 0);
-    dac.use_raw[output] = (cc > 0 || value > 0);
-    if (yocto.out[output].voltage_do_override) {
-      // calcuate the 14-bit number using the cc as high bits and value as low
-      // bits
-      float voltage01 = (float)((cc << 7) + value) / 16383.0f;
-      // scale voltage to -5 to 10
-      yocto.out[output].voltage_override =
-          linlin(voltage01, 0.0f, 1.0f, -5.0f, 10.0f);
-    }
-  }
 }
 
 #define MIDI_DELTA_COUNT_MAX 24

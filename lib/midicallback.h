@@ -38,6 +38,34 @@ bool get_sysex_param_float_value(const char *param_name, const uint8_t *sysex,
   return false;
 }
 
+bool get_sysex_param_int_float_values(const char *param_name,
+                                      const uint8_t *sysex, size_t length,
+                                      int *out_int, float *out_value) {
+  size_t param_len = strlen(param_name);
+
+  if (length > param_len && memcmp(sysex, param_name, param_len) == 0) {
+    char value_str[length - param_len + 1];
+
+    for (size_t i = param_len; i < length; i++) {
+      value_str[i - param_len] = sysex[i];
+    }
+
+    value_str[length - param_len] = '\0';
+
+    char *token = strtok(value_str, "_");
+    if (token == NULL) return false;
+
+    *out_int = strtol(token, NULL, 10);
+
+    token = strtok(NULL, "_");
+    if (token == NULL) return false;
+    *out_value = strtof(token, NULL);
+
+    return true;
+  }
+  return false;
+}
+
 bool get_sysex_param_int_and_two_float_values(const char *param_name,
                                               const uint8_t *sysex,
                                               size_t length, int *out_int,
@@ -140,6 +168,28 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   } else if (get_sysex_param_float_value("diskmode", sysex, length, &val)) {
     sleep_ms(10);
     reset_usb_boot(0, 0);
+  } else if (get_sysex_param_int_float_values("setvolt", sysex, length, &vali,
+                                              &val)) {
+    // voltset_<channel>_<volts>
+    // voltage override
+    uint8_t output = vali - 1;
+    dac.use_raw[output] = false;
+    yocto.out[output].voltage_do_override = val >= -5 && val <= 10;
+    if (yocto.out[output].voltage_do_override) {
+      yocto.out[output].voltage_override = val;
+    }
+  } else if (get_sysex_param_int_float_values("setraw", sysex, length, &vali,
+                                              &val)) {
+    // voltset_<channel>_<volts>
+    // voltage override
+    uint8_t output = vali - 1;
+    yocto.out[output].voltage_do_override = val >= -5 && val <= 10;
+    if (yocto.out[output].voltage_do_override) {
+      dac.use_raw[output] = true;
+      yocto.out[output].voltage_override = val;
+    } else {
+      dac.use_raw[output] = false;
+    }
   } else if (get_sysex_param_int_and_two_float_values("cali", sysex, length,
                                                       &vali, &val, &val2)) {
     if (val != 0 && val2 != 0) {
