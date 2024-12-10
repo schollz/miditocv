@@ -108,8 +108,7 @@ NUM_POINTS = 10
 
 
 def run_calibration(output_num, use_raw):
-    voltages = np.linspace(0, 5, NUM_POINTS)
-    voltages = [-4.5,-3.5,-2.5,-1.5,-0.5] + voltages.tolist() + [5.5,6.5,7.5,8.5,9.5]
+    voltages = np.linspace(-3, 3, NUM_POINTS)
     measured = np.zeros((len(voltages), NUM_TRIALS))
     for trial in tqdm(range(NUM_TRIALS)):
         for i, voltage in enumerate(voltages):
@@ -133,7 +132,7 @@ def run_calibration(output_num, use_raw):
         print(f"Slope: {slope}, Intercept: {intercept}")
         # send the calibration values to the device
         send_sysex(
-            pygame.midi.Output(0), f"cali_{output_num:d}_{slope:.3f}_{intercept:.3f}"
+            pygame.midi.Output(0), f"cali_{output_num:d}_{slope:.4f}_{intercept:.4f}"
         )
 
 
@@ -156,8 +155,7 @@ def create_printout():
                 slope, intercept, r_value, p_value, std_err = linregress(x, y)
 
                 regression_line = slope * x + intercept
-                # total error is some of squares
-                total_error = np.sum((y - x) ** 2)
+                total_error = np.sum(np.sum(y - x))
                 axs[i].plot(
                     x,
                     regression_line,
@@ -168,13 +166,13 @@ def create_printout():
                     linestyle="--",
                 )
 
-                intercept_string = f"{intercept:.3f}"
+                intercept_string = f"{intercept:.4f}"
                 if intercept < 0:
-                    intercept_string = f"-{-intercept:.3f}"
+                    intercept_string = f"-{-intercept:.4f}"
                 else:
-                    intercept_string = f"+{intercept:.3f}"
+                    intercept_string = f"+{intercept:.4f}"
                 axs[i].set_title(
-                    f"Channel {i+1}: {slope:.3f}x{intercept_string}, error={total_error:.3f}"
+                    f"Channel {i+1}: {slope:.4f}x{intercept_string}, error={total_error:.4f}"
                 )
                 axs[i].set_xlim(-5, 10)
                 axs[i].set_ylim(-5, 10)

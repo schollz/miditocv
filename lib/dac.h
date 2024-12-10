@@ -48,19 +48,11 @@ void DAC_set_voltage(DAC *self, int channel, float voltage) {
   if (channel < 0 || channel >= 8) {
     return;
   }
-#ifndef DEBUG_VOLTAGE_CALIBRATION
-  if (!self->use_raw[channel]) {
-    if (self->voltage_calibration_slope[channel] != 0) {
+  if (!self->use_raw[channel] && self->voltage_calibration_slope[channel] != 0) {
       // calculate adjusted setpoint
       voltage = (voltage - self->voltage_calibration_intercept[channel]) /
                 self->voltage_calibration_slope[channel];
-    } else {
-      // calibrated voltage
-      voltage =
-          (voltage - CALIBRATION_VOLTAGE_INTERCEPT) / CALIBRATION_VOLTAGE_SLOPE;
-    }
   }
-#endif
   // convert voltage from -5-10 to 0-5
   voltage = (voltage + 5.0f) / 3.0f;
   if (voltage < 0) {
