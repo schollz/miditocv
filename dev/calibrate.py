@@ -41,39 +41,11 @@ def send_sysex(output, sysex_string):
 
 
 def send_voltage(output, channel, voltage):
-    send_sysex(output, f"setvolt_{channel:d}_{voltage:.3f}")
+    send_sysex(output, f"setvolt_{channel:d}_{voltage:.4f}")
 
 
 def send_raw_voltage(output, channel, voltage):
-    send_sysex(output, f"setraw_{channel:d}_{voltage:.3f}")
-
-
-def set_all_voltage(voltage, use_raw=False):
-    not_done = True
-    while not_done:
-        output = None
-        try:
-            pygame.midi.init()
-            for device_id in range(pygame.midi.get_count()):
-                interface, name, is_input, is_output, opened = (
-                    pygame.midi.get_device_info(device_id)
-                )
-                if not is_output:
-                    continue
-                if "yoctocore" in name.decode("utf-8"):
-                    output = pygame.midi.Output(device_id)
-                    break
-            for i in range(8):
-                if use_raw:
-                    send_raw_voltage(output, i + 1, voltage)
-                else:
-                    send_voltage(output, i + 1, voltage)
-            time.sleep(0.005)
-            not_done = False
-        except:
-            pygame.midi.quit()
-            time.sleep(0.05)
-            continue
+    send_sysex(output, f"setraw_{channel:d}_{voltage:.4f}")
 
 
 def set_voltage(i, voltage, use_raw=False):
@@ -118,7 +90,7 @@ def send_calibration(channel, slope, intercept):
                 if "yoctocore" in name.decode("utf-8"):
                     output = pygame.midi.Output(device_id)
                     break
-            sysex_string = f"cali_{channel:d}_{slope:.4f}_{intercept:.4f}"
+            sysex_string = f"cali_{channel-1:d}_{slope:.4f}_{intercept:.4f}"
             print(sysex_string)
             send_sysex(output, sysex_string)
             time.sleep(0.005)
@@ -140,9 +112,8 @@ def run_calibration(output_num, use_raw):
         for i, voltage in enumerate(voltages):
             set_voltage(output_num, voltage, use_raw)
             for j in range(8):
-                if j != output_num:
-                    if random.random() < 0.01:
-                        set_voltage(j, np.random.uniform(-5, 10), use_raw)
+                if j != output_num and random.random() < 0.01:
+                    set_voltage(j, np.random.uniform(-5, 10), use_raw)
             measured_voltages = read_voltages()
             measured[i, trial] = measured_voltages[0]
 
