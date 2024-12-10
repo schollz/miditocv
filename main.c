@@ -524,13 +524,13 @@ int main() {
     sleep_ms(5000);
   }
 #endif
-#ifdef USE_VOLTAGE_CALIBRATIONS
   Yoctocore_get_calibrations(&yocto);
   for (uint8_t i = 0; i < 8; i++) {
-    DAC_set_calibration(&dac, i, yocto.out[i].voltage_calibration_slope,
-                        yocto.out[i].voltage_calibration_intercept);
+    dac.voltage_calibration_slope[i] = yocto.out[i].voltage_calibration_slope;
+    dac.voltage_calibration_intercept[i] =
+        yocto.out[i].voltage_calibration_intercept;
   }
-#endif
+
   for (uint8_t i = 0; i < 8; i++) {
     DAC_set_voltage(&dac, i, 0);
   }

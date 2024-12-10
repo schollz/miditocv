@@ -1,6 +1,8 @@
 #ifndef LIB_MIDI_CALLBACK_H
 #define LIB_MIDI_CALLBACK_H 1
 
+#include "dac.h"
+
 // #define DEBUG_MIDI 1
 #define MIDI_MAX_NOTES 128
 #define MIDI_MAX_TIME_ON 10000  // 10 seconds
@@ -198,6 +200,12 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
     } else {
       // set calibration
       Yoctocore_set_calibration(&yocto, vali, val, val2);
+      for (uint8_t i = 0; i < 8; i++) {
+        dac.voltage_calibration_slope[i] =
+            yocto.out[i].voltage_calibration_slope;
+        dac.voltage_calibration_intercept[i] =
+            yocto.out[i].voltage_calibration_intercept;
+      }
     }
   } else {
     Yoctocore_process_sysex(&yocto, sysex);

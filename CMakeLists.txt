@@ -97,8 +97,6 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     # constants
     REFERENCE_5V=5.0
     MAX_NOTE_HOLD_TIME_MS=30000
-    CALIBRATION_VOLTAGE_SLOPE=0.991
-    CALIBRATION_VOLTAGE_INTERCEPT=0.139
     # # settings
     INCLUDE_MIDI=1
 
