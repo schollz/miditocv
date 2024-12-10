@@ -1,6 +1,8 @@
 import time
 import os
+import sys
 from datetime import datetime
+import random
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame.midi
@@ -15,68 +17,38 @@ from tqdm import tqdm
 
 
 def read_all_voltages(task, num_channels):
-    # Read all channels in one go
     data = task.read(number_of_samples_per_channel=1)
     return data
 
 
 def read_voltages():
-    # Specify channels to read
-    channels_to_read = list(range(8))  # Reading ai0 to ai7
-
-    # Create and configure the task outside the loop
+    channels_to_read = list(range(8))
     with nidaqmx.Task() as task:
-        # Add multiple channels to the task with single-ended configuration
         for ch in channels_to_read:
             task.ai_channels.add_ai_voltage_chan(
                 f"Dev1/ai{ch}",
-                terminal_config=TerminalConfiguration.RSE,  # Single-ended configuration
+                terminal_config=TerminalConfiguration.RSE,
             )
         task.timing.cfg_samp_clk_timing(10)
-
-        # Read voltages
         voltages = read_all_voltages(task, len(channels_to_read))
         return [v[0] for v in voltages]
 
 
-def float_to_14bit(float_value):
-    if not (0 <= float_value <= 1):
-        raise ValueError("Input float must be in the range 0 to 1.")
-
-    # Scale float to 14-bit range (0 to 16383)
-    scaled_value = round(float_value * 16383)
-
-    # Extract the high 7 bits (most significant bits)
-    high7_bits = (scaled_value >> 7) & 0x7F
-
-    # Extract the low 7 bits (least significant bits)
-    low7_bits = scaled_value & 0x7F
-
-    # Return the two 7-bit numbers
-    return high7_bits, low7_bits
+def send_sysex(output, sysex_string):
+    sysex_data = sysex_string.encode("utf-8")
+    sysex_data = b"\xF0" + sysex_data + b"\xF7"
+    output.write_sys_ex(pygame.midi.time(), sysex_data)
 
 
 def send_voltage(output, channel, voltage):
-    """
-    Send the scaled voltage as a MIDI SysEx message.
-
-    :param channel: MIDI channel (1-indexed)
-    :param scaled_voltage: A float between 0 and 1
-    """
-    # find midi output with "yoctocore" in name
-
-    scaled_voltage = (voltage + 5.0) / 15.0
-    # Convert the scaled voltage to 14-bit
-    high7_bits, low7_bits = float_to_14bit(scaled_voltage)
-
-    # Create the Control Change message and send it with pygame
-    message = [0xB0 + channel - 1 + 8, high7_bits, low7_bits]
-
-    # ic(output, message)
-    output.write_short(message[0], message[1], message[2])
+    send_sysex(output, f"setvolt_{channel:d}_{voltage:.3f}")
 
 
-def set_all_voltage(voltage):
+def send_raw_voltage(output, channel, voltage):
+    send_sysex(output, f"setraw_{channel:d}_{voltage:.3f}")
+
+
+def set_all_voltage(voltage, use_raw=False):
     not_done = True
     while not_done:
         output = None
@@ -92,8 +64,11 @@ def set_all_voltage(voltage):
                     output = pygame.midi.Output(device_id)
                     break
             for i in range(8):
-                send_voltage(output, i + 1, voltage)
-            time.sleep(0.05)
+                if use_raw:
+                    send_raw_voltage(output, i + 1, voltage)
+                else:
+                    send_voltage(output, i + 1, voltage)
+            time.sleep(0.005)
             not_done = False
         except:
             pygame.midi.quit()
@@ -101,7 +76,7 @@ def set_all_voltage(voltage):
             continue
 
 
-def set_voltage(i, voltage):
+def set_voltage(i, voltage, use_raw=False):
     not_done = True
     while not_done:
         output = None
@@ -116,8 +91,11 @@ def set_voltage(i, voltage):
                 if "yoctocore" in name.decode("utf-8"):
                     output = pygame.midi.Output(device_id)
                     break
-            send_voltage(output, i + 1, voltage)
-            time.sleep(0.05)
+            if use_raw:
+                send_raw_voltage(output, i + 1, voltage)
+            else:
+                send_voltage(output, i + 1, voltage)
+            time.sleep(0.005)
             not_done = False
         except:
             pygame.midi.quit()
@@ -125,105 +103,117 @@ def set_voltage(i, voltage):
             continue
 
 
-def run_calibration(output_num):
-    voltages = [
-        -4,
-        -3,
-        -2,
-        -1,
-        0,
-        0.5,
-        1,
-        1.5,
-        2,
-        2.5,
-        3,
-        3.5,
-        4,
-        4.5,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-    ]
-    voltages = [-4, 0, 5]
-    num_trials = 5
-    measured = np.zeros((len(voltages), num_trials))
-    for trial in range(num_trials):
+NUM_TRIALS = 5
+NUM_POINTS = 30
+
+
+def run_calibration(output_num, use_raw):
+    voltages = np.linspace(-4.5, 10, NUM_POINTS)
+    measured = np.zeros((len(voltages), NUM_TRIALS))
+    for trial in tqdm(range(NUM_TRIALS)):
         for i, voltage in enumerate(voltages):
-            set_voltage(output_num, voltage)
+            set_voltage(output_num, voltage, use_raw)
+            for j in range(8):
+                if j != output_num:
+                    if random.random() < 0.1:
+                        set_voltage(j, np.random.uniform(-5, 10), use_raw)
             measured_voltages = read_voltages()
-            measured[i, trial] = measured_voltages[i]
+            measured[i, trial] = measured_voltages[0]
 
-    # save voltages and measured voltages to file
-    np.save(f"voltages_{output_num}.npy", voltages)
-    np.save(f"measured_{output_num}.npy", measured)
+    mode = "raw" if use_raw else "volt"
+    np.save(f"voltages_{output_num}_{mode}.npy", voltages)
+    np.save(f"measured_{output_num}_{mode}.npy", measured)
+    if use_raw:
+        print(f"Raw calibration for channel {output_num+1} complete")
+        # calculate the slope and intercept
+        x = np.repeat(voltages, NUM_TRIALS)
+        y = measured.flatten()
+        slope, intercept, r_value, p_value, std_err = linregress(x, y)
+        print(f"Slope: {slope}, Intercept: {intercept}")
+        # send the calibration values to the device
+        send_sysex(
+            pygame.midi.Output(0), f"cali_{output_num:d}_{slope:.3f}_{intercept:.3f}"
+        )
 
 
-def run_one_by_one():
+def create_printout():
+    num_channels = 8
+    for mode in ["raw", "volt"]:
+        fig, axs = plt.subplots(4, 2, figsize=(8.5, 11))
+        fig.subplots_adjust(
+            left=0.1, right=0.9, top=0.9, bottom=0.1, hspace=0.5, wspace=0.4
+        )
+
+        axs = axs.flatten()
+        for i in range(num_channels):
+            try:
+                voltages = np.load(f"voltages_{i}_{mode}.npy")
+                measured = np.load(f"measured_{i}_{mode}.npy")
+                print(voltages.shape, measured.shape)
+                y = measured.flatten()
+                x = np.repeat(voltages, measured.shape[1])
+                axs[i].scatter(x, y, label=f"Measured Data ({mode})", color="black")
+                slope, intercept, r_value, p_value, std_err = linregress(x, y)
+
+                regression_line = slope * x + intercept
+                # total error is some of squares
+                total_error = np.sum((y - x) ** 2)
+                axs[i].plot(
+                    x,
+                    regression_line,
+                    label=f"Regression ({mode})",
+                    color="red",
+                    linewidth=2,
+                    alpha=0.5,
+                    linestyle="--",
+                )
+
+                intercept_string = f"{intercept:.3f}"
+                if intercept < 0:
+                    intercept_string = f"-{-intercept:.3f}"
+                else:
+                    intercept_string = f"+{intercept:.3f}"
+                axs[i].set_title(
+                    f"Channel {i+1}: {slope:.3f}x{intercept_string}, error={total_error:.3f}"
+                )
+                axs[i].set_xlim(-5, 10)
+                axs[i].set_ylim(-5, 10)
+                axs[i].set_xlabel("Voltage")
+                axs[i].set_ylabel("Measured Voltage")
+                # axs[i].legend(loc="best")
+            except FileNotFoundError:
+                pass
+
+        if mode == "raw":
+            plt.suptitle(
+                f"Calibration on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            )
+        else:
+            plt.suptitle(f"Testing on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        with PdfPages(f"channel_plots_{mode}.pdf") as pdf:
+            fig.tight_layout(rect=[0.025, 0.025, 0.975, 0.975])
+            pdf.savefig(fig)
+            plt.close(fig)
+
+
+def run_one_by_one(start):
+    first = True
     for i in range(8):
-        print(f"Running calibration for channel {i}")
-        # wait for user to press enter
-        input()
-        run_calibration(i)
+        if i + 1 < start:
+            continue
+        if first:
+            first = False
+        else:
+            print(f"Running calibration for channel {i+1}, press enter to continue")
+            input()
+        run_calibration(i, True)
+        run_calibration(i, False)
+        create_printout()
 
 
-# def run():
-#     num_channels = 8  # Assuming 8 channels
-#     num_trials = 5
-#     # make numpy matrix of measured voltages
-#     measured = np.zeros((len(voltages), num_channels, num_trials))
-#     for trial in tqdm(range(num_trials)):
-#         for i, voltage in enumerate(voltages):
-#             set_all_voltage(voltage)
-#             measured_voltages = read_voltages()
-#             measured[i, :, trial] = measured_voltages
-
-#     # Create 8 plots: one for each channel
-#     fig, axs = plt.subplots(
-#         4, 2, figsize=(8.5, 11)
-#     )  # Adjust figure size for better layout
-#     fig.subplots_adjust(
-#         left=0.1, right=0.9, top=0.9, bottom=0.1, hspace=0.5, wspace=0.4
-#     )
-
-#     axs = axs.flatten()  # Flatten to simplify indexing
-
-#     for i in range(num_channels):
-#         # Gather all trial data
-#         x = np.repeat(voltages, num_trials)  # Repeat voltages for all trials
-#         y = measured[:, i, :].flatten()  # Flatten measured data for channel i
-
-#         # Plot scatter points
-#         axs[i].scatter(x, y, color="black", label="Measured Data")
-
-#         # Perform linear regression
-#         slope, intercept, r_value, p_value, std_err = linregress(x, y)
-#         regression_line = slope * x + intercept
-
-#         # Plot regression line and confidence intervals
-#         axs[i].plot(x, regression_line, color="red", label="Regression Line")
-#         axs[i].fill_between(
-#             x,
-#             regression_line - 2.54 * std_err,
-#             regression_line + 2.54 * std_err,
-#             color="red",
-#             alpha=0.2,
-#             label="95% Confidence Interval",
-#         )
-
-#         # Set plot titles and labels
-#         axs[i].set_title(f"Channel {i+1}: {slope:.3f}x + {intercept:.3f}")
-#         axs[i].set_xlabel("Voltage")
-#         axs[i].set_ylabel("Measured Voltage")
-#         # axs[i].legend(loc="best")
-
-#     plt.suptitle(f"Calibration on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-#     with PdfPages("channel_plots.pdf") as pdf:
-#         fig.tight_layout(rect=[0.025, 0.025, 0.975, 0.975])
-#         pdf.savefig(fig)  # Save the figure to the PDF
-#         plt.close(fig)  # Close the figure after saving
-
-run_one_by_one()
+if __name__ == "__main__":
+    if len(sys.argv) >= 2:
+        start_channel = int(sys.argv[1])
+        run_one_by_one(start_channel)
+    else:
+        create_printout()
