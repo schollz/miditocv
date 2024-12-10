@@ -199,12 +199,9 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
       }
     } else {
       // set calibration
-      Yoctocore_set_calibration(&yocto, vali, val, val2);
-      for (uint8_t i = 0; i < 8; i++) {
-        dac.voltage_calibration_slope[i] =
-            yocto.out[i].voltage_calibration_slope;
-        dac.voltage_calibration_intercept[i] =
-            yocto.out[i].voltage_calibration_intercept;
+      if (Yoctocore_set_calibration(&yocto, vali, val, val2)) {
+        dac.voltage_calibration_slope[vali] = val;
+        dac.voltage_calibration_intercept[vali] = val2;
       }
     }
   } else {
