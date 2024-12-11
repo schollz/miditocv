@@ -14,6 +14,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from scipy.stats import linregress
 import numpy as np
 from tqdm import tqdm
+import click
 
 
 def read_all_voltages(task, num_channels):
@@ -171,18 +172,23 @@ def create_printout():
                 # axs[i].scatter(x, y, label=f"Measured Data ({mode})", color="black")
                 slope, intercept, r_value, p_value, std_err = linregress(x, y)
 
-
                 regression_line = slope * x + intercept
                 # total_error is calculated as the average relavtive error
-                total_error = np.sum(np.divide(np.abs(x - y), np.abs(x))) * 100.0 / len(x)
+                total_error = (
+                    np.sum(np.divide(np.abs(x - y), np.abs(x))) * 100.0 / len(x)
+                )
                 y2 = np.divide((x - y), np.abs(x))
                 # plot vertical line from each point to 0 on the y-axis
                 for j in range(len(x)):
                     if x[j] - y[j] > 0:
-                        axs[i].plot([x[j], x[j]], [x[j] - y[j], 0], color="red", alpha=0.8)
+                        axs[i].plot(
+                            [x[j], x[j]], [x[j] - y[j], 0], color="red", alpha=0.8
+                        )
                     else:
-                        axs[i].plot([x[j], x[j]], [x[j] - y[j], 0], color="blue", alpha=0.8)
-                
+                        axs[i].plot(
+                            [x[j], x[j]], [x[j] - y[j], 0], color="blue", alpha=0.8
+                        )
+
                 axs[i].plot(
                     x,
                     x - y,
@@ -214,7 +220,7 @@ def create_printout():
                 else:
                     axs[i].set_title(f"Channel {i+1}: error={total_error:.1f}%")
                 axs[i].set_xlim(-5, 10)
-                axs[i].set_ylim(-0.25,0.25)
+                axs[i].set_ylim(-0.25, 0.25)
                 axs[i].set_xlabel("Set Voltage")
                 axs[i].set_ylabel("Error")
 
@@ -227,7 +233,9 @@ def create_printout():
                 f"Calibration correction on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
         else:
-            plt.suptitle(f"Testing correction on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            plt.suptitle(
+                f"Testing correction on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            )
         with PdfPages(f"channel_plots_{mode}.pdf") as pdf:
             fig.tight_layout(rect=[0.025, 0.025, 0.975, 0.975])
             pdf.savefig(fig)
@@ -253,10 +261,18 @@ def run_one_by_one(start, test_only=False):
             set_voltage(j, -10)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) >= 2:
-        start_channel = int(sys.argv[1])
+@click.command()
+@click.argument("id", required=True)
+@click.argument("start", required=False, type=int, default=1)
+@click.argument("num", required=False, type=int, default=8)
+@click.option("--test", is_flag=True, help="Run in test mode")
+def main(id, start, num, test):
+    print(id, start, num, test)
+    # if id is not None and start is not None and num is not None:
+    #     run_one_by_one(id, start, num, test)
+    # else:
+    #     create_printout()
 
-        run_one_by_one(start_channel, sys.argv[2] == "test")
-    else:
-        create_printout()
+
+if __name__ == "__main__":
+    main()
