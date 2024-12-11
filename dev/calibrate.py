@@ -41,7 +41,7 @@ def send_sysex(output, sysex_string):
 
 
 def send_voltage(output, channel, voltage):
-    send_sysex(output, f"setvolt_{channel:d}_{voltage:.4f}")
+    send_sysex(output, f"setvolt_{channel:d}_{voltage:.5f}")
 
 
 def set_voltage(i, voltage):
@@ -83,7 +83,7 @@ def send_calibration(channel, slope, intercept):
                 if "yoctocore" in name.decode("utf-8"):
                     output = pygame.midi.Output(device_id)
                     break
-            sysex_string = f"cali_{channel-1:d}_{slope:.4f}_{intercept:.4f}"
+            sysex_string = f"cali_{channel-1:d}_{slope:.5f}_{intercept:.5f}"
             print(sysex_string)
             send_sysex(output, sysex_string)
             time.sleep(0.005)
@@ -142,21 +142,21 @@ def run_calibration(output_num, use_raw):
     mode = "raw" if use_raw else "volt"
     np.save(f"voltages_{output_num}_{mode}.npy", voltages)
     np.save(f"measured_{output_num}_{mode}.npy", measured)
+    print(f"Calibration for channel {output_num+1} complete")
+    # calculate the slope and intercept
+    x = np.repeat(voltages, NUM_TRIALS)
+    y = measured.flatten()
+    slope, intercept, r_value, p_value, std_err = linregress(x, y)
+    print(f"Slope: {slope}, Intercept: {intercept}")
     if use_raw:
-        print(f"Raw calibration for channel {output_num+1} complete")
-        # calculate the slope and intercept
-        x = np.repeat(voltages, NUM_TRIALS)
-        y = measured.flatten()
-        slope, intercept, r_value, p_value, std_err = linregress(x, y)
-        print(f"Slope: {slope}, Intercept: {intercept}")
         # send the calibration values to the device
         send_calibration(output_num + 1, slope, intercept)
 
 
 def create_printout():
-    num_channels = 8
+    num_channels = 12
     for mode in ["raw", "volt"]:
-        fig, axs = plt.subplots(4, 2, figsize=(8.5, 11))
+        fig, axs = plt.subplots(6, 2, figsize=(8.5, 11))
         fig.subplots_adjust(
             left=0.1, right=0.9, top=0.9, bottom=0.1, hspace=0.5, wspace=0.4
         )
@@ -168,43 +168,66 @@ def create_printout():
                 measured = np.load(f"measured_{i}_{mode}.npy")
                 y = measured.flatten()
                 x = np.repeat(voltages, measured.shape[1])
-                axs[i].scatter(x, y, label=f"Measured Data ({mode})", color="black")
+                # axs[i].scatter(x, y, label=f"Measured Data ({mode})", color="black")
                 slope, intercept, r_value, p_value, std_err = linregress(x, y)
 
+
                 regression_line = slope * x + intercept
-                total_error = np.sum(np.abs(y - x))
+                # total_error is calculated as the average relavtive error
+                total_error = np.sum(np.divide(np.abs(x - y), np.abs(x))) * 100.0 / len(x)
+                y2 = np.divide((x - y), np.abs(x))
+                # plot vertical line from each point to 0 on the y-axis
+                for j in range(len(x)):
+                    if x[j] - y[j] > 0:
+                        axs[i].plot([x[j], x[j]], [x[j] - y[j], 0], color="red", alpha=0.8)
+                    else:
+                        axs[i].plot([x[j], x[j]], [x[j] - y[j], 0], color="blue", alpha=0.8)
+                
                 axs[i].plot(
                     x,
-                    regression_line,
+                    x - y,
                     label=f"Regression ({mode})",
-                    color="red",
+                    color="black",
                     linewidth=2,
-                    alpha=0.5,
-                    linestyle="--",
+                    alpha=0.9,
+                    linestyle="none",
+                    marker="o",
+                    markersize=3,
+                    markerfacecolor="black",
+                    markeredgecolor="black",
                 )
 
-                intercept_string = f"{intercept:.4f}"
-                if intercept < 0:
-                    intercept_string = f"-{-intercept:.4f}"
-                else:
-                    intercept_string = f"+{intercept:.4f}"
-                axs[i].set_title(
-                    f"Channel {i+1}: {slope:.4f}x{intercept_string}, error={total_error:.4f}"
+                # plot 0 line
+                axs[i].plot(
+                    x, np.zeros_like(x), label="Zero Error", color="black", alpha=0.5
                 )
+
+                intercept_string = f"{intercept:.3f}"
+                if intercept < 0:
+                    intercept_string = f"-{-intercept:.3f}"
+                else:
+                    intercept_string = f"+{intercept:.3f}"
+                if mode == "raw":
+                    axs[i].set_title(
+                        f"Channel {i+1}: {slope:.3f}x{intercept_string}, error={total_error:.1f}%"
+                    )
+                else:
+                    axs[i].set_title(f"Channel {i+1}: error={total_error:.1f}%")
                 axs[i].set_xlim(-5, 10)
-                axs[i].set_ylim(-5, 10)
+                axs[i].set_ylim(-0.25,0.25)
                 axs[i].set_xlabel("Set Voltage")
-                axs[i].set_ylabel("Measured Voltage")
+                axs[i].set_ylabel("Error")
+
                 # axs[i].legend(loc="best")
             except FileNotFoundError:
                 pass
 
         if mode == "raw":
             plt.suptitle(
-                f"Calibration on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                f"Calibration correction on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
         else:
-            plt.suptitle(f"Testing on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            plt.suptitle(f"Testing correction on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         with PdfPages(f"channel_plots_{mode}.pdf") as pdf:
             fig.tight_layout(rect=[0.025, 0.025, 0.975, 0.975])
             pdf.savefig(fig)
@@ -227,7 +250,7 @@ def run_one_by_one(start, test_only=False):
         create_printout()
         # reset all of them
         for j in range(8):
-            set_voltage(j, -10, False)
+            set_voltage(j, -10)
 
 
 if __name__ == "__main__":
