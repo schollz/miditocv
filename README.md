@@ -80,3 +80,23 @@ the lfo waveform can be configured in the editor, the default waveform is a sine
 the lfo frequency can be configured in the editor, the default frequency is 1hz. the lfo frequency can also be configured by turning the knob.
 
 the lfo voltage range is configurable in the editor, the default range is -5v to 5v. the lfo range can be attenuated by holding shift and turning the knob.
+
+
+## Calibration
+
+The yoctocore core is calibrated using an NI USB-6009 device to read in the voltages while manipulating the raw values to obtain a calibration curve for adjusting the final voltage.
+
+To get started, you will need nidaqmx + drivers:
+
+```
+sudo -H python3 -m pip install --break-system-packages nidaqmx
+sudo -H python3 -m nidaqmx installdriver # install everything
+```
+
+To see if it installed correctly:
+
+```
+> nidaqmxconfig
+```
+
+For errors, see [this](https://knowledge.ni.com/KnowledgeArticleDetails?id=kA03q000000wwZyCAI&l=en-US).
