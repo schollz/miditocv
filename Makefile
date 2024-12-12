@@ -12,8 +12,10 @@ yoctocore: luascripts pico-extras build
 	cp build/*.uf2 yoctocore.uf2
 
 luascripts:
-	npm install -g luamin
-	luamin -f web/static/globals.lua > globals.lua
+	npm install -g luamin || true
+	luamin --version || true
+	xxd --version || true
+	luamin -f web/static/globals.lua > globals.lua || true
 	xxd -i globals.lua > lib/lua_globals.h
 	rm globals.lua
 
