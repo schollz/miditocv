@@ -1,5 +1,7 @@
 # yoctocore
 
+![CI/CD](https://github.com/schollz/yoctocore/actions/workflows/build.yml/badge.svg)
+
 there are eight scenes. each scene is selected by holding down `shift` and then holding one of the eight buttons for >1 second.
 
 each scene has eight outputs. each output can be configured to a different mode. modes are selected holding `shift` and pressing one of the eight buttons.
