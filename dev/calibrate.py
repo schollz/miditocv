@@ -127,7 +127,7 @@ NUM_TRIALS = 1
 NUM_POINTS = 30
 
 
-def run_calibration(output_num, use_raw):
+def run_calibration(id, output_num, use_raw):
     send_use_raw(use_raw)
     voltages = np.linspace(-4.5, 9.5, NUM_POINTS)
     measured = np.zeros((len(voltages), NUM_TRIALS))
@@ -141,8 +141,11 @@ def run_calibration(output_num, use_raw):
             measured[i, trial] = measured_voltages[0]
 
     mode = "raw" if use_raw else "volt"
-    np.save(f"voltages_{output_num}_{mode}.npy", voltages)
-    np.save(f"measured_{output_num}_{mode}.npy", measured)
+    # create a folder with the id if it doesn't already exist
+    if not os.path.exists(id):
+        os.mkdir(id)
+    np.save(f"{id}/voltages_{output_num}_{mode}.npy", voltages)
+    np.save(f"{id}/measured_{output_num}_{mode}.npy", measured)
     print(f"Calibration for channel {output_num+1} complete")
     # calculate the slope and intercept
     x = np.repeat(voltages, NUM_TRIALS)
@@ -154,7 +157,7 @@ def run_calibration(output_num, use_raw):
         send_calibration(output_num + 1, slope, intercept)
 
 
-def create_printout():
+def create_printout(id):
     num_channels = 12
     for mode in ["raw", "volt"]:
         fig, axs = plt.subplots(6, 2, figsize=(8.5, 11))
@@ -165,8 +168,8 @@ def create_printout():
         axs = axs.flatten()
         for i in range(num_channels):
             try:
-                voltages = np.load(f"voltages_{i}_{mode}.npy")
-                measured = np.load(f"measured_{i}_{mode}.npy")
+                voltages = np.load(f"{id}/voltages_{i}_{mode}.npy")
+                measured = np.load(f"{id}/measured_{i}_{mode}.npy")
                 y = measured.flatten()
                 x = np.repeat(voltages, measured.shape[1])
                 # axs[i].scatter(x, y, label=f"Measured Data ({mode})", color="black")
@@ -236,16 +239,17 @@ def create_printout():
             plt.suptitle(
                 f"Testing correction on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
-        with PdfPages(f"channel_plots_{mode}.pdf") as pdf:
+        with PdfPages(f"{id}/channel_plots_{mode}.pdf") as pdf:
             fig.tight_layout(rect=[0.025, 0.025, 0.975, 0.975])
             pdf.savefig(fig)
             plt.close(fig)
 
 
-def run_one_by_one(start, test_only=False):
+def run_one_by_one(id, start, num, test_only=False):
     first = True
-    for i in range(8):
-        if i + 1 < start:
+    # check start to start + num inclusively
+    for i in range(start, num + start):
+        if i < start:
             continue
         if first:
             first = False
@@ -253,8 +257,8 @@ def run_one_by_one(start, test_only=False):
             print(f"Running calibration for channel {i+1}, press enter to continue")
             input()
         if not test_only:
-            run_calibration(i, True)
-        run_calibration(i, False)
+            run_calibration(id, i, True)
+        run_calibration(id, i, False)
         create_printout()
         # reset all of them
         for j in range(8):
@@ -267,11 +271,10 @@ def run_one_by_one(start, test_only=False):
 @click.argument("num", required=False, type=int, default=8)
 @click.option("--test", is_flag=True, help="Run in test mode")
 def main(id, start, num, test):
-    print(id, start, num, test)
-    # if id is not None and start is not None and num is not None:
-    #     run_one_by_one(id, start, num, test)
-    # else:
-    #     create_printout()
+    if id is not None and start is not None and num is not None:
+        run_one_by_one(id, start, num, test)
+    else:
+        create_printout()
 
 
 if __name__ == "__main__":
