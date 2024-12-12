@@ -20,6 +20,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'latest' # or the version you need
+      - name: Install luamin
+        run: |
+          npm install -g luamin
+          echo "::add-path::$(npm bin -g)"
+          luamin --version
       - name: Install Pico SDK dependencies
         run: |
           sudo apt update
