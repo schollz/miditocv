@@ -46,6 +46,7 @@ jobs:
       - name: Build yoctocore
         run: |
           make yoctocore
+          cp yoctocore.uf2 yoctocore_${{ github.event.release.name }}.uf2
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
