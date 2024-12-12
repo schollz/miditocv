@@ -23,7 +23,7 @@ jobs:
       - name: Install luamin
         run: |
           npm install -g luamin
-          echo "::add-path::$(npm bin -g)"
+          echo "$(npm bin -g)" >> $GITHUB_PATH
           luamin --version
       - name: Install Pico SDK dependencies
         run: |
