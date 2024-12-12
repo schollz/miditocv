@@ -2,8 +2,12 @@
 yoctocore.uf2
 web/*pem
 *pdf
+*.npy
 *.d
+recalibration.js
+settings.json
 pico-extras/
+dev/calibrations/*
 build/
 # Object files
 *.o
