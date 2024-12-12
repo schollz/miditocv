@@ -1,6 +1,6 @@
 # yoctocore
 
-![CI/CD](https://github.com/schollz/yoctocore/actions/workflows/build.yml/badge.svg)
+[![CI/CD](https://github.com/schollz/yoctocore/actions/workflows/build.yml/badge.svg)](https://github.com/schollz/yoctocore/actions/workflows/build.yml) [![Latest](https://img.shields.io/github/v/release/schollz/yoctocore?color=brightgreen&label=Latest Release)](https://github.com/schollz/yoctocore/releases/latest)
 
 there are eight scenes. each scene is selected by holding down `shift` and then holding one of the eight buttons for >1 second.
 

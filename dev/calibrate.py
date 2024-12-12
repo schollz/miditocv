@@ -36,6 +36,7 @@ def read_voltages():
 
 
 def send_sysex(output, sysex_string):
+    print(sysex_string)
     sysex_data = sysex_string.encode("utf-8")
     sysex_data = b"\xF0" + sysex_data + b"\xF7"
     output.write_sys_ex(pygame.midi.time(), sysex_data)
@@ -60,7 +61,7 @@ def set_voltage(i, voltage):
                 if "yoctocore" in name.decode("utf-8"):
                     output = pygame.midi.Output(device_id)
                     break
-            send_voltage(output, i + 1, voltage)
+            send_voltage(output, i, voltage)
             time.sleep(0.005)
             not_done = False
         except:
@@ -84,7 +85,7 @@ def send_calibration(channel, slope, intercept):
                 if "yoctocore" in name.decode("utf-8"):
                     output = pygame.midi.Output(device_id)
                     break
-            sysex_string = f"cali_{channel-1:d}_{slope:.5f}_{intercept:.5f}"
+            sysex_string = f"cali_{channel:d}_{slope:.5f}_{intercept:.5f}"
             print(sysex_string)
             send_sysex(output, sysex_string)
             time.sleep(0.005)
@@ -113,7 +114,7 @@ def send_use_raw(use_raw=False):
             sysex_string = f"useraw 1"
             if not use_raw:
                 sysex_string = f"useraw 0"
-            print(sysex_string)
+            # print(sysex_string)
             send_sysex(output, sysex_string)
             time.sleep(0.005)
             not_done = False
@@ -146,7 +147,7 @@ def run_calibration(id, output_num, use_raw):
         os.mkdir(id)
     np.save(f"{id}/voltages_{output_num}_{mode}.npy", voltages)
     np.save(f"{id}/measured_{output_num}_{mode}.npy", measured)
-    print(f"Calibration for channel {output_num+1} complete")
+    print(f"Calibration for channel {output_num} complete")
     # calculate the slope and intercept
     x = np.repeat(voltages, NUM_TRIALS)
     y = measured.flatten()
@@ -154,7 +155,7 @@ def run_calibration(id, output_num, use_raw):
     print(f"Slope: {slope}, Intercept: {intercept}")
     if use_raw:
         # send the calibration values to the device
-        send_calibration(output_num + 1, slope, intercept)
+        send_calibration(output_num, slope, intercept)
 
 
 def create_printout(id):
@@ -167,9 +168,10 @@ def create_printout(id):
 
         axs = axs.flatten()
         for i in range(num_channels):
+            channel_num = i + 1
             try:
-                voltages = np.load(f"{id}/voltages_{i}_{mode}.npy")
-                measured = np.load(f"{id}/measured_{i}_{mode}.npy")
+                voltages = np.load(f"{id}/voltages_{channel_num}_{mode}.npy")
+                measured = np.load(f"{id}/measured_{channel_num}_{mode}.npy")
                 y = measured.flatten()
                 x = np.repeat(voltages, measured.shape[1])
                 # axs[i].scatter(x, y, label=f"Measured Data ({mode})", color="black")
@@ -218,10 +220,10 @@ def create_printout(id):
                     intercept_string = f"+{intercept:.3f}"
                 if mode == "raw":
                     axs[i].set_title(
-                        f"Channel {i+1}: {slope:.3f}x{intercept_string}, error={total_error:.1f}%"
+                        f"Channel {channel_num}: {slope:.3f}x{intercept_string}, error={total_error:.1f}%"
                     )
                 else:
-                    axs[i].set_title(f"Channel {i+1}: error={total_error:.1f}%")
+                    axs[i].set_title(f"Channel {channel_num}: error={total_error:.1f}%")
                 axs[i].set_xlim(-5, 10)
                 axs[i].set_ylim(-0.25, 0.25)
                 axs[i].set_xlabel("Set Voltage")
@@ -249,20 +251,18 @@ def run_one_by_one(id, start, num, test_only=False):
     first = True
     # check start to start + num inclusively
     for i in range(start, num + start):
-        if i < start:
-            continue
         if first:
             first = False
         else:
-            print(f"Running calibration for channel {i+1}, press enter to continue")
+            print(f"Running calibration for channel {i}, press enter to continue")
             input()
         if not test_only:
             run_calibration(id, i, True)
         run_calibration(id, i, False)
-        create_printout()
         # reset all of them
         for j in range(8):
             set_voltage(j, -10)
+    create_printout(id)
 
 
 @click.command()
@@ -271,10 +271,10 @@ def run_one_by_one(id, start, num, test_only=False):
 @click.argument("num", required=False, type=int, default=8)
 @click.option("--test", is_flag=True, help="Run in test mode")
 def main(id, start, num, test):
-    if id is not None and start is not None and num is not None:
-        run_one_by_one(id, start, num, test)
+    if test:
+        create_printout(id)
     else:
-        create_printout()
+        run_one_by_one(id, start, num, test)
 
 
 if __name__ == "__main__":

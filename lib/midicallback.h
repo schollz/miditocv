@@ -3,7 +3,7 @@
 
 // #define DEBUG_MIDI 1
 #define MIDI_MAX_NOTES 128
-#define MIDI_MAX_TIME_ON 10000  // 10 seconds
+#define MIDI_MAX_TIME_ON 10000 // 10 seconds
 #define MIDI_RESET_EVERY_BEAT 16
 #define MIDI_CLOCK_MULTIPLIER 2
 
@@ -53,12 +53,14 @@ bool get_sysex_param_int_float_values(const char *param_name,
     value_str[length - param_len] = '\0';
 
     char *token = strtok(value_str, "_");
-    if (token == NULL) return false;
+    if (token == NULL)
+      return false;
 
     *out_int = strtol(token, NULL, 10);
 
     token = strtok(NULL, "_");
-    if (token == NULL) return false;
+    if (token == NULL)
+      return false;
     *out_value = strtof(token, NULL);
 
     return true;
@@ -88,19 +90,22 @@ bool get_sysex_param_int_and_two_float_values(const char *param_name,
 
     // Tokenize the string to extract the integer and two float values
     char *token = strtok(value_str, "_");
-    if (token == NULL) return false;
+    if (token == NULL)
+      return false;
 
     // Parse the integer
     *out_int = strtol(token, NULL, 10);
 
     // Parse the first float
     token = strtok(NULL, "_");
-    if (token == NULL) return false;
+    if (token == NULL)
+      return false;
     *out_value1 = strtof(token, NULL);
 
     // Parse the second float
     token = strtok(NULL, "_");
-    if (token == NULL) return false;
+    if (token == NULL)
+      return false;
     *out_value2 = strtof(token, NULL);
 
     return true;
@@ -170,9 +175,13 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
     reset_usb_boot(0, 0);
   } else if (get_sysex_param_int_float_values("setvolt", sysex, length, &vali,
                                               &val)) {
+    // expects 1-index
     // voltset_<channel>_<volts>
     // voltage override
-    uint8_t output = vali - 1;
+    int8_t output = vali - 1;
+    if (output < 0) {
+      return;
+    }
     yocto.out[output].voltage_do_override = val >= -5.0f && val <= 10.0f;
     if (yocto.out[output].voltage_do_override) {
       yocto.out[output].voltage_override = val;
@@ -188,6 +197,11 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
     }
   } else if (get_sysex_param_int_and_two_float_values("cali", sysex, length,
                                                       &vali, &val, &val2)) {
+    // expects 1-index
+    int8_t output = vali - 1;
+    if (output < 0) {
+      return;
+    }
     if (val == 0 && val2 == 0) {
       // get calibration
       Yoctocore_get_calibrations(&yocto);
@@ -197,9 +211,9 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
       }
     } else {
       // set calibration
-      if (Yoctocore_set_calibration(&yocto, vali, val, val2)) {
-        dac.voltage_calibration_slope[vali] = val;
-        dac.voltage_calibration_intercept[vali] = val2;
+      if (Yoctocore_set_calibration(&yocto, output, val, val2)) {
+        dac.voltage_calibration_slope[output] = val;
+        dac.voltage_calibration_intercept[output] = val2;
       }
     }
   } else {
