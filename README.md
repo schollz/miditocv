@@ -93,6 +93,8 @@ sudo -H python3 -m pip install --break-system-packages nidaqmx
 sudo -H python3 -m nidaqmx installdriver # install everything
 ```
 
+Restart the computer and make sure to DISABLE "Secure Boot".
+
 To see if it installed correctly:
 
 ```
@@ -100,3 +102,16 @@ To see if it installed correctly:
 ```
 
 For errors, see [this](https://knowledge.ni.com/KnowledgeArticleDetails?id=kA03q000000wwZyCAI&l=en-US).
+
+## Building Lua for the browser
+
+```
+https://github.com/Doridian/LuaJS
+cd LuaJS && git checkout 8cd117fdbec00a3b6a8a403757f62b700e41b445
+git submodule update --init --recursive
+npm install
+npm run clean
+npm run build
+```
+
+The `dist` folder can now be used.
