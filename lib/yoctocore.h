@@ -195,8 +195,8 @@ void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
   }
 }
 
-#define CODE_CHUNK_SIZE \
-  36  // Total buffer size including "LS"/"LE"/"LN", scene, and output
+#define CODE_CHUNK_SIZE                                                        \
+  36 // Total buffer size including "LS"/"LE"/"LN", scene, and output
 
 void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
   if (self->config[scene][output].code == NULL) {
@@ -248,7 +248,7 @@ void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
     // Send the buffer as SysEx
     send_buffer_as_sysex(
         buffer,
-        4 + chunk_size);  // 4 for "LS"/"LE"/"LN", scene, output + chunk_size
+        4 + chunk_size); // 4 for "LS"/"LE"/"LN", scene, output + chunk_size
 #endif
   }
 }
@@ -259,84 +259,84 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
   Config *config = &self->config[scene][output];
   Out *out = &self->out[output];
   switch (param) {
-    case PARAM_SCENE:
-      self->i = (uint8_t)val;
-      break;
-    case PARAM_MODE:
-      config->mode = (uint8_t)val;
-      break;
-    case PARAM_QUANTIZATION:
-      config->quantization = (uint8_t)val;
-      break;
-    case PARAM_PORTATMENTO:
-      config->portamento = val;
-      break;
-    case PARAM_V_OCT:
-      config->v_oct = val;
-      break;
-    case PARAM_ROOT_NOTE:
-      config->root_note = (uint8_t)val;
-      break;
-    case PARAM_MIN_VOLTAGE:
-      config->min_voltage = val;
-      break;
-    case PARAM_MAX_VOLTAGE:
-      config->max_voltage = val;
-      break;
-    case PARAM_SLEW_TIME:
-      config->slew_time = val;
-      break;
-    case PARAM_MIDI_CHANNEL:
-      config->midi_channel = (uint8_t)val;
-      break;
-    case PARAM_MIDI_PRIORITY_CHANNEL:
-      config->midi_priority_channel = (uint8_t)val;
-      break;
-    case PARAM_MIDI_CC:
-      config->midi_cc = (uint8_t)val;
-      break;
-    case PARAM_CLOCK_TEMPO:
-      if (val > 0) {
-        val += 29;
-      }
-      config->clock_tempo = val;
-      break;
-    case PARAM_CLOCK_DIVISION:
-      config->clock_division = (uint8_t)val;
-      break;
-    case PARAM_LFO_PERIOD:
-      config->lfo_period = val;
-      break;
-    case PARAM_LFO_DEPTH:
-      config->lfo_depth = val;
-      break;
-    case PARAM_LFO_WAVEFORM:
-      config->lfo_waveform = (uint8_t)val;
-      break;
-    case PARAM_ATTACK:
-      config->attack = val;
-      break;
-    case PARAM_DECAY:
-      config->decay = val;
-      break;
-    case PARAM_SUSTAIN:
-      config->sustain = val;
-      break;
-    case PARAM_RELEASE:
-      config->release = val;
-      break;
-    case PARAM_LINKED_TO:
-      config->linked_to = (uint8_t)val;
-      break;
-    case PARAM_PROBABILITY:
-      if (val > 100) {
-        val = 100;
-      }
-      config->probability = (uint8_t)val;
-      break;
-    default:
-      return;
-      break;
+  case PARAM_SCENE:
+    self->i = (uint8_t)val;
+    break;
+  case PARAM_MODE:
+    config->mode = (uint8_t)val;
+    break;
+  case PARAM_QUANTIZATION:
+    config->quantization = (uint8_t)val;
+    break;
+  case PARAM_PORTATMENTO:
+    config->portamento = val;
+    break;
+  case PARAM_V_OCT:
+    config->v_oct = val;
+    break;
+  case PARAM_ROOT_NOTE:
+    config->root_note = (uint8_t)val;
+    break;
+  case PARAM_MIN_VOLTAGE:
+    config->min_voltage = val;
+    break;
+  case PARAM_MAX_VOLTAGE:
+    config->max_voltage = val;
+    break;
+  case PARAM_SLEW_TIME:
+    config->slew_time = val;
+    break;
+  case PARAM_MIDI_CHANNEL:
+    config->midi_channel = (uint8_t)val;
+    break;
+  case PARAM_MIDI_PRIORITY_CHANNEL:
+    config->midi_priority_channel = (uint8_t)val;
+    break;
+  case PARAM_MIDI_CC:
+    config->midi_cc = (uint8_t)val;
+    break;
+  case PARAM_CLOCK_TEMPO:
+    if (val > 0) {
+      val += 29;
+    }
+    config->clock_tempo = val;
+    break;
+  case PARAM_CLOCK_DIVISION:
+    config->clock_division = (uint8_t)val;
+    break;
+  case PARAM_LFO_PERIOD:
+    config->lfo_period = val;
+    break;
+  case PARAM_LFO_DEPTH:
+    config->lfo_depth = val;
+    break;
+  case PARAM_LFO_WAVEFORM:
+    config->lfo_waveform = (uint8_t)val;
+    break;
+  case PARAM_ATTACK:
+    config->attack = val;
+    break;
+  case PARAM_DECAY:
+    config->decay = val;
+    break;
+  case PARAM_SUSTAIN:
+    config->sustain = val;
+    break;
+  case PARAM_RELEASE:
+    config->release = val;
+    break;
+  case PARAM_LINKED_TO:
+    config->linked_to = (uint8_t)val;
+    break;
+  case PARAM_PROBABILITY:
+    if (val > 100) {
+      val = 100;
+    }
+    config->probability = (uint8_t)val;
+    break;
+  default:
+    return;
+    break;
   }
   self->debounce_save = to_ms_since_boot(get_absolute_time());
 }
@@ -345,58 +345,58 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
                     uint32_t param) {
   Config *config = &self->config[scene][output];
   switch (param) {
-    case PARAM_SCENE:
-      return self->i;
-    case PARAM_MODE:
-      return config->mode;
-    case PARAM_QUANTIZATION:
-      return config->quantization;
-    case PARAM_PORTATMENTO:
-      return config->portamento;
-    case PARAM_V_OCT:
-      return config->v_oct;
-    case PARAM_ROOT_NOTE:
-      return config->root_note;
-    case PARAM_MIN_VOLTAGE:
-      return config->min_voltage;
-    case PARAM_MAX_VOLTAGE:
-      return config->max_voltage;
-    case PARAM_SLEW_TIME:
-      return config->slew_time;
-    case PARAM_MIDI_CHANNEL:
-      return config->midi_channel;
-    case PARAM_MIDI_PRIORITY_CHANNEL:
-      return config->midi_priority_channel;
-    case PARAM_MIDI_CC:
-      return config->midi_cc;
-    case PARAM_CLOCK_TEMPO:
-      float val = config->clock_tempo;
-      if (val > 0) {
-        val -= 29;
-      }
-      return val;
-    case PARAM_CLOCK_DIVISION:
-      return config->clock_division;
-    case PARAM_LFO_PERIOD:
-      return config->lfo_period;
-    case PARAM_LFO_DEPTH:
-      return config->lfo_depth;
-    case PARAM_LFO_WAVEFORM:
-      return config->lfo_waveform;
-    case PARAM_ATTACK:
-      return config->attack;
-    case PARAM_DECAY:
-      return config->decay;
-    case PARAM_SUSTAIN:
-      return config->sustain;
-    case PARAM_RELEASE:
-      return config->release;
-    case PARAM_LINKED_TO:
-      return config->linked_to;
-    case PARAM_PROBABILITY:
-      return config->probability;
-    default:
-      return -1000;
+  case PARAM_SCENE:
+    return self->i;
+  case PARAM_MODE:
+    return config->mode;
+  case PARAM_QUANTIZATION:
+    return config->quantization;
+  case PARAM_PORTATMENTO:
+    return config->portamento;
+  case PARAM_V_OCT:
+    return config->v_oct;
+  case PARAM_ROOT_NOTE:
+    return config->root_note;
+  case PARAM_MIN_VOLTAGE:
+    return config->min_voltage;
+  case PARAM_MAX_VOLTAGE:
+    return config->max_voltage;
+  case PARAM_SLEW_TIME:
+    return config->slew_time;
+  case PARAM_MIDI_CHANNEL:
+    return config->midi_channel;
+  case PARAM_MIDI_PRIORITY_CHANNEL:
+    return config->midi_priority_channel;
+  case PARAM_MIDI_CC:
+    return config->midi_cc;
+  case PARAM_CLOCK_TEMPO:
+    float val = config->clock_tempo;
+    if (val > 0) {
+      val -= 29;
+    }
+    return val;
+  case PARAM_CLOCK_DIVISION:
+    return config->clock_division;
+  case PARAM_LFO_PERIOD:
+    return config->lfo_period;
+  case PARAM_LFO_DEPTH:
+    return config->lfo_depth;
+  case PARAM_LFO_WAVEFORM:
+    return config->lfo_waveform;
+  case PARAM_ATTACK:
+    return config->attack;
+  case PARAM_DECAY:
+    return config->decay;
+  case PARAM_SUSTAIN:
+    return config->sustain;
+  case PARAM_RELEASE:
+    return config->release;
+  case PARAM_LINKED_TO:
+    return config->linked_to;
+  case PARAM_PROBABILITY:
+    return config->probability;
+  default:
+    return -1000;
   }
 }
 
@@ -604,4 +604,4 @@ void Yoctocore_get_calibrations(Yoctocore *self) {
   }
 }
 
-#endif  // LIB_YOCTOCORE_H
+#endif // LIB_YOCTOCORE_H

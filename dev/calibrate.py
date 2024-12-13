@@ -23,7 +23,7 @@ def read_all_voltages(task, num_channels):
 
 
 def read_voltages():
-    channels_to_read = list(range(8))
+    channels_to_read = list(range(0, 8))
     with nidaqmx.Task() as task:
         for ch in channels_to_read:
             task.ai_channels.add_ai_voltage_chan(
@@ -36,6 +36,7 @@ def read_voltages():
 
 
 def send_sysex(output, sysex_string):
+    print(sysex_string)
     sysex_data = sysex_string.encode("utf-8")
     sysex_data = b"\xF0" + sysex_data + b"\xF7"
     output.write_sys_ex(pygame.midi.time(), sysex_data)
@@ -60,7 +61,7 @@ def set_voltage(i, voltage):
                 if "yoctocore" in name.decode("utf-8"):
                     output = pygame.midi.Output(device_id)
                     break
-            send_voltage(output, i + 1, voltage)
+            send_voltage(output, i, voltage)
             time.sleep(0.005)
             not_done = False
         except:
@@ -84,7 +85,7 @@ def send_calibration(channel, slope, intercept):
                 if "yoctocore" in name.decode("utf-8"):
                     output = pygame.midi.Output(device_id)
                     break
-            sysex_string = f"cali_{channel-1:d}_{slope:.5f}_{intercept:.5f}"
+            sysex_string = f"cali_{channel:d}_{slope:.5f}_{intercept:.5f}"
             print(sysex_string)
             send_sysex(output, sysex_string)
             time.sleep(0.005)
@@ -113,7 +114,7 @@ def send_use_raw(use_raw=False):
             sysex_string = f"useraw 1"
             if not use_raw:
                 sysex_string = f"useraw 0"
-            print(sysex_string)
+            # print(sysex_string)
             send_sysex(output, sysex_string)
             time.sleep(0.005)
             not_done = False
@@ -127,23 +128,32 @@ NUM_TRIALS = 1
 NUM_POINTS = 30
 
 
-def run_calibration(output_num, use_raw):
+def run_calibration(id, output_num, use_raw):
+    # output_num is 1-indexed channel number
     send_use_raw(use_raw)
     voltages = np.linspace(-4.5, 9.5, NUM_POINTS)
     measured = np.zeros((len(voltages), NUM_TRIALS))
     for trial in tqdm(range(NUM_TRIALS)):
         for i, voltage in enumerate(voltages):
             set_voltage(output_num, voltage)
-            for j in range(8):
+            for j in range(1, 8 + 1):
                 if j != output_num and random.random() < 0.01:
                     set_voltage(j, np.random.uniform(-5, 10))
             measured_voltages = read_voltages()
             measured[i, trial] = measured_voltages[0]
 
     mode = "raw" if use_raw else "volt"
-    np.save(f"voltages_{output_num}_{mode}.npy", voltages)
-    np.save(f"measured_{output_num}_{mode}.npy", measured)
-    print(f"Calibration for channel {output_num+1} complete")
+    # create a folder with the id if it doesn't already exist
+    if not os.path.exists("calibrations"):
+        os.mkdir("calibrations")
+    if not os.path.exists(id):
+        os.mkdir(f"calibrations/{id}")
+    np.savez(
+        f"calibrations/{id}/data_{output_num}_{mode}.npz",
+        voltages=voltages,
+        measured=measured,
+    )
+    print(f"Calibration for channel {output_num} complete")
     # calculate the slope and intercept
     x = np.repeat(voltages, NUM_TRIALS)
     y = measured.flatten()
@@ -151,28 +161,35 @@ def run_calibration(output_num, use_raw):
     print(f"Slope: {slope}, Intercept: {intercept}")
     if use_raw:
         # send the calibration values to the device
-        send_calibration(output_num + 1, slope, intercept)
+        send_calibration(output_num, slope, intercept)
 
 
-def create_printout():
-    num_channels = 12
+def create_printout(id, num_channels):
+    recalibration_text = ""
+
     for mode in ["raw", "volt"]:
-        fig, axs = plt.subplots(6, 2, figsize=(8.5, 11))
+        fig, axs = plt.subplots(int(num_channels / 2), 2, figsize=(8.5, 11))
         fig.subplots_adjust(
             left=0.1, right=0.9, top=0.9, bottom=0.1, hspace=0.5, wspace=0.4
         )
 
         axs = axs.flatten()
         for i in range(num_channels):
+            channel_num = i + 1
             try:
-                voltages = np.load(f"voltages_{i}_{mode}.npy")
-                measured = np.load(f"measured_{i}_{mode}.npy")
+                data = np.load(f"calibrations/{id}/data_{channel_num}_{mode}.npz")
+                voltages = data["voltages"]
+                measured = data["measured"]
                 y = measured.flatten()
                 x = np.repeat(voltages, measured.shape[1])
                 # axs[i].scatter(x, y, label=f"Measured Data ({mode})", color="black")
                 slope, intercept, r_value, p_value, std_err = linregress(x, y)
 
-                regression_line = slope * x + intercept
+                if mode == "raw":
+                    sysex_string = f"cali_{channel_num:d}_{slope:.5f}_{intercept:.5f}"
+                    random_milliseconds = 1000 + i * 1000
+                    recalibration_text += f"setTimeout(() => send_sysex('{sysex_string}'), {random_milliseconds});\n"
+
                 # total_error is calculated as the average relavtive error
                 total_error = (
                     np.sum(np.divide(np.abs(x - y), np.abs(x))) * 100.0 / len(x)
@@ -215,10 +232,10 @@ def create_printout():
                     intercept_string = f"+{intercept:.3f}"
                 if mode == "raw":
                     axs[i].set_title(
-                        f"Channel {i+1}: {slope:.3f}x{intercept_string}, error={total_error:.1f}%"
+                        f"Channel {channel_num}: {slope:.3f}x{intercept_string}, error={total_error:.1f}%"
                     )
                 else:
-                    axs[i].set_title(f"Channel {i+1}: error={total_error:.1f}%")
+                    axs[i].set_title(f"Channel {channel_num}: error={total_error:.1f}%")
                 axs[i].set_xlim(-5, 10)
                 axs[i].set_ylim(-0.25, 0.25)
                 axs[i].set_xlabel("Set Voltage")
@@ -230,35 +247,38 @@ def create_printout():
 
         if mode == "raw":
             plt.suptitle(
-                f"Calibration correction on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                f"[#{id}] Calibration on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
         else:
             plt.suptitle(
-                f"Testing correction on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                f"[#{id}] Testing on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
-        with PdfPages(f"channel_plots_{mode}.pdf") as pdf:
+        title = "calibrated" if mode == "raw" else "testing"
+        with PdfPages(f"calibrations/{id}/{id}_{title}.pdf") as pdf:
             fig.tight_layout(rect=[0.025, 0.025, 0.975, 0.975])
             pdf.savefig(fig)
             plt.close(fig)
+    with open(f"calibrations/{id}/recalibration.js", "w") as f:
+        f.write(recalibration_text)
 
 
-def run_one_by_one(start, test_only=False):
+def run_one_by_one(id, start, num, test_only=False):
     first = True
-    for i in range(8):
-        if i + 1 < start:
-            continue
+    # check start to start + num inclusively
+    for i in range(start, num + start):
         if first:
             first = False
         else:
-            print(f"Running calibration for channel {i+1}, press enter to continue")
+            print(f"Running calibration for channel {i}, press enter to continue")
             input()
         if not test_only:
-            run_calibration(i, True)
-        run_calibration(i, False)
-        create_printout()
+            run_calibration(id, i, True)
+        run_calibration(id, i, False)
         # reset all of them
-        for j in range(8):
+        for j in range(1, 8 + 1):
             set_voltage(j, -10)
+    if not test_only:
+        create_printout(id, num)
 
 
 @click.command()
@@ -266,12 +286,12 @@ def run_one_by_one(start, test_only=False):
 @click.argument("start", required=False, type=int, default=1)
 @click.argument("num", required=False, type=int, default=8)
 @click.option("--test", is_flag=True, help="Run in test mode")
-def main(id, start, num, test):
-    print(id, start, num, test)
-    # if id is not None and start is not None and num is not None:
-    #     run_one_by_one(id, start, num, test)
-    # else:
-    #     create_printout()
+@click.option("--print", is_flag=True, help="Print the calibration results")
+def main(id, start, num, test, print):
+    if print:
+        create_printout(id, num)
+    else:
+        run_one_by_one(id, start, num, test)
 
 
 if __name__ == "__main__":
