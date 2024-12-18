@@ -245,7 +245,7 @@ void midi_note_off(int channel, int note) {
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_PITCH &&
+    if (config->mode == MODE_NOTE &&
         (config->midi_channel == channel || config->midi_channel == 0) &&
         out->note_on.note == note) {
       // set the voltage
@@ -304,7 +304,7 @@ void midi_note_on(int channel, int note, int velocity) {
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_PITCH &&
+    if (config->mode == MODE_NOTE &&
         (config->midi_channel == channel || config->midi_channel == 0) &&
         (out->note_on.time_on == 0 ||
          (ct - out->note_on.time_on) > MAX_NOTE_HOLD_TIME_MS) &&
@@ -630,7 +630,7 @@ int main() {
               // trigger the envelope
               ADSR_gate(&out->adsr, val, ct);
               break;
-            case MODE_PITCH:
+            case MODE_NOTE:
               if (button_shift && val) {
                 // toggle tuning mode
                 out->tuning = !out->tuning;
@@ -712,7 +712,7 @@ int main() {
               scale_quantize_voltage(config->quantization, config->root_note,
                                      config->v_oct, out->voltage_set);
           break;
-        case MODE_PITCH:
+        case MODE_NOTE:
           // mode pitch will set the voltage based on midi note
           // check if midi note was received
           // slew the voltage
