@@ -19,7 +19,7 @@ typedef struct MCP4725 {
 void MCP4725_init(MCP4725 *self, i2c_inst_t *i2c, bool address_bit,
                   float external_voltage) {
   self->i2c = i2c;
-  self->address = MCP4728_ADDRESS + address_bit;
+  self->address = MCP4725_ADDRESS + address_bit;
   self->voltage_reference = external_voltage;
 }
 
