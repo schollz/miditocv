@@ -538,6 +538,8 @@ end`,
             "/512", "/256", "/128", "/64", "/32", "/16", "/8", "/4", "/2",
             "x1", "x2", "x3", "x4", "x6", "x8", "x12", "x16", "x24", "x48"
         ];
+        const midiLearning = ref(false);
+        const inDarkMode = ref(false);
         const current_bpm = ref(0);
         const current_scene = ref(0);
         const current_output = ref(0);
@@ -687,6 +689,7 @@ end`,
             myCodeMirror.setOption("theme", document.body.classList.contains('dark-mode') ? "material-darker" : "default");
             outputCodeMirror.setOption("theme", document.body.classList.contains('dark-mode') ? "material-darker" : "default");
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
+            inDarkMode.value = document.body.classList.contains('dark-mode');
         }
         // Function to initialize dark mode based on saved preference
         function initializeDarkMode() {
@@ -697,10 +700,13 @@ end`,
                 document.body.classList.add('dark-mode');
                 myCodeMirror.setOption("theme", "material-darker");
                 outputCodeMirror.setOption("theme", "material-darker");
+                inDarkMode.value = true;
             } else {
+                inDarkMode.value = false;
                 myCodeMirror.setOption("theme", "default");
                 outputCodeMirror.setOption("theme", "default");
             }
+
         }
         function doBoardReset() {
             send_sysex("diskmode1");
@@ -709,6 +715,10 @@ end`,
             console.log(`Toggling activation for ${inputName}`);
             midi_input_active.value[inputName] = !midi_input_active.value[inputName];
             console.log(`Activated: ${midi_input_active.value[inputName]}`);
+        }
+        function toggleLearning() {
+            midiLearning.value = !midiLearning.value;
+
         }
         const currentBPMSource = ref("");
         function toggleBPMSource(inputName) {
@@ -954,6 +964,7 @@ end`,
             toggleActivation,
             doBoardReset,
             darkMode,
+            inDarkMode,
             note_names,
             clockDivisions,
             executeLua,
@@ -964,6 +975,8 @@ end`,
             currentBPMSource,
             current_bpm,
             definitionsModes,
+            toggleLearning,
+            midiLearning,
         };
     },
 });
