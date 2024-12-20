@@ -116,13 +116,16 @@ uint8_t gammaCorrectUint8_t(float value) {
   return roundf(255.0f * powf(value, 0.8f));
 }
 
-const uint8_t const_colors[8][3] = {
+const uint8_t const_colors[11][3] = {
     {160, 160, 160},  // White
     {255, 0, 0},      // Red
     {255, 74, 0},     // Orange
     {250, 175, 0},    // Yellow
     {0, 255, 0},      // Green
     {0, 255, 255},    // Cyan
+    {0, 255, 0},      // Green
+    {0, 255, 0},      // Green
+    {0, 255, 0},      // Green
     {0, 0, 244},      // Blue
     {97, 0, 97},      // Violet
 };

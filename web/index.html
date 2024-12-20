@@ -430,42 +430,46 @@
       margin-top: 20px;
     }
 
-    .mode-manual {
+    .mode-0 {
       background-color: #fff;
       color: black;
     }
 
-    .mode-midi-pitch {
+    .mode-1 {
       background-color: #FF0000e1;
       color: black;
     }
 
-    .mode-midi-envelope {
+    .mode-2 {
       background-color: #FFAA33e1;
       color: black;
     }
 
-    .mode-midi-cc {
+    .mode-3 {
       background-color: #FFEA00e1;
       color: black;
     }
 
-    .mode-clock {
+    .mode-4,
+    .mode-6,
+    .mode-7,
+    .mode-8,
+    .mode-9 {
       background-color: #32CD32e1;
       color: black;
     }
 
-    .mode-lfo {
+    .mode-5 {
       background-color: #7DF9FFe1;
       color: black;
     }
 
-    .mode-sequencer {
+    .mode-10 {
       background-color: #0096FFe1;
       color: black;
     }
 
-    .mode-code {
+    .mode-11 {
       background-color: #CBC3E3;
       color: black;
     }
@@ -610,19 +614,24 @@
         </div>
         <div class="col col-10">
           <select id="mode-select" v-model="selected_output.mode">
-            <option value=0>Manual</option>
-            <option value=1>MIDI Pitch</option>
-            <option value=2>MIDI Envelope</option>
-            <option value=3>MIDI CC</option>
-            <option value=4>Clock</option>
-            <option value=5>LFO</option>
-            <option value=6>Sequencer</option>
-            <option value=7>Code</option>
+            <option :value="definitionsModes.MODE_MANUAL">Manual</option>
+            <option :value="definitionsModes.MODE_NOTE">MIDI Note</option>
+            <option :value="definitionsModes.MODE_GATE">Gate</option>
+            <option :value="definitionsModes.MODE_ENVELOPE">Envelope</option>
+            <option :value="definitionsModes.MODE_KEY_PRESSURE">MIDI Key Pressure</option>
+            <option :value="definitionsModes.MODE_CONTROL_CHANGE">MIDI Control Change</option>
+            <option :value="definitionsModes.MODE_PROGRAM_CHANGE">MIDI Program Change</option>
+            <option :value="definitionsModes.MODE_CHANNEL_PRESSURE">MIDI Channel Pressure</option>
+            <option :value="definitionsModes.MODE_PITCH_BEND">MIDI Pitch Bend</option>
+            <option :value="definitionsModes.MODE_CLOCK">Clock</option>
+
+            <option :value="definitionsModes.MODE_LFO">LFO</option>
+            <option :value="definitionsModes.MODE_CODE">Code</option>
           </select>
         </div>
       </div>
       <!-- sequencer -->
-      <div class="row" v-if="[6].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[99].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="sequence">
             Duration:
@@ -642,13 +651,14 @@
       </div>
       <!-- code -->
       <div class="row" style="padding-left:1.5em; padding-bottom:0.5em;"
-        v-show="[7].includes(Number(selected_output.mode))">
+        v-show="[definitionsModes.MODE_CODE].includes(Number(selected_output.mode))">
         <div class="col col-12">
           <textarea id="mytext" v-model="selected_output.code"></textarea>
           <!-- <p>{{ selected_output.code }}</p> -->
         </div>
       </div>
-      <div class="row" style="padding-left:1.5em;" v-show="[7].includes(Number(selected_output.mode))">
+      <div class="row" style="padding-left:1.5em;"
+        v-show="[definitionsModes.MODE_CODE].includes(Number(selected_output.mode))">
         <div class="col col-4" style="text-align:center;">
           <button @click="executeLua()">Test main()</button>
         </div>
@@ -660,7 +670,7 @@
         </div>
       </div>
       <div class="row" style="padding-left:1.5em; padding-bottom:1.5em; margin-top:0.5em;"
-        v-show="[7].includes(Number(selected_output.mode))">
+        v-show="[definitionsModes.MODE_CODE].includes(Number(selected_output.mode))">
         <div class="col col-12">
           <textarea id="output"></textarea>
         </div>
@@ -683,7 +693,8 @@
           <input type="number" v-model.number="selected_output.max_voltage" min="-5" max="10" step="0.01" />
         </div>
       </div>
-      <div class="row" v-if="[0,1,7].includes(Number(selected_output.mode))">
+      <div class="row"
+        v-if="[definitionsModes.MODE_MANUAL,definitionsModes.MODE_NOTE].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="slew-rate">Slew:</label>
         </div>
@@ -698,7 +709,7 @@
         </div>
       </div>
       <!-- lfo stuff -->
-      <div class="row" v-if="[5].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[definitionsModes.MODE_LFO].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="lfo-waveform">
             LFO waveform:
@@ -725,7 +736,7 @@
       </div>
 
       <!-- attack / decay / sustain / release -->
-      <div class="row" v-if="[2].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[definitionsModes.MODE_ENVELOPE].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="attack">
             Attack:
@@ -743,7 +754,7 @@
           <input id="decay" type="number" v-model.number="selected_output.decay" min="0" max="10" step="0.01" />
         </div>
       </div>
-      <div class="row" v-if="[2].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[definitionsModes.MODE_ENVELOPE].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="sustain">
             Sustain:
@@ -763,7 +774,8 @@
       </div>
 
       <!-- linked to -->
-      <div class="row" v-if="[2].includes(Number(selected_output.mode))">
+      <div class="row"
+        v-if="[definitionsModes.MODE_ENVELOPE,definitionsModes.MODE_GATE].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="linked-to">
             Linked to:
@@ -778,7 +790,17 @@
           </select>
         </div>
       </div>
-      <div class="row" v-if="[0,1,5,6,7].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[definitionsModes.MODE_MANUAL,
+      definitionsModes.MODE_NOTE,
+      definitionsModes.MODE_ENVELOPE,
+      definitionsModes.MODE_KEY_PRESSURE,
+      definitionsModes.MODE_CONTROL_CHANGE,
+      definitionsModes.MODE_PROGRAM_CHANGE,
+      definitionsModes.MODE_CHANNEL_PRESSURE,
+      definitionsModes.MODE_PITCH_BEND,
+      definitionsModes.MODE_LFO,
+      definitionsModes.MODE_CODE
+      ].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="quantization">
             Quantize:
@@ -854,7 +876,7 @@
         </div>
       </div>
       <!-- midi stuff -->
-      <div class="row" v-if="[3].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[definitionsModes.MODE_CONTROL_CHANGE].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="midi-cc">
             MIDI CC:
@@ -865,7 +887,13 @@
         </div>
       </div>
       <!-- midi stuff -->
-      <div class="row" v-if="[1,3].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[definitionsModes.MODE_NOTE,
+      definitionsModes.MODE_CONTROL_CHANGE,
+      definitionsModes.MODE_KEY_PRESSURE,
+      definitionsModes.MODE_CHANNEL_PRESSURE,
+      definitionsModes.MODE_PROGRAM_CHANGE,
+      definitionsModes.MODE_PITCH_BEND,
+      ].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="midi-channel">
             MIDI Channel:
@@ -922,7 +950,8 @@
 
 
       <!-- clock stuff -->
-      <div class="row" v-if="[4,7].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[      definitionsModes.MODE_CLOCK,
+      ].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="clock-tempo">
             Clock tempo:
