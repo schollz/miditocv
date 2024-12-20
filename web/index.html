@@ -892,8 +892,8 @@
           <input id="midi-cc" type="number" v-model.number="selected_output.midi_cc" min="0" max="16" />
         </div>
         <div class="col col-4">
-          <button @click="toggleLearning()" :class="midiLearning ? 'active':''">
-            {{ midiLearning ? 'Learning' : 'Learn' }}
+          <button @click="toggleLearning()" :class="inLearningMode ? 'active':''">
+            {{ inLearningMode ? 'Learning' : 'Learn' }}
           </button>
         </div>
       </div>

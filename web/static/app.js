@@ -382,7 +382,16 @@ function setupMidi() {
                                     return;
                                 }
                             }
-
+                            // check if it is a cc message
+                            if (messageType == 0xB0 && vm.midi_input_active[input.name]) {
+                                if (vm.inLearningMode) {
+                                    vm.scenes[vm.current_scene].outputs[vm.current_output].midi_cc = note;
+                                    vm.scenes[vm.current_scene].outputs[vm.current_output].midi_channel = channel + 1;
+                                    console.log(`[midi_learn] ${vm.current_scene} ${vm.current_output} ${note} ${channel + 1}`);
+                                } else {
+                                    console.log(`[${input.name}] cc ch=${channel + 1}, cc=${note}, val=${velocity}`);
+                                }
+                            }
                             // convert the data to hex string
                             let hexString = "";
                             for (let i = 0; i < midiMessage.data.length; i++) {
@@ -538,7 +547,7 @@ end`,
             "/512", "/256", "/128", "/64", "/32", "/16", "/8", "/4", "/2",
             "x1", "x2", "x3", "x4", "x6", "x8", "x12", "x16", "x24", "x48"
         ];
-        const midiLearning = ref(false);
+        const inLearningMode = ref(false);
         const inDarkMode = ref(false);
         const current_bpm = ref(0);
         const current_scene = ref(0);
@@ -717,7 +726,7 @@ end`,
             console.log(`Activated: ${midi_input_active.value[inputName]}`);
         }
         function toggleLearning() {
-            midiLearning.value = !midiLearning.value;
+            inLearningMode.value = !inLearningMode.value;
 
         }
         const currentBPMSource = ref("");
@@ -976,7 +985,7 @@ end`,
             current_bpm,
             definitionsModes,
             toggleLearning,
-            midiLearning,
+            inLearningMode,
         };
     },
 });
