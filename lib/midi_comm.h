@@ -1,7 +1,7 @@
 #ifndef LIB_MIDI_COMM_H
 #define LIB_MIDI_COMM_H 1
-#include <stdarg.h> // Include this header for va_start, va_end, etc.
-#include <stdio.h>  // Include for vsnprintf
+#include <stdarg.h>  // Include this header for va_start, va_end, etc.
+#include <stdio.h>   // Include for vsnprintf
 
 typedef void (*callback_int_int_int)(int, int, int);
 typedef void (*callback_int_int)(int, int);
@@ -14,13 +14,13 @@ typedef void (*callback_uint8_buffer)(uint8_t *buffer, int length);
 typedef void (*callback_void)();
 
 uint32_t send_buffer_as_sysex(char *buffer, uint32_t bufsize) {
-  uint8_t sysex_data[bufsize + 2]; // +2 for SysEx start and end bytes
+  uint8_t sysex_data[bufsize + 2];  // +2 for SysEx start and end bytes
 
-  sysex_data[0] = 0xF0; // Start of SysEx
+  sysex_data[0] = 0xF0;  // Start of SysEx
   for (uint32_t i = 0; i < bufsize; i++) {
-    sysex_data[i + 1] = buffer[i]; // Copy buffer into SysEx data
+    sysex_data[i + 1] = buffer[i];  // Copy buffer into SysEx data
   }
-  sysex_data[bufsize + 1] = 0xF7; // End of SysEx
+  sysex_data[bufsize + 1] = 0xF7;  // End of SysEx
 
   uint32_t v = tud_midi_n_stream_write(0, 0, sysex_data, sizeof(sysex_data));
   tud_task();
@@ -31,14 +31,14 @@ uint32_t send_text_as_sysex(const char *text) {
   while (!tud_ready()) {
     tud_task();
   }
-  uint32_t text_length = strlen(text); // Get the length of the text
-  uint8_t sysex_data[text_length + 2]; // +2 for SysEx start and end bytes
+  uint32_t text_length = strlen(text);  // Get the length of the text
+  uint8_t sysex_data[text_length + 2];  // +2 for SysEx start and end bytes
 
-  sysex_data[0] = 0xF0; // Start of SysEx
+  sysex_data[0] = 0xF0;  // Start of SysEx
   for (uint32_t i = 0; i < text_length; i++) {
-    sysex_data[i + 1] = text[i]; // Copy text into SysEx data
+    sysex_data[i + 1] = text[i];  // Copy text into SysEx data
   }
-  sysex_data[text_length + 1] = 0xF7; // End of SysEx
+  sysex_data[text_length + 1] = 0xF7;  // End of SysEx
 
   // Call the stream write function with the SysEx message
   uint32_t v = tud_midi_n_stream_write(0, 0, sysex_data, sizeof(sysex_data));
@@ -52,7 +52,7 @@ void send_midi_clock() {
     // Construct the MIDI message
     // MIDI Timing Clock message format: 0xF8
     uint8_t midi_message[1];
-    midi_message[0] = 0xF8; // Timing Clock command
+    midi_message[0] = 0xF8;  // Timing Clock command
 
     // Send the MIDI message
     tud_midi_n_stream_write(0, 0, midi_message, sizeof(midi_message));
@@ -66,7 +66,7 @@ void send_midi_start() {
     // Construct the MIDI message
     // MIDI Start message format: 0xFA
     uint8_t midi_message[1];
-    midi_message[0] = 0xFA; // Start command
+    midi_message[0] = 0xFA;  // Start command
 
     // Send the MIDI message
     tud_midi_n_stream_write(0, 0, midi_message, sizeof(midi_message));
@@ -80,7 +80,7 @@ void send_midi_stop() {
     // Construct the MIDI message
     // MIDI Stop message format: 0xFC
     uint8_t midi_message[1];
-    midi_message[0] = 0xFC; // Stop command
+    midi_message[0] = 0xFC;  // Stop command
 
     // Send the MIDI message
     tud_midi_n_stream_write(0, 0, midi_message, sizeof(midi_message));
@@ -92,14 +92,14 @@ void send_midi_note_on(uint8_t note, uint8_t velocity) {
   // Ensure TinyUSB stack is initialized and ready
   if (tud_ready()) {
     // MIDI cable number 0, Note On event, channel 1
-    uint8_t channel = 0; // MIDI channels are 0-15
+    uint8_t channel = 0;  // MIDI channels are 0-15
 
     // Construct the MIDI message
     // MIDI Note On message format: 0x9n, where n is the channel number
     uint8_t midi_message[3];
-    midi_message[0] = 0x90 | channel; // Note On command with channel
-    midi_message[1] = note;           // MIDI note number
-    midi_message[2] = velocity;       // Note velocity
+    midi_message[0] = 0x90 | channel;  // Note On command with channel
+    midi_message[1] = note;            // MIDI note number
+    midi_message[2] = velocity;        // Note velocity
 
     // Send the MIDI message
     tud_midi_n_stream_write(0, 0, midi_message, sizeof(midi_message));
@@ -116,7 +116,7 @@ int printf_sysex(const char *format, ...) {
   int text_length = vsnprintf(NULL, 0, format, args);
   va_end(args);
 
-  char text[text_length + 1]; // +1 for null terminator
+  char text[text_length + 1];  // +1 for null terminator
   va_start(args, format);
   vsnprintf(text, text_length + 1, format, args);
   va_end(args);
@@ -134,7 +134,11 @@ uint8_t midi_sysex_index = 0;
 void midi_comm_task(callback_uint8_buffer sysex_callback,
                     callback_int_int_int midi_note_on,
                     callback_int_int midi_note_off,
-                    callback_int_int_int midi_cc_callback,
+                    callback_int_int_int midi_key_pressure_callback,  // 0xa0
+                    callback_int_int_int midi_cc_callback,            // 0xb0
+                    callback_int_int midi_program_change_callback,    // 0xc0
+                    callback_int_int midi_channel_pressure_callback,  // 0xd0
+                    callback_int_int midi_pitch_bend_callback,        // 0xe0
                     callback_void midi_start, callback_void midi_continue,
                     callback_void midi_stop, callback_void midi_timing) {
   uint32_t bytes_read = 0;
@@ -183,8 +187,8 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
     return;
   }
 
-  uint8_t messageType = midi_buffer[0] & 0xF0; // Extract the message type
-  uint8_t channel = midi_buffer[0] & 0x0F;     // Extract the channel (0-15)
+  uint8_t messageType = midi_buffer[0] & 0xF0;  // Extract the message type
+  uint8_t channel = midi_buffer[0] & 0x0F;      // Extract the channel (0-15)
 
   if (midi_buffer[0] == 0xf8) {
     // timing received
@@ -214,6 +218,43 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
       midi_stop();
     }
     return;
+  } else if (messageType == 0xa0 && bytes_read > 2) {
+    // key pressure
+    usb_midi_present = true;
+    if (midi_key_pressure_callback != NULL) {
+      // note number, pressure value
+      midi_key_pressure_callback(channel, midi_buffer[1], midi_buffer[2]);
+    }
+  } else if (messageType == 0xb0 && bytes_read > 2) {
+    // control change received
+    usb_midi_present = true;
+    if (midi_cc_callback != NULL) {
+      midi_cc_callback(channel, midi_buffer[1], midi_buffer[2]);
+    }
+    return;
+  } else if (messageType == 0xc0 && bytes_read > 1) {
+    // program change received
+    usb_midi_present = true;
+    if (midi_program_change_callback != NULL) {
+      midi_program_change_callback(channel, midi_buffer[1]);
+    }
+    return;
+  } else if (messageType == 0xd0 && bytes_read > 1) {
+    // channel pressure received
+    usb_midi_present = true;
+    if (midi_channel_pressure_callback != NULL) {
+      midi_channel_pressure_callback(channel, midi_buffer[1]);
+    }
+    return;
+  } else if (messageType == 0xe0 && bytes_read > 2) {
+    // pitch bend received
+    usb_midi_present = true;
+    if (midi_pitch_bend_callback != NULL) {
+      // convert the two bytes to a 14-bit value
+      int pitch_bend = (midi_buffer[2] << 7) | midi_buffer[1];
+      midi_pitch_bend_callback(channel, pitch_bend);
+    }
+    return;
   } else if (messageType == 0x80 && bytes_read > 1) {
     // note off received
     usb_midi_present = true;
@@ -231,13 +272,6 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
       } else {
         midi_note_on(channel, midi_buffer[1], 0);
       }
-    }
-    return;
-  } else if ((midi_buffer[0] & 0xF0) == 0xB0 && bytes_read > 2) {
-    // control change received
-    usb_midi_present = true;
-    if (midi_cc_callback != NULL) {
-      midi_cc_callback(channel, midi_buffer[1], midi_buffer[2]);
     }
     return;
   }

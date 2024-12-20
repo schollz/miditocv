@@ -342,6 +342,26 @@ void midi_cc(int channel, int cc, int value) {
   printf("ch=%d cc=%d val=%d\n", channel, cc, value);
 }
 
+void midi_key_pressure(int channel, int note, int pressure) {
+  channel++;  // 1-indexed
+  printf("ch=%d note=%d pressure=%d\n", channel, note, pressure);
+}
+
+void midi_program_change(int channel, int program) {
+  channel++;  // 1-indexed
+  printf("ch=%d program=%d\n", channel, program);
+}
+
+void midi_channel_pressure(int channel, int pressure) {
+  channel++;  // 1-indexed
+  printf("ch=%d pressure=%d\n", channel, pressure);
+}
+
+void midi_pitch_bend(int channel, int value) {
+  channel++;  // 1-indexed
+  printf("ch=%d pitch_bend=%d\n", channel, value);
+}
+
 #define MIDI_DELTA_COUNT_MAX 24
 uint32_t midi_timing_count = 0;
 uint64_t midi_last_time = 0;
@@ -589,8 +609,10 @@ int main() {
     uint32_t us = time_us_32();
 #ifdef INCLUDE_MIDI
     tud_task();
-    midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off, midi_cc,
-                   midi_start, midi_continue, midi_stop, midi_timing);
+    midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off,
+                   midi_key_pressure, midi_cc, midi_program_change,
+                   midi_channel_pressure, midi_pitch_bend, midi_start,
+                   midi_continue, midi_stop, midi_timing);
 #endif
     timer_per[0] = time_us_32() - us;
 
