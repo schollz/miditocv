@@ -342,27 +342,81 @@ void midi_note_on(int channel, int note, int velocity) {
 
 void midi_cc(int channel, int cc, int value) {
   channel++;  // 1-indexed
-  printf("ch=%d cc=%d val=%d\n", channel, cc, value);
+  // printf("ch=%d cc=%d val=%d\n", channel, cc, value);
+  for (uint8_t i = 0; i < 8; i++) {
+    Config *config = &yocto.config[yocto.i][i];
+    Out *out = &yocto.out[i];
+    if (config->mode == MODE_CONTROL_CHANGE &&
+        config->midi_channel == channel && config->midi_cc == cc) {
+      // set the voltage
+      out->voltage_set =
+          linlin(value, 0, 127, config->min_voltage, config->max_voltage);
+      printf("[cc%d] %f\n", i + 1, out->voltage_current);
+    }
+  }
 }
 
 void midi_key_pressure(int channel, int note, int pressure) {
   channel++;  // 1-indexed
   printf("ch=%d note=%d pressure=%d\n", channel, note, pressure);
+  for (uint8_t i = 0; i < 8; i++) {
+    Config *config = &yocto.config[yocto.i][i];
+    Out *out = &yocto.out[i];
+    if (config->mode == MODE_KEY_PRESSURE && config->midi_channel == channel) {
+      // set the voltage
+      out->voltage_set =
+          linlin(pressure, 0, 127, config->min_voltage, config->max_voltage);
+      printf("[kp%d] %f\n", i + 1, out->voltage_current);
+    }
+  }
 }
 
 void midi_program_change(int channel, int program) {
   channel++;  // 1-indexed
   printf("ch=%d program=%d\n", channel, program);
+  for (uint8_t i = 0; i < 8; i++) {
+    Config *config = &yocto.config[yocto.i][i];
+    Out *out = &yocto.out[i];
+    if (config->mode == MODE_PROGRAM_CHANGE &&
+        config->midi_channel == channel) {
+      // set the voltage
+      out->voltage_set =
+          linlin(program, 0, 127, config->min_voltage, config->max_voltage);
+      printf("[pc%d] %f\n", i + 1, out->voltage_current);
+    }
+  }
 }
 
 void midi_channel_pressure(int channel, int pressure) {
   channel++;  // 1-indexed
   printf("ch=%d pressure=%d\n", channel, pressure);
+  for (uint8_t i = 0; i < 8; i++) {
+    Config *config = &yocto.config[yocto.i][i];
+    Out *out = &yocto.out[i];
+    if (config->mode == MODE_CHANNEL_PRESSURE &&
+        config->midi_channel == channel) {
+      // set the voltage
+      out->voltage_set =
+          linlin(pressure, 0, 127, config->min_voltage, config->max_voltage);
+      printf("[cp%d] %f\n", i + 1, out->voltage_current);
+    }
+  }
 }
 
 void midi_pitch_bend(int channel, int value) {
   channel++;  // 1-indexed
   printf("ch=%d pitch_bend=%d\n", channel, value);
+  // value is 14-bit number
+  for (uint8_t i = 0; i < 8; i++) {
+    Config *config = &yocto.config[yocto.i][i];
+    Out *out = &yocto.out[i];
+    if (config->mode == MODE_PITCH_BEND && config->midi_channel == channel) {
+      // set the voltage
+      out->voltage_set =
+          linlin(value, 0, 16383, config->min_voltage, config->max_voltage);
+      printf("[pb%d] %f\n", i + 1, out->voltage_current);
+    }
+  }
 }
 
 #define MIDI_DELTA_COUNT_MAX 24
@@ -752,6 +806,18 @@ int main() {
           if (out->tuning) {
             out->voltage_current = 3.0;
           }
+          break;
+        case MODE_CONTROL_CHANGE | MODE_KEY_PRESSURE | MODE_PROGRAM_CHANGE |
+            MODE_CHANNEL_PRESSURE | MODE_PITCH_BEND:
+          // slew the voltage
+          out->voltage_current = Slew_process(&out->slew, out->voltage_set, ct);
+          // quantize the voltage
+          out->voltage_current =
+              scale_quantize_voltage(config->quantization, config->root_note,
+                                     config->v_oct, out->voltage_current);
+          // portamento voltage
+          out->voltage_current =
+              Slew_process(&out->portamento, out->voltage_current, ct);
           break;
         case MODE_CLOCK:
           break;

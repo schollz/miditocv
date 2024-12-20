@@ -700,7 +700,7 @@
         </div>
       </div>
       <div class="row"
-        v-if="[definitionsModes.MODE_MANUAL,definitionsModes.MODE_NOTE].includes(Number(selected_output.mode))">
+        v-if="[definitionsModes.MODE_MANUAL,definitionsModes.MODE_NOTE,definitionsModes.MODE_CONTROL_CHANGE].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="slew-rate">Slew:</label>
         </div>
