@@ -116,13 +116,16 @@ uint8_t gammaCorrectUint8_t(float value) {
   return roundf(255.0f * powf(value, 0.8f));
 }
 
-const uint8_t const_colors[8][3] = {
+const uint8_t const_colors[11][3] = {
     {160, 160, 160},  // White
     {255, 0, 0},      // Red
     {255, 74, 0},     // Orange
     {250, 175, 0},    // Yellow
     {0, 255, 0},      // Green
     {0, 255, 255},    // Cyan
+    {0, 255, 0},      // Green
+    {0, 255, 0},      // Green
+    {0, 255, 0},      // Green
     {0, 0, 244},      // Blue
     {97, 0, 97},      // Violet
 };
@@ -245,7 +248,7 @@ void midi_note_off(int channel, int note) {
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_PITCH &&
+    if (config->mode == MODE_NOTE &&
         (config->midi_channel == channel || config->midi_channel == 0) &&
         out->note_on.note == note) {
       // set the voltage
@@ -304,7 +307,7 @@ void midi_note_on(int channel, int note, int velocity) {
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_PITCH &&
+    if (config->mode == MODE_NOTE &&
         (config->midi_channel == channel || config->midi_channel == 0) &&
         (out->note_on.time_on == 0 ||
          (ct - out->note_on.time_on) > MAX_NOTE_HOLD_TIME_MS) &&
@@ -340,6 +343,26 @@ void midi_note_on(int channel, int note, int velocity) {
 void midi_cc(int channel, int cc, int value) {
   channel++;  // 1-indexed
   printf("ch=%d cc=%d val=%d\n", channel, cc, value);
+}
+
+void midi_key_pressure(int channel, int note, int pressure) {
+  channel++;  // 1-indexed
+  printf("ch=%d note=%d pressure=%d\n", channel, note, pressure);
+}
+
+void midi_program_change(int channel, int program) {
+  channel++;  // 1-indexed
+  printf("ch=%d program=%d\n", channel, program);
+}
+
+void midi_channel_pressure(int channel, int pressure) {
+  channel++;  // 1-indexed
+  printf("ch=%d pressure=%d\n", channel, pressure);
+}
+
+void midi_pitch_bend(int channel, int value) {
+  channel++;  // 1-indexed
+  printf("ch=%d pitch_bend=%d\n", channel, value);
 }
 
 #define MIDI_DELTA_COUNT_MAX 24
@@ -589,8 +612,10 @@ int main() {
     uint32_t us = time_us_32();
 #ifdef INCLUDE_MIDI
     tud_task();
-    midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off, midi_cc,
-                   midi_start, midi_continue, midi_stop, midi_timing);
+    midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off,
+                   midi_key_pressure, midi_cc, midi_program_change,
+                   midi_channel_pressure, midi_pitch_bend, midi_start,
+                   midi_continue, midi_stop, midi_timing);
 #endif
     timer_per[0] = time_us_32() - us;
 
@@ -630,7 +655,7 @@ int main() {
               // trigger the envelope
               ADSR_gate(&out->adsr, val, ct);
               break;
-            case MODE_PITCH:
+            case MODE_NOTE:
               if (button_shift && val) {
                 // toggle tuning mode
                 out->tuning = !out->tuning;
@@ -712,7 +737,7 @@ int main() {
               scale_quantize_voltage(config->quantization, config->root_note,
                                      config->v_oct, out->voltage_set);
           break;
-        case MODE_PITCH:
+        case MODE_NOTE:
           // mode pitch will set the voltage based on midi note
           // check if midi note was received
           // slew the voltage

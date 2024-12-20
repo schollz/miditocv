@@ -13,13 +13,17 @@
 #include "utils.h"
 
 #define MODE_MANUAL 0
-#define MODE_PITCH 1
-#define MODE_ENVELOPE 2
-#define MODE_CC 3
-#define MODE_CLOCK 4
-#define MODE_LFO 5
-#define MODE_SEQUENCER 6
-#define MODE_CODE 7
+#define MODE_NOTE 1
+#define MODE_GATE 2
+#define MODE_ENVELOPE 3
+#define MODE_KEY_PRESSURE 4
+#define MODE_CONTROL_CHANGE 5
+#define MODE_PROGRAM_CHANGE 6
+#define MODE_CHANNEL_PRESSURE 7
+#define MODE_PITCH_BEND 8
+#define MODE_CLOCK 9
+#define MODE_LFO 10
+#define MODE_CODE 11
 
 #define PARAM_SCENE 274204627
 #define PARAM_MODE 2090515018

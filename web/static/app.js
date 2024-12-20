@@ -549,6 +549,20 @@ end`,
         const midi_input_active = ref({});
         const midi_input_last_message = ref({});
         const clockTempos = ref([]);
+        const definitionsModes = ref({
+            "MODE_MANUAL": 0,
+            "MODE_NOTE": 1,
+            "MODE_GATE": 2,
+            "MODE_ENVELOPE": 3,
+            "MODE_KEY_PRESSURE": 4,
+            "MODE_CONTROL_CHANGE": 5,
+            "MODE_PROGRAM_CHANGE": 6,
+            "MODE_CHANNEL_PRESSURE": 7,
+            "MODE_PITCH_BEND": 8,
+            "MODE_CLOCK": 9,
+            "MODE_LFO": 10,
+            "MODE_CODE": 11,
+        })
         clockTempos.value.push("Global");
         for (let i = 30; i < 300; i++) {
             clockTempos.value.push(i);
@@ -709,26 +723,7 @@ end`,
 
         function getButtonClass(mode) {
             mode = Number(mode);
-            switch (mode) {
-                case 0:
-                    return 'mode-manual';
-                case 1:
-                    return 'mode-midi-pitch';
-                case 2:
-                    return 'mode-midi-envelope';
-                case 3:
-                    return 'mode-midi-cc';
-                case 4:
-                    return 'mode-clock';
-                case 5:
-                    return 'mode-lfo';
-                case 6:
-                    return 'mode-sequencer';
-                case 7:
-                    return 'mode-code';
-                default:
-                    return '';
-            }
+            return `mode-${mode}`;
         }
 
         const defaultValues = {
@@ -968,6 +963,7 @@ end`,
             toggleBPMSource,
             currentBPMSource,
             current_bpm,
+            definitionsModes,
         };
     },
 });
