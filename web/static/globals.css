@@ -1,0 +1,510 @@
+:root {
+    --bg-color: #fff;
+    --text-color: #000;
+    --border-color: #000;
+    --shadow-color: #030303;
+    --button-bg: #fff;
+    --button-text: #000;
+    --input-bg: #fff;
+    --input-text: #000;
+    --hover-color: #ddd;
+    --alert-info-bg: #e7f5ff;
+    --alert-warning-bg: #fff3cd;
+    --alert-danger-bg: #f8d7da;
+    --bg-color-disabled: #f0f0f0;
+    --text-color-disabled: #a0a0a0;
+}
+
+.dark-mode {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --border-color: #c4c4c4;
+    --shadow-color: #c4c4c4;
+    --button-bg: #1e1e1e;
+    --button-text: #ffffff;
+    --input-bg: #1c1c1c;
+    --input-text: #ffffff;
+    --hover-color: #2c2c2c;
+    --alert-info-bg: #0044cc;
+    --alert-warning-bg: #b86f00;
+    --alert-danger-bg: #880000;
+    --bg-color-disabled: #1f1f1f;
+    --text-color-disabled: #a0a0a0;
+}
+
+/* Importing a Monochrome Font */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+
+
+@font-face {
+    font-family: 'MonaspaceNeon';
+    src: url('static/neon/MonaspaceNeon-Regular.woff2') format('woff2'),
+        url('static/neon/MonaspaceNeon-Regular.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: Glass;
+    src: url(/static/Glass_TTY_VT220.ttf) format("truetype");
+}
+
+/* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body,
+button,
+select,
+input {
+    font-family: MonaspaceNeon, 'Roboto Mono', monospace;
+    font-weight: 500;
+    font-size: 1em;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+p {
+    margin-bottom: 1rem;
+}
+
+/* Containers */
+.container {
+    width: 100%;
+    margin: 0 auto;
+    padding: 1rem;
+    max-width: 1200px;
+}
+
+/* Grid System */
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: -0.5rem;
+    align-items: center;
+    margin-left: -1em;
+}
+
+.col {
+    flex: 1;
+    padding: 0.5rem;
+    /* center vertically */
+
+}
+
+.col-1 {
+    flex: 0 0 8.33%;
+}
+
+.col-2 {
+    flex: 0 0 16.66%;
+}
+
+.col-3 {
+    flex: 0 0 25%;
+}
+
+.col-4 {
+    flex: 0 0 33.33%;
+}
+
+.col-5 {
+    flex: 0 0 41.66%;
+}
+
+.col-6 {
+    flex: 0 0 50%;
+}
+
+.col-7 {
+    flex: 0 0 58.33%;
+}
+
+.col-8 {
+    flex: 0 0 66.66%;
+}
+
+.col-9 {
+    flex: 0 0 75%;
+}
+
+.col-10 {
+    flex: 0 0 83.33%;
+}
+
+.col-11 {
+    flex: 0 0 91.66%;
+}
+
+.col-12 {
+    flex: 0 0 100%;
+}
+
+/* Buttons */
+button,
+.button {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    text-align: center;
+    text-decoration: none;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 2px solid var(--border-color);
+    box-shadow: 4px 4px 0 var(--shadow-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    transform: translate(0px, -8px);
+}
+
+/* Add the pressed effect */
+button:active,
+.button:active {
+    box-shadow: 2px 2px 0 var(--shadow-color);
+    transform: translate(2px, 2px);
+}
+
+button:hover,
+.button:hover {
+    box-shadow: 6px 6px 0 var(--shadow-color);
+}
+
+
+
+/* button:hover,
+.button:hover {
+  box-shadow: 6px 6px 0 var(--shadow-color);
+} */
+
+/* Forms */
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 2px solid var(--border-color);
+    box-shadow: 4px 4px 0 var(--shadow-color);
+}
+
+textarea {
+    resize: vertical;
+}
+
+label {
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* Checkboxes and Radio Buttons */
+input[type="radio"],
+input[type="checkbox"] {
+    display: inline-block;
+    width: auto;
+    margin-right: 0.5rem;
+}
+
+select[multiple] {
+    height: auto;
+}
+
+/* Boxes */
+.box {
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    box-shadow: 4px 4px 0 var(--shadow-color);
+    margin-bottom: 1rem;
+}
+
+/* Utility Classes */
+.text-center {
+    text-align: center;
+}
+
+.mt-1 {
+    margin-top: 1rem;
+}
+
+.mb-1 {
+    margin-bottom: 1rem;
+}
+
+.ml-1 {
+    margin-left: 1rem;
+}
+
+.mr-1 {
+    margin-right: 1rem;
+}
+
+.mt-2 {
+    margin-top: 2rem;
+}
+
+.mb-2 {
+    margin-bottom: 2rem;
+}
+
+.ml-2 {
+    margin-left: 2rem;
+}
+
+.mr-2 {
+    margin-right: 2rem;
+}
+
+/* Alerts */
+.alert {
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    box-shadow: 4px 4px 0 var(--shadow-color);
+    margin-bottom: 1rem;
+}
+
+.alert-info {
+    background-color: #e7f5ff;
+    color: #000;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #000;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #000;
+}
+
+/* Modals */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: var(--bg-color);
+    padding: 2rem;
+    border: 2px solid var(--border-color);
+    box-shadow: 4px 4px 0 var(--shadow-color);
+}
+
+/* Progress Bars */
+.progress {
+    width: 100%;
+    background-color: var(--progress-bg);
+    border: 2px solid var(--border-color);
+    box-shadow: 4px 4px 0 var(--shadow-color);
+    height: 1.5rem;
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: var(--progress-color);
+    width: 0;
+    transition: width 0.2s ease;
+}
+
+.progress-bar-25 {
+    width: 25%;
+}
+
+.progress-bar-50 {
+    width: 50%;
+}
+
+.progress-bar-75 {
+    width: 75%;
+}
+
+.progress-bar-100 {
+    width: 100%;
+}
+
+/* Code Container */
+.code-container {
+    background-color: var(--bg-color);
+    border: 2px solid var(--border-color);
+    box-shadow: 4px 4px 0 var(--shadow-color);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Text Links */
+a {
+    color: var(--text-color);
+    text-decoration: underline;
+}
+
+a:hover {
+    color: #808080;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+    .col {
+        flex: 0 0 100%;
+    }
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 1em;
+}
+
+
+.inactive {
+    color: var(--text-color-disabled);
+    background-color: var(--bg-color-disabled);
+}
+
+.fr {
+    display: flex;
+    justify-content: flex-end;
+    text-align: right;
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+    text-align: center;
+}
+
+.app {
+    width: 100%;
+    max-width: 800px;
+    margin: 4em;
+}
+
+.active {
+    font-weight: bold;
+    /* add a shdwo to the top + left */
+    box-shadow: -6px -6px 0 var(--shadow-color);
+
+}
+
+
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.output-details {
+    margin-top: 20px;
+}
+
+.mode-0 {
+    background-color: #fff;
+    color: black;
+}
+
+.mode-1 {
+    background-color: #FF0000e1;
+    color: black;
+}
+
+.mode-2 {
+    background-color: #FFAA33e1;
+    color: black;
+}
+
+.mode-3 {
+    background-color: #FFEA00e1;
+    color: black;
+}
+
+.mode-4,
+.mode-6,
+.mode-7,
+.mode-8,
+.mode-9 {
+    background-color: #32CD32e1;
+    color: black;
+}
+
+.mode-5 {
+    background-color: #7DF9FFe1;
+    color: black;
+}
+
+.mode-10 {
+    background-color: #0096FFe1;
+    color: black;
+}
+
+.mode-11 {
+    background-color: #CBC3E3;
+    color: black;
+}
+
+#app {
+    border: solid var(--border-color);
+    background: var(--bg-color);
+    padding: 2em;
+    box-shadow: 8px 8px 0px var(--shadow-color);
+}
+
+input:disabled,
+select:disabled {
+    background-color: var(--bg-color-disabled);
+    /* Light gray background */
+    color: var(--text-color-disabled);
+    /* Dimmed text color */
+    border: 1px solid var(--border-color);
+    /* Lighter border */
+    cursor: not-allowed;
+    /* Indicate the input is not clickable */
+}
+
+input:disabled:hover,
+select:disabled:hover {
+    background-color: #f0f0f0;
+    /* Prevent hover styles
+    */
+}
+
+.grayed {
+    color: #a0a0a0;
+}
+
+.routing div:not(:first-child) {
+    margin-left: 0.5em;
+}
+
+.sparkline {
+    width: 100%;
+    height: 35px;
+    /* Adjust as needed */
+    display: block;
+    margin-bottom: 0.25em;
+}
