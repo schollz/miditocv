@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>yoctocore</title>
+    <script src="/static/vue.global.js"></script>
+    <link rel="stylesheet" href="/static/docs.css">
+    <script src="/static/codemirror.js"></script>
+    <link rel="stylesheet" href="/static/codemirror.css">
+    <link rel="stylesheet" href="/static/material-darker.css">
+    <script src="/static/lua.js"></script>
+    <script src="/static/lua-formatter.js"></script>
+    <link rel="stylesheet" href="/static/globals-adj.css">
+</head>
+
+<body>
+    <div id="app1">
+        <div class="container">
+            <div class="row">
+                <h1>yoctocore</h1>
+            </div>
+            <div class="row">
+                <img src="/static/yocto1.jpg">
+            </div>
+
+            <div class="row">
+                <div class="box alert alert-info">
+                    yoctocore is a simple web-based Lua interpreter. It uses LuaJS, a Lua interpreter written in
+                    WebAssembly, to run Lua code in the browser. The code is executed in a sandboxed
+                    environment, so
+                    it is safe to run untrusted code.
+                </div>
+            </div>
+            <div class="row">
+                <img src="https://placehold.co/800x400/EEE/31343C">
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <h1>Updating firmware</h1>
+        </div>
+        <div class="row">
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <h1>Supercollider</h1>
+
+        </div>
+        <div class="row">
+            SuperCollider interfaces easily with the yoctocore.
+        </div>
+        <div class="row" style="padding-top:10px;">
+            <div class="editor-container" id="supercollider-editor"></div>
+        </div>
+    </div>
+
+
+    <div id="app2">
+        <div class="container">
+            <div class="row">
+                <h1>Lua scripting</h1>
+            </div>
+            <div class="row">
+                <div class="col-6">
+                    yoctocore is a simple web-based Lua interpreter. It uses LuaJS, a Lua interpreter written in
+                    WebAssembly, to run Lua code in the browser. The code is executed in a sandboxed
+                    environment, so
+                    it is safe to run untrusted code.
+                </div>
+            </div>
+            <img src="https://placehold.co/800x400/EEE/31343C" class="box">
+        </div>
+    </div>
+
+    <script type="module">
+        import emscriptenInit from '/static/dist/luajs.mjs';
+        const LuaJS = await emscriptenInit();
+        window.LuaJS = LuaJS;
+        window.luaState = LuaJS.newState();
+        fetch('/static/globals.lua')
+            .then(response => response.text())
+            .then(data => {
+                console.log(`[LuaJS] setting lua environemnts`);
+                luaState = LuaJS.newState();
+                luaState.then(async (L) => {
+                    await L.run(data);
+                });
+            });
+    </script>
+    <script src="/static/docs.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Find the editor container
+            const editorContainer = document.getElementById("supercollider-editor");
+
+            // Initialize CodeMirror
+            const editor = CodeMirror(editorContainer, {
+                value: `(
+s.waitForBoot({
+    MIDIClient.init;
+    MIDIClient.destinations.do{ |dest , i|
+        if (dest.name.contains("yoctocore")) {
+            ~yoctocore_midi = MIDIOut.newByName(dest.device, dest.name);
+        };
+    };
+
+    // ~yotcocore_set_volts(channel, voltage);
+    // channels are 1-based (1 to 8)
+    // voltage is -5.0 to +10.0
+    yotcocore_set_volts = {
+        arg channel,voltage;
+        var sysExString = "setvolt_" ++ channel.asString ++ "_" ++ voltage.asString;
+        var sysExMessage = [240] ++ sysExString.ascii ++ [247];
+        if (~yoctocore_midi.notNil) {
+            ~yoctocore_midi.sysex(Int8Array.newFrom(sysExMessage));
+        };
+    };
+
+    // ~yoctocore_set_note
+    ~yoctocore_set_note = {
+        arg channel, note, velocity;
+        MIDIClient.destinations.do { |dest, i|
+            if (~yoctocore_midi.notNil){
+                ~yoctocore_midi.noteOn(channel, note, velocity);
+            };
+        };
+    };
+});
+)
+
+// set channel, volts
+~yoctocore_set_volts.(1,-10.0);
+~yoctocore_set_note.(1,60,120);
+`,
+                theme: "default",
+                lineNumbers: true,
+                readOnly: true, // Set to true for display-only mode
+            });
+        });
+    </script>
+</body>
+
+</html>

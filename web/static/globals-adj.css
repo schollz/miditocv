@@ -1,0 +1,7 @@
+.CodeMirror {
+    border: var(--border-color);
+    border-style: solid;
+    box-shadow: 6px 6px var(--shadow-color);
+    border-width: 1.5px;
+    min-height: 5em;
+}
