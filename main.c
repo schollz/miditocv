@@ -474,6 +474,44 @@ void midi_event_note_off(char chan, char data1, char data2) {
 void midi_event_control_change(char chan, char data1, char data2) {
   printf("midi_event_control_change: %d %d %d\n", chan, data1, data2);
 }
+
+void midi_event_program_change(char chan, char data1, char data2) {
+  printf("midi_event_program_change: %d %d %d\n", chan, data1, data2);
+  midi_program_change(chan, data1);
+}
+
+void midi_event_pitch_bend(char chan, char data1, char data2) {
+  printf("midi_event_pitch_bend: %d %d %d\n", chan, data1, data2);
+  midi_pitch_bend(chan, data1 + (data2 << 7));
+}
+
+void midi_event_channel_pressure(char chan, char data1, char data2) {
+  printf("midi_event_channel_pressure: %d %d %d\n", chan, data1, data2);
+  midi_channel_pressure(chan, data1);
+}
+
+void midi_event_key_pressure(char chan, char data1, char data2) {
+  printf("midi_event_key_pressure: %d %d %d\n", chan, data1, data2);
+  midi_key_pressure(chan, data1, data2);
+}
+
+void midi_event_clock(char chan, char data1, char data2) { midi_timing(); }
+
+void midi_event_start(char chan, char data1, char data2) {
+  printf("midi_event_start: %d %d %d\n", chan, data1, data2);
+  midi_start();
+}
+
+void midi_event_continue(char chan, char data1, char data2) {
+  printf("midi_event_continue: %d %d %d\n", chan, data1, data2);
+  midi_continue();
+}
+
+void midi_event_stop(char chan, char data1, char data2) {
+  printf("midi_event_stop: %d %d %d\n", chan, data1, data2);
+  midi_stop();
+}
+
 int main() {
   // Set PLL_USB 96MHz
   const uint32_t main_line = 96;
@@ -527,6 +565,17 @@ int main() {
   midi_register_event_handler(EVT_CHAN_NOTE_OFF, midi_event_note_off);
   midi_register_event_handler(EVT_CHAN_CONTROL_CHANGE,
                               midi_event_control_change);
+  midi_register_event_handler(EVT_CHAN_PROGRAM_CHANGE,
+                              midi_event_program_change);
+  midi_register_event_handler(EVT_CHAN_PITCH_BEND, midi_event_pitch_bend);
+  midi_register_event_handler(EVT_CHAN_AFTERTOUCH, midi_event_channel_pressure);
+  midi_register_event_handler(EVT_CHAN_POLY_AFTERTOUCH,
+                              midi_event_key_pressure);
+  midi_register_event_handler(EVT_SYS_REALTIME_TIMING_CLOCK, midi_event_clock);
+  midi_register_event_handler(EVT_SYS_REALTIME_SEQ_START, midi_event_start);
+  midi_register_event_handler(EVT_SYS_REALTIME_SEQ_CONTINUE,
+                              midi_event_continue);
+  midi_register_event_handler(EVT_SYS_REALTIME_SEQ_STOP, midi_event_stop);
 
   // setup pio for uart
   uint offset = pio_add_program(pio0, &uart_rx_program);
