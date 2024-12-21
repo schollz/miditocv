@@ -1,0 +1,32 @@
+---
+sidebar_position: 4
+---
+
+# Code
+
+import LuaCodeBox from "@site/src/components/LuaCodeBox";
+
+Here’s a Lua code editor example rendered using CodeMirror:
+
+<LuaCodeBox />
+
+export const Highlight = ({ children, color }) => (
+  <span
+    style={{
+      backgroundColor: color,
+      borderRadius: "20px",
+      color: "#fff",
+      padding: "10px",
+      cursor: "pointer",
+    }}
+    onClick={() => {
+      alert(`You clicked the color ${color} with label ${children}`);
+    }}
+  >
+    {children}
+  </span>
+);
+
+This is <Highlight color="#25c2a0">Docusaurus hi</Highlight> !
+
+This is <Highlight color="#1877F2">Facebook blue</Highlight> !
