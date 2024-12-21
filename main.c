@@ -807,8 +807,11 @@ int main() {
             out->voltage_current = 3.0;
           }
           break;
-        case MODE_CONTROL_CHANGE | MODE_KEY_PRESSURE | MODE_PROGRAM_CHANGE |
-            MODE_CHANNEL_PRESSURE | MODE_PITCH_BEND:
+        case MODE_CONTROL_CHANGE:
+        case MODE_KEY_PRESSURE:
+        case MODE_PROGRAM_CHANGE:
+        case MODE_CHANNEL_PRESSURE:
+        case MODE_PITCH_BEND:
           // slew the voltage
           out->voltage_current = Slew_process(&out->slew, out->voltage_set, ct);
           // quantize the voltage
