@@ -12,11 +12,7 @@
 float gammaCorrect(float value) { return powf(value, SPECTRA_GAMMA); }
 
 // Map normalized value (0.0 to 1.0) to RGB
-void normalizedToRGB(float normalized, float *r, float *g, float *b) {
-  float wl = 380.0f +
-             (normalized *
-              400.0f);  // Map normalized value to wavelength (380 nm to 780 nm)
-
+void wavelengthToRGB(float wl, float *r, float *g, float *b) {
   if (wl >= 380.0f && wl <= 440.0f) {
     *r = -(wl - 440.0f) / (440.0f - 380.0f);
     *g = 0.0f;
@@ -56,6 +52,14 @@ void normalizedToRGB(float normalized, float *r, float *g, float *b) {
   *r *= sss;
   *g *= sss;
   *b *= sss;
+}
+
+// Map normalized value (0.0 to 1.0) to RGB
+void normalizedToRGB(float normalized, float *r, float *g, float *b) {
+  float wl = 380.0f +
+             (normalized *
+              400.0f);  // Map normalized value to wavelength (380 nm to 780 nm)
+  wavelengthToRGB(wl, r, g, b);
 }
 
 // Convert normalized value (0.0 to 1.0) to uint8 RGB with gamma correction

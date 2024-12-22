@@ -443,29 +443,36 @@ body {
     color: black;
 }
 
-.mode-4,
-.mode-6,
-.mode-7,
-.mode-8,
-.mode-9 {
-    background-color: #32CD32e1;
+.mode-4 {
+    background-color: #ADFF2Fe1;
     color: black;
 }
 
 .mode-5 {
-    background-color: #7DF9FFe1;
+    background-color: #00FF00e1;
     color: black;
 }
 
-.mode-10 {
-    background-color: #0096FFe1;
+.mode-6 {
+    background-color: #00FFFFe1;
     color: black;
 }
 
-.mode-11 {
-    background-color: #CBC3E3;
+.mode-7 {
+    background-color: #0000FFe1;
     color: black;
 }
+
+.mode-8 {
+    background-color: #4B0082e1;
+    color: black;
+}
+
+.mode-9 {
+    background-color: #7E00FFe1;
+    color: black;
+}
+
 
 #app {
     border: solid var(--border-color);

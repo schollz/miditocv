@@ -560,19 +560,18 @@ end`,
         const midi_input_active = ref({});
         const midi_input_last_message = ref({});
         const clockTempos = ref([]);
+
         const definitionsModes = ref({
-            "MODE_MANUAL": 0,
-            "MODE_NOTE": 1,
-            "MODE_GATE": 2,
-            "MODE_ENVELOPE": 3,
-            "MODE_KEY_PRESSURE": 4,
-            "MODE_CONTROL_CHANGE": 5,
-            "MODE_PROGRAM_CHANGE": 6,
-            "MODE_CHANNEL_PRESSURE": 7,
-            "MODE_PITCH_BEND": 8,
-            "MODE_CLOCK": 9,
-            "MODE_LFO": 10,
-            "MODE_CODE": 11,
+            "MODE_NOTE": 0,
+            "MODE_ENVELOPE": 1,
+            "MODE_KEY_PRESSURE": 2,
+            "MODE_CONTROL_CHANGE": 3,
+            "MODE_PROGRAM_CHANGE": 4,
+            "MODE_CHANNEL_PRESSURE": 5,
+            "MODE_PITCH_BEND": 6,
+            "MODE_CLOCK": 7,
+            "MODE_LFO": 8,
+            "MODE_CODE": 9,
         })
         clockTempos.value.push("Global");
         for (let i = 30; i < 300; i++) {

@@ -116,17 +116,16 @@ uint8_t gammaCorrectUint8_t(float value) {
   return roundf(255.0f * powf(value, 0.8f));
 }
 
-const uint8_t const_colors[11][3] = {
+const uint8_t const_colors[10][3] = {
     {160, 160, 160},  // White
     {255, 0, 0},      // Red
     {255, 74, 0},     // Orange
     {250, 175, 0},    // Yellow
+    {173, 255, 47},   // Yellow-green
     {0, 255, 0},      // Green
     {0, 255, 255},    // Cyan
-    {0, 255, 0},      // Green
-    {0, 255, 0},      // Green
-    {0, 255, 0},      // Green
     {0, 0, 244},      // Blue
+    {200, 0, 255},    // Indigo
     {97, 0, 97},      // Violet
 };
 
@@ -752,8 +751,6 @@ int main() {
           Config *config = &yocto.config[yocto.i][i];
           // check mode
           switch (config->mode) {
-            case MODE_MANUAL:
-              break;
             case MODE_ENVELOPE:
               // trigger the envelope
               ADSR_gate(&out->adsr, val, ct);
@@ -811,24 +808,6 @@ int main() {
       Slew_set_duration(&out->slew, roundf(config->slew_time * 1000));
 
       switch (config->mode) {
-        case MODE_MANUAL:
-          // mode manual will set voltage based on knob turning and slew
-          // check if knob was turned
-          if (knob_val != -1) {
-            // change the set voltage
-            out->voltage_set = linlin(knob_val, 0.0f, 1023.0f,
-                                      config->min_voltage, config->max_voltage);
-          }
-          // slew the voltage
-          out->voltage_current = Slew_process(&out->slew, out->voltage_set, ct);
-          // quantize the voltage
-          out->voltage_current =
-              scale_quantize_voltage(config->quantization, config->root_note,
-                                     config->v_oct, out->voltage_current);
-          // portamento voltage
-          out->voltage_current =
-              Slew_process(&out->portamento, out->voltage_current, ct);
-          break;
         case MODE_LFO:
           // mode lfo will set the voltage based on lfo
           out->voltage_set =
@@ -842,7 +821,12 @@ int main() {
           break;
         case MODE_NOTE:
           // mode pitch will set the voltage based on midi note
-          // check if midi note was received
+          // check if knob was turned
+          if (knob_val != -1) {
+            // change the set voltage
+            out->voltage_set = linlin(knob_val, 0.0f, 1023.0f,
+                                      config->min_voltage, config->max_voltage);
+          }
           // slew the voltage
           out->voltage_current = Slew_process(&out->slew, out->voltage_set, ct);
           // quantize the voltage
