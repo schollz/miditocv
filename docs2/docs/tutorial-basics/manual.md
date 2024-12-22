@@ -28,6 +28,11 @@ export default function MyReactPage() {
 }
 ```
 
+```lua title="src/pages/my-react-page.js"
+-- comment
+print("hello world")
+```
+
 A new page is now available at [http://localhost:3000/my-react-page](http://localhost:3000/my-react-page).
 
 ## Create your first Markdown Page

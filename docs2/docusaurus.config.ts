@@ -1,6 +1,15 @@
 import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
+import Prism from 'prismjs';
+
+// Ensure that the Prism instance is globally accessible before importing additional languages
+(typeof global !== 'undefined' ? global : window).Prism = Prism;
+
+
+// Dynamically import the Lua language definition from prismjs
+require('prismjs/components/prism-lua');
+
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -48,6 +57,8 @@ const config: Config = {
       } satisfies Preset.Options,
     ],
   ],
+
+  plugins: [require.resolve('docusaurus-lunr-search')],
 
   themeConfig: {
     // Replace with your project's social card
@@ -108,8 +119,11 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      additionalLanguages: ['lua'],
     },
   } satisfies Preset.ThemeConfig,
 };
+
+
 
 export default config;
