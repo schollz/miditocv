@@ -1,8 +1,24 @@
 ---
 sidebar_position: 1
+headerColor: "red"
 ---
 
-# Manual mode
+# Note
+
+The **NOTE** mode is distinguished by the white LED: <span class='white-circle'>⬤</span>
+
+The output voltage quantization is configurable in the editor, the default quantization is the resolution of the knob (12-bit) scaled by the output range (minimum resolution is 0.004v).
+
+The slew rate is configurable in the editor, the default slew rate is 12v/s.  the slew can also be configured by holding shift and turning the knob.
+
+#
+Normally, the output voltage is controlled by the midi note number. the output voltage is calculated as `(note - root) / 12` where `note` is the midi note number and `root` is the root note number. the root note number is configurable in the editor, the default root note number is 69 (middle A).
+
+the output voltage quantization is configurable in the editor.
+
+the MIDI channel is configurable in the editor, the default MIDI channel is 0 (any).
+
+the knob can be used to manually change the current pitch, similar to [manual mode](#manual).
 
 The Manual mode lets you change the voltage using the knob.
 

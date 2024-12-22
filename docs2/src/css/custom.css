@@ -28,3 +28,18 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+.white-circle {
+  color: white;
+  background-color: black;
+  padding: 0.3em;
+  border-radius: 0%;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap');
+
+body {
+  font-family: "Geist Mono", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}

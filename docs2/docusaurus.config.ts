@@ -60,7 +60,23 @@ const config: Config = {
 
   plugins: [require.resolve('docusaurus-lunr-search')],
 
+  headTags: [
+    {
+      tagName: 'link',
+      attributes: {
+        rel: 'stylesheet',
+        href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css',
+      },
+    },
+  ],
+  
   themeConfig: {
+    stylesheets: [
+      {
+        href: 'https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap',
+        type: 'text/css',
+      },
+    ],
     // Replace with your project's social card
     image: "img/docusaurus-social-card.jpg",
     navbar: {
