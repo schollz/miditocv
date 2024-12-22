@@ -46,6 +46,31 @@ def send_voltage(output, channel, voltage):
     send_sysex(output, f"setvolt_{channel:d}_{voltage:.5f}")
 
 
+def set_voltages(voltages):
+    not_done = True
+    while not_done:
+        output = None
+        try:
+            pygame.midi.init()
+            for device_id in range(pygame.midi.get_count()):
+                interface, name, is_input, is_output, opened = (
+                    pygame.midi.get_device_info(device_id)
+                )
+                if not is_output:
+                    continue
+                if "yoctocore" in name.decode("utf-8"):
+                    output = pygame.midi.Output(device_id)
+                    break
+            for channel, voltage in enumerate(voltages):
+                send_sysex(output, f"setvolt_{channel+1:d}_{voltage:.5f}")
+            time.sleep(0.005)
+            not_done = False
+        except:
+            pygame.midi.quit()
+            time.sleep(0.05)
+            continue
+
+
 def set_voltage(i, voltage):
     not_done = True
     while not_done:
@@ -128,43 +153,58 @@ NUM_TRIALS = 1
 NUM_POINTS = 30
 
 
-def run_calibration(id, output_num, use_raw):
+def run_calibration(id, use_raw):
     # output_num is 1-indexed channel number
     send_use_raw(use_raw)
+    num_outputs = 8
     voltages = np.linspace(-4.5, 9.5, NUM_POINTS)
-    measured = np.zeros((len(voltages), NUM_TRIALS))
+    voltage_settings = np.zeros((num_outputs, len(voltages)))
+    measured = np.zeros((num_outputs, len(voltages), NUM_TRIALS))
+    # shuffle voltages for each output for testing
+    for i in range(num_outputs):
+        voltages = np.random.permutation(voltages)
+        voltage_settings[i, :] = voltages
+
     for trial in tqdm(range(NUM_TRIALS)):
-        for i, voltage in enumerate(voltages):
-            set_voltage(output_num, voltage)
-            for j in range(1, 8 + 1):
-                if j != output_num and random.random() < 0.01:
-                    set_voltage(j, np.random.uniform(-5, 10))
+        for i in range(NUM_POINTS):
+            test_voltages = []
+            for output in range(num_outputs):
+                test_voltages.append(voltage_settings[output, i])
+            set_voltages(test_voltages)
             measured_voltages = read_voltages()
-            measured[i, trial] = measured_voltages[0]
+            for j in range(num_outputs):
+                measured[j, i, trial] = measured_voltages[j]
+            print(measured[:, i, trial])
 
     mode = "raw" if use_raw else "volt"
+
     # create a folder with the id if it doesn't already exist
     if not os.path.exists("calibrations"):
         os.mkdir("calibrations")
-    if not os.path.exists(id):
+    if not os.path.exists(f"calibrations/{id}"):
         os.mkdir(f"calibrations/{id}")
-    np.savez(
-        f"calibrations/{id}/data_{output_num}_{mode}.npz",
-        voltages=voltages,
-        measured=measured,
-    )
-    print(f"Calibration for channel {output_num} complete")
-    # calculate the slope and intercept
-    x = np.repeat(voltages, NUM_TRIALS)
-    y = measured.flatten()
-    slope, intercept, r_value, p_value, std_err = linregress(x, y)
-    print(f"Slope: {slope}, Intercept: {intercept}")
-    if use_raw:
-        # send the calibration values to the device
-        send_calibration(output_num, slope, intercept)
+
+    for i in range(num_outputs):
+        output_num = i + 1
+        voltages = voltage_settings[i, :]
+        voltages_measured = measured[i, :, :]
+        np.savez(
+            f"calibrations/{id}/data_{output_num}_{mode}.npz",
+            voltages=voltages,
+            measured=voltages_measured,
+        )
+        print(f"Calibration for channel {output_num} complete")
+        # calculate the slope and intercept
+        x = np.repeat(voltages, NUM_TRIALS)
+        y = voltages_measured.flatten()
+        slope, intercept, _, _, _ = linregress(x, y)
+        print(f"Slope: {slope}, Intercept: {intercept}")
+        if use_raw:
+            # send the calibration values to the device
+            send_calibration(output_num, slope, intercept)
 
 
-def create_printout(id, num_channels):
+def create_printout(id, num_channels=8):
     recalibration_text = ""
 
     for mode in ["raw", "volt"]:
@@ -237,7 +277,7 @@ def create_printout(id, num_channels):
                 else:
                     axs[i].set_title(f"Channel {channel_num}: error={total_error:.1f}%")
                 axs[i].set_xlim(-5, 10)
-                axs[i].set_ylim(-0.25, 0.25)
+                axs[i].set_ylim(-0.4, 0.4)
                 axs[i].set_xlabel("Set Voltage")
                 axs[i].set_ylabel("Error")
 
@@ -262,36 +302,26 @@ def create_printout(id, num_channels):
         f.write(recalibration_text)
 
 
-def run_one_by_one(id, start, num, test_only=False):
-    first = True
-    # check start to start + num inclusively
-    for i in range(start, num + start):
-        if first:
-            first = False
-        else:
-            print(f"Running calibration for channel {i}, press enter to continue")
-            input()
-        if not test_only:
-            run_calibration(id, i, True)
-        run_calibration(id, i, False)
-        # reset all of them
-        for j in range(1, 8 + 1):
-            set_voltage(j, -10)
+def run_all_calibration(id, test_only=False):
     if not test_only:
-        create_printout(id, num)
+        run_calibration(id, True)
+    run_calibration(id, False)
+    # reset all of them
+    for j in range(1, 8 + 1):
+        set_voltage(j, -10)
+    if not test_only:
+        create_printout(id)
 
 
 @click.command()
 @click.argument("id", required=True)
-@click.argument("start", required=False, type=int, default=1)
-@click.argument("num", required=False, type=int, default=8)
 @click.option("--test", is_flag=True, help="Run in test mode")
 @click.option("--print", is_flag=True, help="Print the calibration results")
-def main(id, start, num, test, print):
+def main(id, test, print):
     if print:
-        create_printout(id, num)
+        create_printout(id)
     else:
-        run_one_by_one(id, start, num, test)
+        run_all_calibration(id, test)
 
 
 if __name__ == "__main__":
