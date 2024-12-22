@@ -9,6 +9,7 @@ import Prism from 'prismjs';
 
 // Dynamically import the Lua language definition from prismjs
 require('prismjs/components/prism-lua');
+//require('prismjs/components/prism-supercollider');
 
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
