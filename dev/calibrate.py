@@ -207,6 +207,8 @@ def run_calibration(id, use_raw):
 def create_printout(id, num_channels=8):
     recalibration_text = ""
 
+    slopes = np.zeros(num_channels)
+    intercepts = np.zeros(num_channels)
     for mode in ["raw", "volt"]:
         fig, axs = plt.subplots(int(num_channels / 2), 2, figsize=(8.5, 11))
         fig.subplots_adjust(
@@ -224,6 +226,9 @@ def create_printout(id, num_channels=8):
                 x = np.repeat(voltages, measured.shape[1])
                 # axs[i].scatter(x, y, label=f"Measured Data ({mode})", color="black")
                 slope, intercept, r_value, p_value, std_err = linregress(x, y)
+                if mode == "raw":
+                    slopes[i] = slope
+                    intercepts[i] = intercept
 
                 if mode == "raw":
                     sysex_string = f"cali_{channel_num:d}_{slope:.5f}_{intercept:.5f}"
@@ -265,17 +270,14 @@ def create_printout(id, num_channels=8):
                     x, np.zeros_like(x), label="Zero Error", color="black", alpha=0.5
                 )
 
-                intercept_string = f"{intercept:.3f}"
-                if intercept < 0:
-                    intercept_string = f"-{-intercept:.3f}"
+                intercept_string = f"{intercepts[i]:.3f}"
+                if intercepts[i] < 0:
+                    intercept_string = f"{intercepts[i]:.3f}"
                 else:
-                    intercept_string = f"+{intercept:.3f}"
-                if mode == "raw":
-                    axs[i].set_title(
-                        f"Channel {channel_num}: {slope:.3f}x{intercept_string}, error={total_error:.1f}%"
-                    )
-                else:
-                    axs[i].set_title(f"Channel {channel_num}: error={total_error:.1f}%")
+                    intercept_string = f"+{intercepts[i]:.3f}"
+                axs[i].set_title(
+                    f"Channel {channel_num}: {slopes[i]:.3f}x{intercept_string}, error={total_error:.1f}%"
+                )
                 axs[i].set_xlim(-5, 10)
                 axs[i].set_ylim(-0.4, 0.4)
                 axs[i].set_xlabel("Set Voltage")
@@ -291,9 +293,9 @@ def create_printout(id, num_channels=8):
             )
         else:
             plt.suptitle(
-                f"[#{id}] Testing on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                f"[#{id}] Calibrated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             )
-        title = "calibrated" if mode == "raw" else "testing"
+        title = "calibrated" if mode == "raw" else "Calibration"
         with PdfPages(f"calibrations/{id}/{id}_{title}.pdf") as pdf:
             fig.tight_layout(rect=[0.025, 0.025, 0.975, 0.975])
             pdf.savefig(fig)
