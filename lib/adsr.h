@@ -18,6 +18,7 @@ typedef struct ADSR {
   float level_start;
   float start_time;
   float shape;
+  float max;
   int32_t state;
   bool gate;
 } ADSR;
@@ -35,6 +36,7 @@ void ADSR_init(ADSR *adsr, float attack, float decay, float sustain,
   adsr->start_time = 0;
   adsr->gate = false;
   adsr->shape = shape;
+  adsr->max = 1.0;
 }
 
 void ADSR_gate(ADSR *adsr, bool gate, uint32_t current_time_ms) {
@@ -56,8 +58,8 @@ float ADSR_process(ADSR *adsr, float current_time_ms) {
     int32_t elapsed = current_time_ms - adsr->start_time;
     float curve_shape = adsr->attack / adsr->shape;
     adsr->level =
-        adsr->level_start +
-        (1.0 - adsr->level_start) * (1.0 - exp(-1.0 * (elapsed / curve_shape)));
+        adsr->level_start + (adsr->max - adsr->level_start) *
+                                (1.0 - exp(-1.0 * (elapsed / curve_shape)));
     adsr->level_attack = adsr->level;
     adsr->level_release = adsr->level;
     if (elapsed >= adsr->attack) {
@@ -73,8 +75,9 @@ float ADSR_process(ADSR *adsr, float current_time_ms) {
       adsr->start_time = current_time_ms - (elapsed - adsr->decay);
     } else {
       float curve_shape = adsr->decay / adsr->shape;
-      adsr->level = adsr->sustain + (adsr->level_attack - adsr->sustain) *
-                                        exp(-1.0 * (elapsed / curve_shape));
+      adsr->level = (adsr->sustain * adsr->max) +
+                    (adsr->level_attack - (adsr->sustain * adsr->max)) *
+                        exp(-1.0 * (elapsed / curve_shape));
       adsr->level_release = adsr->level;
     }
   }
@@ -84,7 +87,7 @@ float ADSR_process(ADSR *adsr, float current_time_ms) {
     // this prevents discontinuities when the decay is
     // over, which should get close to the adsr->susatin level
     // but sometimes not quite all the way
-    // adsr->level = adsr->sustain;
+    // adsr->level = (adsr->sustain * adsr->max);
   }
 
   if (adsr->state == env_release) {

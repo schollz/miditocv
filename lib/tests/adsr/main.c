@@ -26,6 +26,7 @@ int main() {
 
   // Start with the gate off
   ADSR_gate(&adsr, false, current_time);
+  adsr.max = 0.5f;
 
   // Run the simulation
   uint32_t time_increment = 2;
@@ -42,6 +43,14 @@ int main() {
     if (current_time == 5700) {
       adsr.sustain = 0.2f;
       adsr.decay = 500.0f;
+      ADSR_gate(&adsr, true, current_time);
+    }
+    if (current_time == 7500) {
+      ADSR_gate(&adsr, false, current_time);
+    }
+    if (current_time == 7600) {
+      adsr.max = 1.0;
+      adsr.sustain = 0.5f;
       ADSR_gate(&adsr, true, current_time);
     }
     if (current_time == 8000) {
