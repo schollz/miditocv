@@ -403,6 +403,10 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
   }
 }
 
+void Yoctocore_schedule_save(Yoctocore *self) {
+  self->debounce_save = to_ms_since_boot(get_absolute_time());
+}
+
 bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
   if (self->debounce_save == 0) {
     return false;

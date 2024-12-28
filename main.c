@@ -357,16 +357,23 @@ void midi_note_on(int channel, int note, int velocity) {
 
 void midi_cc(int channel, int cc, int value) {
   channel++;  // 1-indexed
-  // printf("ch=%d cc=%d val=%d\n", channel, cc, value);
+  printf("ch=%d cc=%d val=%d (%d)\n", channel, cc, value, button_values[0]);
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_CONTROL_CHANGE &&
-        config->midi_channel == channel && config->midi_cc == cc) {
-      // set the voltage
-      out->voltage_set =
-          linlin(value, 0, 127, config->min_voltage, config->max_voltage);
-      printf("[cc%d] %f\n", i + 1, out->voltage_current);
+    if (config->mode == MODE_CONTROL_CHANGE) {
+      if (config->midi_channel == channel && config->midi_cc == cc) {
+        // set the voltage
+        out->voltage_set =
+            linlin(value, 0, 127, config->min_voltage, config->max_voltage);
+        printf("[cc%d] %f\n", i + 1, out->voltage_current);
+      } else if (button_values[i]) {
+        // listen and set the channel and cc
+        yocto.config[yocto.i][i].midi_channel = channel;
+        yocto.config[yocto.i][i].midi_cc = cc;
+        // save the config
+        Yoctocore_schedule_save(&yocto);
+      }
     }
   }
 }
@@ -487,26 +494,27 @@ void midi_event_note_off(char chan, char data1, char data2) {
 }
 
 void midi_event_control_change(char chan, char data1, char data2) {
-  printf("midi_event_control_change: %d %d %d\n", chan, data1, data2);
+  // printf("midi_event_control_change: %d %d %d\n", chan, data1, data2);
+  midi_cc(chan, data1, data2);
 }
 
 void midi_event_program_change(char chan, char data1, char data2) {
-  printf("midi_event_program_change: %d %d %d\n", chan, data1, data2);
+  // printf("midi_event_program_change: %d %d %d\n", chan, data1, data2);
   midi_program_change(chan, data1);
 }
 
 void midi_event_pitch_bend(char chan, char data1, char data2) {
-  printf("midi_event_pitch_bend: %d %d %d\n", chan, data1, data2);
+  // printf("midi_event_pitch_bend: %d %d %d\n", chan, data1, data2);
   midi_pitch_bend(chan, data1 + (data2 << 7));
 }
 
 void midi_event_channel_pressure(char chan, char data1, char data2) {
-  printf("midi_event_channel_pressure: %d %d %d\n", chan, data1, data2);
+  // printf("midi_event_channel_pressure: %d %d %d\n", chan, data1, data2);
   midi_channel_pressure(chan, data1);
 }
 
 void midi_event_key_pressure(char chan, char data1, char data2) {
-  printf("midi_event_key_pressure: %d %d %d\n", chan, data1, data2);
+  // printf("midi_event_key_pressure: %d %d %d\n", chan, data1, data2);
   midi_key_pressure(chan, data1, data2);
 }
 
