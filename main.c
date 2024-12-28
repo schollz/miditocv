@@ -342,6 +342,8 @@ void midi_note_on(int channel, int note, int velocity) {
         if (config->mode == MODE_ENVELOPE) {
           // trigger the envelope
           printf("[out%d] env_on linked to out%d\n", i + 1, config->linked_to);
+          // set the max level to scale with the velocity
+          out->adsr.max = linlin((float)velocity, 0.0f, 127.0f, 0.0f, 1.0f);
           ADSR_gate(&out->adsr, 1, ct);
         } else if (config->mode == MODE_GATE) {
           // trigger the gate
