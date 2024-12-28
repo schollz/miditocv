@@ -207,7 +207,7 @@ void timer_callback_ws2812(bool on, int user_data) {
     if (out->tuning && blink_on) {
       WS2812_fill(&ws2812, leds_second_8[i - 8] + 8, 0, 0, 0);
     } else {
-      uint8_t brightness = 20;
+      uint8_t brightness = 80;
       WS2812_fill(&ws2812, leds_second_8[i - 8] + 8,
                   const_colors[config->mode][0] * brightness / 100,
                   const_colors[config->mode][1] * brightness / 100,
@@ -808,6 +808,7 @@ int main() {
       Out *out = &yocto.out[i];
       Config *config = &yocto.config[yocto.i][i];
       float knob_val = (float)KnobChange_get(&pool_knobs[i]);
+      bool button_val = button_values[i];
       // check mode
       // make sure modes are up to date
       if (config->mode == MODE_CLOCK || config->mode == MODE_CODE) {
@@ -842,8 +843,8 @@ int main() {
           break;
         case MODE_NOTE:
           // mode pitch will set the voltage based on midi note
-          // check if knob was turned
-          if (knob_val != -1) {
+          // button + knob will override and set the voltage
+          if (knob_val != -1 && button_val) {
             // change the set voltage
             out->voltage_set = linlin(knob_val, 0.0f, 1023.0f,
                                       config->min_voltage, config->max_voltage);
