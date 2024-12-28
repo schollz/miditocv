@@ -9,7 +9,7 @@ each scene has eight outputs. each output can be configured to a different mode.
 
 | Category         | Button        | Knob          | Shift + Button | Shift + Knob  | Button + Knob |
 | ---------------- | ------------- | ------------- | -------------- | ------------- | ------------- |
-| Note             |               | voltage       | tuning note    | change tuning | portamento    |
+| Note             |               |               | tuning note    | change tuning | voltage       |
 | Envelope         | trigger       | attack        |                | release       |               |
 | Gate             | trigger       | duration      |                | probability   |               |
 | CC               |               |               | listen         |               |               |
