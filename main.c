@@ -116,9 +116,10 @@ uint8_t gammaCorrectUint8_t(float value) {
   return roundf(255.0f * powf(value, 0.8f));
 }
 
-const uint8_t const_colors[10][3] = {
+const uint8_t const_colors[11][3] = {
     {160, 160, 160},  // White
     {255, 0, 0},      // Red
+    {255, 0, 0},      // Red (gate)
     {255, 74, 0},     // Orange
     {250, 175, 0},    // Yellow
     {173, 255, 47},   // Yellow-green
@@ -261,11 +262,18 @@ void midi_note_off(int channel, int note) {
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_ENVELOPE && config->linked_to > 0) {
+    if (config->linked_to > 0) {
       if (outs_with_note_change[config->linked_to - 1]) {
-        // trigger the envelope
-        printf("[out%d] env_ff linked to out%d\n", i + 1, config->linked_to);
-        ADSR_gate(&out->adsr, 0, ct);
+        if (config->mode == MODE_ENVELOPE) {
+          // trigger the envelope
+          printf("[out%d] env_off linked to out%d\n", i + 1, config->linked_to);
+          ADSR_gate(&out->adsr, 0, ct);
+        } else if (config->mode == MODE_GATE) {
+          // trigger the gate
+          printf("[out%d] gate_off linked to out%d\n", i + 1,
+                 config->linked_to);
+          out->voltage_set = config->min_voltage;
+        }
       }
     }
   }
@@ -329,11 +337,17 @@ void midi_note_on(int channel, int note, int velocity) {
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_ENVELOPE && config->linked_to > 0) {
+    if (config->linked_to > 0) {
       if (outs_with_note_change[config->linked_to - 1]) {
-        // trigger the envelope
-        printf("[out%d] env_on linked to out%d\n", i + 1, config->linked_to);
-        ADSR_gate(&out->adsr, 1, ct);
+        if (config->mode == MODE_ENVELOPE) {
+          // trigger the envelope
+          printf("[out%d] env_on linked to out%d\n", i + 1, config->linked_to);
+          ADSR_gate(&out->adsr, 1, ct);
+        } else if (config->mode == MODE_GATE) {
+          // trigger the gate
+          printf("[out%d] gate_on linked to out%d\n", i + 1, config->linked_to);
+          out->voltage_set = config->max_voltage;
+        }
       }
     }
   }
@@ -755,6 +769,11 @@ int main() {
               // trigger the envelope
               ADSR_gate(&out->adsr, val, ct);
               break;
+            case MODE_GATE:
+              // set the voltage
+              out->voltage_set =
+                  val ? config->max_voltage : config->min_voltage;
+              break;
             case MODE_NOTE:
               if (button_shift && val) {
                 // toggle tuning mode
@@ -878,6 +897,9 @@ int main() {
           out->adsr.release = roundf(config->release * 1000);
           out->voltage_set = linlin(ADSR_process(&out->adsr, ct), 0.0f, 1.0f,
                                     config->min_voltage, config->max_voltage);
+          out->voltage_current = out->voltage_set;
+          break;
+        case MODE_GATE:
           out->voltage_current = out->voltage_set;
           break;
         default:

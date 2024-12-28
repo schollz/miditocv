@@ -166,11 +166,9 @@ typedef struct Config {
   float release;
   uint8_t linked_to;
   uint8_t probability;
-  bool sparkline_do_update;
-  char code;
-  uint15_t code_len;
-  float duration;
-  float setpoint_voltage;
+  uint16_t code_len;
+  char *code;
+  uint8_t duration_percent;
 } Config;
 
 `;
@@ -564,14 +562,15 @@ end`,
         const definitionsModes = ref({
             "MODE_NOTE": 0,
             "MODE_ENVELOPE": 1,
-            "MODE_KEY_PRESSURE": 2,
-            "MODE_CONTROL_CHANGE": 3,
-            "MODE_PROGRAM_CHANGE": 4,
-            "MODE_CHANNEL_PRESSURE": 5,
-            "MODE_PITCH_BEND": 6,
-            "MODE_CLOCK": 7,
-            "MODE_LFO": 8,
-            "MODE_CODE": 9,
+            "MODE_GATE": 2,
+            "MODE_KEY_PRESSURE": 3,
+            "MODE_CONTROL_CHANGE": 4,
+            "MODE_PROGRAM_CHANGE": 5,
+            "MODE_CHANNEL_PRESSURE": 6,
+            "MODE_PITCH_BEND": 7,
+            "MODE_CLOCK": 8,
+            "MODE_LFO": 9,
+            "MODE_CODE": 10,
         })
         clockTempos.value.push("Global");
         for (let i = 30; i < 300; i++) {

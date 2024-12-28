@@ -98,7 +98,8 @@
         <div class="col col-10">
           <select id="mode-select" v-model="selected_output.mode">
             <option :value="definitionsModes.MODE_NOTE">MIDI Note</option>
-            <option :value="definitionsModes.MODE_ENVELOPE">Envelope/Gate</option>
+            <option :value="definitionsModes.MODE_ENVELOPE">Envelope</option>
+            <option :value="definitionsModes.MODE_GATE">Gate</option>
             <option :value="definitionsModes.MODE_KEY_PRESSURE">MIDI Key Pressure</option>
             <option :value="definitionsModes.MODE_CONTROL_CHANGE">MIDI Control Change</option>
             <option :value="definitionsModes.MODE_PROGRAM_CHANGE">MIDI Program Change</option>
@@ -469,7 +470,7 @@
 
       </div>
       <!-- random stuff -->
-      <div class="row" v-if="[1].includes(Number(selected_output.mode))">
+      <div class="row" v-if="[definitionsModes.MODE_GATE].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="probability">
             Chance (%):
