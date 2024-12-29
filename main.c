@@ -895,6 +895,9 @@ int main() {
           if (out->tuning) {
             out->voltage_current = 3.0;
           }
+          if (config->note_tuning > 0) {
+            out->voltage_current += ((float)config->note_tuning / 1000.0);
+          }
           break;
         case MODE_CONTROL_CHANGE:
         case MODE_KEY_PRESSURE:

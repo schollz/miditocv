@@ -13,6 +13,8 @@
     --alert-danger-bg: #f8d7da;
     --bg-color-disabled: #f0f0f0;
     --text-color-disabled: #a0a0a0;
+    --bg-color-disabled: #f0f0f0;
+    --thumb-color: #000;
 }
 
 .dark-mode {
@@ -104,7 +106,6 @@ p {
     flex: 1;
     padding: 0.5rem;
     /* center vertically */
-
 }
 
 .col-1 {
@@ -519,4 +520,48 @@ select:disabled:hover {
     /* Adjust as needed */
     display: block;
     margin-bottom: 0.25em;
+}
+
+/* Slider container to hold the range slider */
+.slider-container {
+    position: relative;
+    width: 100%;
+}
+
+/* Base slider styles */
+#tuning-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 10px;
+    background: linear-gradient(to right,
+            var(--bg-color) 50%,
+            var(--bg-color) 50%);
+    border-radius: 5px;
+    outline: none;
+    position: relative;
+    z-index: 1;
+    transition: background 0.2s ease;
+    margin-bottom: 0;
+}
+
+/* Slider thumb */
+#tuning-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--thumb-color);
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+
+#tuning-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--thumb-color);
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
 }

@@ -143,33 +143,34 @@ function parseStructAndHashVariables(cCode) {
 
 // Example usage
 const cCode = `
+
 typedef struct Config {
-  uint8_t mode;
-  float min_voltage;
-  float max_voltage;
-  float slew_time;
-  float v_oct;
-  uint8_t root_note;
-  uint16_t quantization;
-  float portamento;
-  uint8_t midi_channel;
-  uint8_t midi_priority_channel;
-  uint8_t midi_cc;
-  float clock_tempo;
-  uint8_t clock_division;
-  float lfo_period;
-  float lfo_depth;
-  uint8_t lfo_waveform;
-  float attack;
-  float decay;
-  float sustain;
-  float release;
-  uint8_t linked_to;
-  uint8_t probability;
-  uint16_t code_len;
-  char *code;
-  uint8_t duration_percent;
-} Config;
+    uint8_t mode;
+    float min_voltage;
+    float max_voltage;
+    float slew_time;
+    float v_oct;
+    uint8_t root_note;
+    uint16_t quantization;
+    float portamento;
+    uint8_t midi_channel;
+    uint8_t midi_priority_channel;
+    uint8_t midi_cc;
+    float clock_tempo;
+    uint8_t clock_division;
+    float lfo_period;
+    float lfo_depth;
+    uint8_t lfo_waveform;
+    float attack;
+    float decay;
+    float sustain;
+    float release;
+    uint8_t linked_to;
+    uint8_t probability;
+    uint16_t code_len;
+    uint8_t note_tuning;
+    char *code;
+  } Config;
 
 `;
 
@@ -533,6 +534,7 @@ const app = createApp({
                     release: 2.1,
                     linked_to: 0,
                     probability: 100,
+                    note_tuning: 0,
                     code: `function main()
 	return 60
 end`,

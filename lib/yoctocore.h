@@ -49,6 +49,7 @@
 #define PARAM_PROBABILITY 451533126
 #define PARAM_CODE 2090155648
 #define PARAM_CODE_LEN 709259102
+#define PARAM_NOTE_TUNING 2686914255
 
 typedef struct Config {
   uint8_t mode;
@@ -74,6 +75,7 @@ typedef struct Config {
   uint8_t linked_to;
   uint8_t probability;
   uint16_t code_len;
+  int16_t note_tuning;
   char *code;
 } Config;
 
@@ -337,6 +339,9 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
       }
       config->probability = (uint8_t)val;
       break;
+    case PARAM_NOTE_TUNING:
+      config->note_tuning = val;
+      break;
     default:
       return;
       break;
@@ -398,6 +403,8 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
       return config->linked_to;
     case PARAM_PROBABILITY:
       return config->probability;
+    case PARAM_NOTE_TUNING:
+      return config->note_tuning;
     default:
       return -1000;
   }
