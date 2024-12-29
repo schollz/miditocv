@@ -920,16 +920,18 @@ int main() {
           break;
         case MODE_ENVELOPE:
           // mode envelope will trigger the envelope based on button press
-          // knob changes will scale the attack/release
           if (knob_val != -1) {
-            // scale the attack/release
-            float attack, release;
-            spiral_coordinate(knob_val, &attack, &release);
-            attack = linlin(attack, 0.0f, 1.0f, 10.0f, 1000.0f);
-            release = linlin(release, 0.0f, 1.0f, 10.0f, 5000.0f);
-            config->attack = roundf(attack);
-            config->release = roundf(release);
-            printf("Attack: %f, Release: %f\n", attack, release);
+            if (button_shift) {
+              // shift + knob will set the sustain
+              config->sustain = linlin(knob_val, 0.0f, 1023.0f, 0.0, 1.0);
+            } else if (button_val) {
+              // button + knob will set the release
+              config->release = linlin(knob_val, 0.0f, 1023.0f, 0.0, 10.0);
+            } else {
+              // knob will set the attack
+              config->attack = linlin(knob_val, 0.0f, 1023.0f, 0.0, 10.0);
+            }
+            Yoctocore_schedule_save(&yocto);
           }
           out->adsr.attack = roundf(config->attack * 1000);
           out->adsr.decay = roundf(config->decay * 1000);
