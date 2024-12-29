@@ -7,16 +7,18 @@ there are eight scenes. each scene is selected by holding down `shift` and then 
 
 each scene has eight outputs. each output can be configured to a different mode. modes are selected holding `shift` and pressing one of the eight buttons.
 
+The **bold** things are implemented.
+
 | Category         | Button        | Knob          | Shift + Button | Shift + Knob  | Button + Knob |
 | ---------------- | ------------- | ------------- | -------------- | ------------- | ------------- |
 | Note             |               |               | tuning note    | change tuning | voltage       |
 | Envelope         | trigger       | attack        |                | release       |               |
 | Gate             | trigger       | duration      |                | probability   |               |
-| CC               | listen        |               |                |               |               |
-| Program change   | listen        |               |                |               |               |
-| Key Pressure     | listen        |               |                |               |               |
-| Channel Pressure | listen        |               |                |               |               |
-| Pitch bend       | listen        |               |                |               |               |
+| CC               | **listen**    |               |                |               |               |
+| Program change   | **listen**    |               |                |               |               |
+| Key Pressure     | **listen**    |               |                |               |               |
+| Channel Pressure | **listen**    |               |                |               |               |
+| Pitch bend       | **listen**    |               |                |               |               |
 | Clock            | start/stop    | tempo         | tap tempo      | division      |               |
 | LFO              | pause         | period        | max voltage    | shape         |               |
 | Code             | key(on,shift) | knob(x,shift) | key(on,shift)  | knob(x,shift) |               |

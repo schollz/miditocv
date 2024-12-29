@@ -368,7 +368,7 @@ void midi_cc(int channel, int cc, int value) {
             linlin(value, 0, 127, config->min_voltage, config->max_voltage);
         printf("[cc%d] %f\n", i + 1, out->voltage_current);
       } else if (button_values[i]) {
-        // listen and set the channel and cc
+        // listen and learn the channel and cc
         yocto.config[yocto.i][i].midi_channel = channel;
         yocto.config[yocto.i][i].midi_cc = cc;
         // save the config
@@ -384,11 +384,18 @@ void midi_key_pressure(int channel, int note, int pressure) {
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_KEY_PRESSURE && config->midi_channel == channel) {
-      // set the voltage
-      out->voltage_set =
-          linlin(pressure, 0, 127, config->min_voltage, config->max_voltage);
-      printf("[kp%d] %f\n", i + 1, out->voltage_current);
+    if (config->mode == MODE_KEY_PRESSURE) {
+      if (config->midi_channel == channel) {
+        // set the voltage
+        out->voltage_set =
+            linlin(pressure, 0, 127, config->min_voltage, config->max_voltage);
+        printf("[kp%d] %f\n", i + 1, out->voltage_current);
+      } else if (button_values[i]) {
+        // listen and learn the channel
+        yocto.config[yocto.i][i].midi_channel = channel;
+        // save the config
+        Yoctocore_schedule_save(&yocto);
+      }
     }
   }
 }
@@ -399,12 +406,18 @@ void midi_program_change(int channel, int program) {
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_PROGRAM_CHANGE &&
-        config->midi_channel == channel) {
-      // set the voltage
-      out->voltage_set =
-          linlin(program, 0, 127, config->min_voltage, config->max_voltage);
-      printf("[pc%d] %f\n", i + 1, out->voltage_current);
+    if (config->mode == MODE_PROGRAM_CHANGE) {
+      if (config->midi_channel == channel) {
+        // set the voltage
+        out->voltage_set =
+            linlin(program, 0, 127, config->min_voltage, config->max_voltage);
+        printf("[pc%d] %f\n", i + 1, out->voltage_current);
+      } else if (button_values[i]) {
+        // listen and learn the channel
+        yocto.config[yocto.i][i].midi_channel = channel;
+        // save the config
+        Yoctocore_schedule_save(&yocto);
+      }
     }
   }
 }
@@ -415,12 +428,18 @@ void midi_channel_pressure(int channel, int pressure) {
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_CHANNEL_PRESSURE &&
-        config->midi_channel == channel) {
-      // set the voltage
-      out->voltage_set =
-          linlin(pressure, 0, 127, config->min_voltage, config->max_voltage);
-      printf("[cp%d] %f\n", i + 1, out->voltage_current);
+    if (config->mode == MODE_CHANNEL_PRESSURE) {
+      if (config->midi_channel == channel) {
+        // set the voltage
+        out->voltage_set =
+            linlin(pressure, 0, 127, config->min_voltage, config->max_voltage);
+        printf("[cp%d] %f\n", i + 1, out->voltage_current);
+      } else if (button_values[i]) {
+        // listen and learn the channel
+        yocto.config[yocto.i][i].midi_channel = channel;
+        // save the config
+        Yoctocore_schedule_save(&yocto);
+      }
     }
   }
 }
@@ -432,11 +451,18 @@ void midi_pitch_bend(int channel, int value) {
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_PITCH_BEND && config->midi_channel == channel) {
-      // set the voltage
-      out->voltage_set =
-          linlin(value, 0, 16383, config->min_voltage, config->max_voltage);
-      printf("[pb%d] %f\n", i + 1, out->voltage_current);
+    if (config->mode == MODE_PITCH_BEND) {
+      if (config->midi_channel == channel) {
+        // set the voltage
+        out->voltage_set =
+            linlin(value, 0, 16383, config->min_voltage, config->max_voltage);
+        printf("[pb%d] %f\n", i + 1, out->voltage_current);
+      } else if (button_values[i]) {
+        // listen and learn the channel
+        yocto.config[yocto.i][i].midi_channel = channel;
+        // save the config
+        Yoctocore_schedule_save(&yocto);
+      }
     }
   }
 }
