@@ -107,7 +107,6 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     USBD_PID=0x1836
 )
 
-
 # if INCLUDE_MIDI
 target_link_libraries(${PROJECT_NAME} 
     tinyusb_device

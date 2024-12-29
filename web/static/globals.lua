@@ -398,78 +398,46 @@ end
 
 function update_env(i, code)
     envs[i] = new_env([[
-gate_trigger = 0
-envelope_trigger = 0
+volts = 0
+trigger = 0
 iteration_num = 0
 
-function gate(on) 
-    if on==true or on==nil then 
-        gate_trigger = 1 
-    else
-        gate_trigger = 0
-    end
-end
-
-function trig()
-    envelope_trigger = 1 
-end
-
-function main_call(beat)
-    iteration_num = iteration_num + 1
-    local value = -15
-    if type(main) == "function" then
-        original = main(beat)
-        if original then
-            value = to_cv(original)
+function on_beat_call(beat)
+    if type(on_beat) == "function" then
+        local success, result = pcall(function()
+            return on_beat(beat)
+        end)
+        if success then
+            return result
         end
     end
-    local trigger = gate_trigger
-    if envelope_trigger == 1 then
-        trigger = 1
-        envelope_trigger = 0
-    end
-    return value, trigger, original
 end
 ]] .. code)
 end
 
-function env_main(i, beat)
-    local v, t, _ = envs[i].main_call(beat)
-    return v, t
-end
-
-function test_env_main(i, beat)
-    local v, t, o = envs[i].main_call(beat)
-    if v >= -5 then
-        return envs[i].iteration_num .. ") " .. o .. string.format(", cv=%2.2f, env=", v) .. t
-    else
-        return string.format("%d) ", envs[i].iteration_num)
+function test_on_beat(i)
+    envs[i].iteration_num = envs[i].iteration_num + 1
+    local v = envs[i].on_beat_call(envs[i].iteration_num)
+    if v then
+        return string.format("%d) %f volts, %s, %s", envs[i].iteration_num, envs[i].volts, envs[i].trigger, v)
     end
 end
 
 math.randomseed(os.time())
 
--- -- testing
--- update_env(1, [[
--- a = S{60,62,S{70,75},67}
--- b = S{1,1,1,0}
--- c = S{10,13,15,S{17,20}}
--- function main(beat)
---     a:select(beat)
---     b:select(beat)
---     c:select(beat)
---     local u = a() + c()
---     -- gate(b()>0)
---     if (b()>0) then
---         trig()
---     end
---     -- trig()
---     if u~='skip' then 
---         do return u end 
---     end
--- end
--- ]])
+-- testing
+update_env(1, [[
+a = S{60,62,S{70,75},67}
+b = S{1,1,1,0}
+c = S{10,13,15,S{17,20}}
+function on_beat(beat)
+    local v = a() + b() + c()
+    volts = to_cv(v)
+    trigger = b()>0
+    return v
+end
+]])
 
--- for i = 1, 10 do
---     print(test_env_main(1, i))
--- end
+for i = 1, 10 do
+    print(test_on_beat(1))
+end

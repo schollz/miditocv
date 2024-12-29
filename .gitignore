@@ -4,6 +4,10 @@ web/*pem
 *pdf
 *.npy
 *.d
+*LuaJS/*
+
+package-lock.json
+test.py
 recalibration.js
 settings.json
 pico-extras/

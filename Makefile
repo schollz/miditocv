@@ -19,6 +19,9 @@ luascripts:
 	xxd -i globals.lua > lib/lua_globals.h
 	rm globals.lua
 
+
+lua:
+	lua web/static/globals.lua
 build: 
 	mkdir -p build
 	cd build && cmake ..
