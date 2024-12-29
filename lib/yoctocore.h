@@ -138,6 +138,7 @@ void Yoctocore_init(Yoctocore *self) {
       self->config[scene][output].release = 0.5;
       self->config[scene][output].linked_to = 0;
       self->config[scene][output].probability = 100;
+      self->config[scene][output].note_tuning = 0;
       self->config[scene][output].code_len = 0;
       self->config[scene][output].code = NULL;
     }

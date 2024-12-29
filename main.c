@@ -236,6 +236,7 @@ void timer_callback_update_voltage(bool on, int user_data) {
 
 void timer_callback_blink(bool on, int user_data) { blink_on = on; }
 
+#ifdef INCLUDE_MIDI
 void midi_note_off(int channel, int note) {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   channel++;  // 1-indexed
@@ -560,6 +561,7 @@ void midi_event_stop(char chan, char data1, char data2) {
   printf("midi_event_stop: %d %d %d\n", chan, data1, data2);
   midi_stop();
 }
+#endif
 
 int main() {
   // Set PLL_USB 96MHz
@@ -606,7 +608,6 @@ int main() {
 #ifdef INCLUDE_MIDI
   // setup midi
   tusb_init();
-#endif
 
   // setup libmidi
   midi_init();
@@ -625,6 +626,8 @@ int main() {
   midi_register_event_handler(EVT_SYS_REALTIME_SEQ_CONTINUE,
                               midi_event_continue);
   midi_register_event_handler(EVT_SYS_REALTIME_SEQ_STOP, midi_event_stop);
+
+#endif
 
   // setup pio for uart
   uint offset = pio_add_program(pio0, &uart_rx_program);
