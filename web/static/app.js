@@ -512,7 +512,7 @@ const app = createApp({
         const scenes = ref(
             Array.from({ length: 8 }, () => ({
                 outputs: Array.from({ length: 8 }, () => ({
-                    mode: 0,
+                    mode: 10,
                     quantization: 0,
                     v_oct: 1.0,
                     root_note: 60,
@@ -535,8 +535,8 @@ const app = createApp({
                     linked_to: 0,
                     probability: 100,
                     note_tuning: 0,
-                    code: `function main()
-	return 60
+                    code: `function on_beat(beat)
+	return beat
 end`,
                     duration: 1,
                     setpoint_voltage: 0,
@@ -560,6 +560,7 @@ end`,
         const midi_input_active = ref({});
         const midi_input_last_message = ref({});
         const clockTempos = ref([]);
+        const luaBeatNumber = ref(0);
 
         const definitionsModes = ref({
             "MODE_NOTE": 0,
@@ -613,6 +614,7 @@ end`,
         let code_last = "";
         async function clearLua() {
             console.log(`[clearLua]`);
+            luaBeatNumber.value = 0;
             code_last = "Zzzz";
             // clear the output 
             outputCodeMirror.setValue(''); // Clear the CodeMirror output
@@ -626,7 +628,8 @@ end`,
                 outputCodeMirror.refresh();
             }, 50);
         }
-        async function executeLua() {
+        async function executeLua(function_name) {
+            console.log(`[executeLua]: ${function_name}`);
             // using https://github.com/Doridian/LuaJS
             let outputElement = document.getElementById('output');
             let code = myCodeMirror.getValue();
@@ -654,7 +657,11 @@ end`,
             luaState.then(async (L) => {
                 let value;
                 try {
-                    value = await L.run(`return test_env_main(${output_num})`); //value == [3]
+                    if (function_name == "on_beat") {
+                        value = await L.run(`return envs[${output_num}].${function_name}(${luaBeatNumber.value})`);
+                    } else {
+                        value = await L.run(`return envs[${output_num}].${function_name}()`);
+                    }
                 } catch (error) {
                     value = error;
                 }
@@ -662,8 +669,13 @@ end`,
                 await value;
                 // get the value
                 console.log(`[executeLua]: ${value}`);
+
+                // get the `volts` variable in the current environment
+                let volts = await L.run(`return envs[${output_num}].volts`);
+                // get the 'trigger' boolean 
+                let trigger = await L.run(`return envs[${output_num}].trigger`);
                 // append to output
-                outputCodeMirror.setValue(outputCodeMirror.getValue() + '\n' + value);
+                outputCodeMirror.setValue(outputCodeMirror.getValue() + `\nv=${volts}\tt=${trigger}\tr=${value}`);
             });
             // console.log(`[executeLua]: ${new_code}`);
             beautify_code = LuaFormatter.beautifyLua(code).trim();
@@ -986,6 +998,7 @@ end`,
             definitionsModes,
             toggleLearning,
             inLearningMode,
+            luaBeatNumber,
         };
     },
 });

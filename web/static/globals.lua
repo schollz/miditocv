@@ -408,6 +408,7 @@ trigger = 0
 iteration_num = 0
 ]]
 function update_env(i, code)
+    print("[globals.lua] updating env " .. i .. " with code: " .. code)
     local new_env_made = new_env(baseline_code .. code)
     if new_env_made then
         envs[i] = new_env_made
@@ -428,31 +429,31 @@ end
 
 math.randomseed(os.time())
 
--- testing
-update_env(1, [[
-a = S{60,62,S{70,75},67}
-b = S{1,1,1,0}
-c = S{10,13,15,S{17,20}}
-function on_beat(beat)
-    local v = a() + b() + c()
-    volts = to_cv(v)
-    trigger = b()>0
-    return v
-end
+-- -- testing
+-- update_env(1, [[
+-- a = S{60,62,S{70,75},67}
+-- b = S{1,1,1,0}
+-- c = S{10,13,15,S{17,20}}
+-- function on_beat(beat)
+--     local v = a() + b() + c()
+--     volts = to_cv(v)
+--     trigger = b()>0
+--     return v
+-- end
 
-local notes = S{"c4", "d4", "e4", "f4", "g4", "a4", "b4", "c5"}
-function on_button(value, shift)
-    if value then 
-        local note = notes()
-        volts = to_cv(note)
-        return note
-    end
-end
-]])
+-- local notes = S{"c4", "d4", "e4", "f4", "g4", "a4", "b4", "c5"}
+-- function on_button(value, shift)
+--     if value then 
+--         local note = notes()
+--         volts = to_cv(note)
+--         return note
+--     end
+-- end
+-- ]])
 
-for i = 1, 10 do
-    print(test_on_beat(1))
-end
-for i = 1, 10 do
-    print(envs[1].on_button(1, 0), envs[1].volts)
-end
+-- for i = 1, 10 do
+--     print(test_on_beat(1))
+-- end
+-- for i = 1, 10 do
+--     print(envs[1].on_button(1, 0), envs[1].volts)
+-- end

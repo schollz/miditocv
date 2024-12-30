@@ -565,3 +565,7 @@ select:disabled:hover {
     position: relative;
     z-index: 2;
 }
+
+.CodeMirror {
+    margin-bottom: 1em;
+}
