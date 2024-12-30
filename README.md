@@ -139,7 +139,7 @@ This function exposes the MIDI channel pressure events. The `channel` is the MID
 ```lua
 function on_channel_pressure(channel,pressure)
     if (channel == 1) then 
-        volts = pressure/127.0, true
+        volts = pressure/127.0
     end
 end
 ```

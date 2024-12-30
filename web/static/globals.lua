@@ -412,6 +412,28 @@ function on_beat_call(beat)
         end
     end
 end
+
+function on_knob_call(value,shift,button)
+    if type(on_knob) == "function" then
+        local success, result = pcall(function()
+            return on_knob(value,shift,button)
+        end)
+        if success then
+            return result
+        end
+    end
+end
+
+function on_button_call(value,shift)
+    if type(on_button) == "function" then
+        local success, result = pcall(function()
+            return on_button(value,shift)
+        end)
+        if success then
+            return result
+        end
+    end
+end
 ]] .. code)
 end
 
@@ -436,8 +458,19 @@ function on_beat(beat)
     trigger = b()>0
     return v
 end
+
+local notes = S{"c4", "d4", "e4", "f4", "g4", "a4", "b4", "c5"}
+function on_button(value, shift)
+    if value then 
+        local note = notes()
+        return note
+    end
+end
 ]])
 
 for i = 1, 10 do
     print(test_on_beat(1))
+end
+for i = 1, 10 do
+    print(envs[1].on_button_call(1, 0), envs[1].volts)
 end
