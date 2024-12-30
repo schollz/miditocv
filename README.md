@@ -156,6 +156,62 @@ function on_pitch_bend(channel,pitch)
 end
 ```
 
+## Code Helper Functions
+
+### `to_cv(value)`
+
+This function is called every time a value is sent to the CV output. The `value` is the voltage that is being sent to the CV output. The value can be a MIDI note (values between 10 and 127) or it can be a voltage (values between -5 and 10) or it can be a note name (e.g. "c4"). 
+
+```lua
+volts = to_cv(60) -- sets the voltage to 0V
+volts = to_cv("a5") -- sets the voltage to 1.75V
+volts = to_cv(0) -- sets the voltage to 0V
+```
+
+### S - A Minimal Sequencing Library
+
+`S` is a library designed to build sequencers and arpeggiators with minimal scaffolding using Lua tables. Originally designed by [Trent Gill](https://monome.org/docs/norns/reference/lib/sequins), it provides a simple, extensible interface for creating complex patterns with ease.
+
+This document introduces the basics of `S`. For advanced techniques, see the extended reference.
+
+
+#### Syntax and Description
+
+| **Syntax**                   | **Description**                                                                     |
+| ---------------------------- | ----------------------------------------------------------------------------------- |
+| `my_seq = S{a, b, c, ...}`   | Create a sequence of values (any data type, including nested sequences).            |
+| `my_seq()`                   | Call the sequence, advancing by the step size (default is 1) and returning a value. |
+| `my_seq:step(x)`             | Change the step size to `x`.                                                        |
+| `my_seq:select(n)`           | Select index `n` for the next call to `my_seq()`.                                   |
+| `my_seq[x] = y`              | Update the value at index `x` to `y` (does not change the length).                  |
+| `my_seq:settable(new_table)` | Replace the sequence's table with `new_table` (changes length and resets index).    |
+
+---
+
+#### Flow Modifiers
+
+Flow modifiers work exclusively on nested sequences, offering additional control.
+
+| **Syntax**        | **Description**                                                           |
+| ----------------- | ------------------------------------------------------------------------- |
+| `my_seq:every(n)` | Produce a value every `n`th call.                                         |
+| `my_seq:times(n)` | Produce values only the first `n` times it's called.                      |
+| `my_seq:count(n)` | Produce `n` values from the inner sequence before returning to the outer. |
+| `my_seq:all()`    | Iterate through all inner sequence values before returning to the outer.  |
+| `my_seq:reset()`  | Reset all flow modifiers and indices.                                     |
+
+---
+
+#### Examples
+
+```lua
+note_vals = S{'c4', 'd4', 'e4', S{'g4', 'a4', 'b4'}} -- plays c4, d4, e4, then g4, a4, b4
+note_vals = S{'c4', 'd4', 'e4', S{'g4', 'a4', 'b4'}:every(3)}:step(3) -- Advance by 3, play inner sequence every 3rd iteration
+note_vals = S{'c4', 'd4', 'e4', S{'g4', 'a4', 'b4'}:count(10)} -- Inner sequence iterates 10 times
+note_vals = S{'c4', 'd4', 'e4', S{'f4', 'g4', 'a4'}:times(6)} -- Inner sequence iterates as normal but stops after 6 iterations
+note_vals = S{'c4', 'd4', 'e4', S{'f4', 'g4', 'a4'}:all()} -- Inner sequence plays all values before releasing focus
+```
+
 
 ## Calibration
 
