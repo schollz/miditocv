@@ -387,7 +387,13 @@ function new_env(code)
         end
     })
     local chunk = load(code, "chunk", "t", env)
-    chunk()
+    success = pcall(chunk)
+    if not success then
+        print("Error in environment block")
+        do
+            return
+        end
+    end
     return env
 end
 
@@ -396,52 +402,27 @@ for i = 1, 8 do
     table.insert(envs, new_env(""))
 end
 
-function update_env(i, code)
-    envs[i] = new_env([[
+local baseline_code = [[
 volts = 0
 trigger = 0
 iteration_num = 0
-
-function on_beat_call(beat)
-    if type(on_beat) == "function" then
-        local success, result = pcall(function()
-            return on_beat(beat)
-        end)
-        if success then
-            return result
-        end
+]]
+function update_env(i, code)
+    local new_env_made = new_env(baseline_code .. code)
+    if new_env_made then
+        envs[i] = new_env_made
+    else
+        envs[i] = new_env(baseline_code)
     end
-end
-
-function on_knob_call(value,shift,button)
-    if type(on_knob) == "function" then
-        local success, result = pcall(function()
-            return on_knob(value,shift,button)
-        end)
-        if success then
-            return result
-        end
-    end
-end
-
-function on_button_call(value,shift)
-    if type(on_button) == "function" then
-        local success, result = pcall(function()
-            return on_button(value,shift)
-        end)
-        if success then
-            return result
-        end
-    end
-end
-]] .. code)
 end
 
 function test_on_beat(i)
     envs[i].iteration_num = envs[i].iteration_num + 1
-    local v = envs[i].on_beat_call(envs[i].iteration_num)
-    if v then
-        return string.format("%d) %f volts, %s, %s", envs[i].iteration_num, envs[i].volts, envs[i].trigger, v)
+    if envs[i].on_beat then
+        local v = envs[i].on_beat(envs[i].iteration_num)
+        if v then
+            return string.format("%d) %f volts, %s, %s", envs[i].iteration_num, envs[i].volts, envs[i].trigger, v)
+        end
     end
 end
 
@@ -463,6 +444,7 @@ local notes = S{"c4", "d4", "e4", "f4", "g4", "a4", "b4", "c5"}
 function on_button(value, shift)
     if value then 
         local note = notes()
+        volts = to_cv(note)
         return note
     end
 end
@@ -472,5 +454,5 @@ for i = 1, 10 do
     print(test_on_beat(1))
 end
 for i = 1, 10 do
-    print(envs[1].on_button_call(1, 0), envs[1].volts)
+    print(envs[1].on_button(1, 0), envs[1].volts)
 end
