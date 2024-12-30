@@ -535,8 +535,20 @@ const app = createApp({
                     linked_to: 0,
                     probability: 100,
                     note_tuning: 0,
-                    code: `function on_beat(beat)
-	return beat
+                    code: `note_vals = S{
+	'c4',
+	'd4',
+	'e4',
+	S{
+		'g4',
+		'a4',
+		'b4'
+	}
+}
+function on_beat(beat)
+	local v = note_vals()
+	volts = to_cv(v)
+	return v
 end`,
                     duration: 1,
                     setpoint_voltage: 0,
@@ -653,6 +665,7 @@ end`,
                 await luaState;
                 code_last = new_code;
                 outputCodeMirror.setValue(`-- ${new_code.length} bytes`);
+                outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n-- volts\ttrigger\t${function_name}`);
             }
             luaState.then(async (L) => {
                 let value;
@@ -669,13 +682,16 @@ end`,
                 await value;
                 // get the value
                 console.log(`[executeLua]: ${value}`);
-
+                // if value is number, round to 2 decimal places
+                if (typeof value == "number") {
+                    value = Math.round(value * 100) / 100;
+                }
                 // get the `volts` variable in the current environment
                 let volts = await L.run(`return envs[${output_num}].volts`);
                 // get the 'trigger' boolean 
                 let trigger = await L.run(`return envs[${output_num}].trigger`);
                 // append to output
-                outputCodeMirror.setValue(outputCodeMirror.getValue() + `\nv=${volts}\tt=${trigger}\tr=${value}`);
+                outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n  ${(Math.round(volts * 1000) / 1000).toFixed(3)}\t\t  ${trigger}\t\t  ${value}`);
             });
             // console.log(`[executeLua]: ${new_code}`);
             beautify_code = LuaFormatter.beautifyLua(code).trim();
