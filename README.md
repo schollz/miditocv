@@ -55,6 +55,8 @@ Here are examples of the functions.
 This function is called every time a beat is detected. The `beat` is a number that increments every beat. You can return two numbers: the first is the voltage to set to the output and the second is a boolean of whether to trigger the output (if any envelopes or gates are linked to this). 
 
 ```lua
+bpm = 120 -- define bpm
+-- local variables
 local envelope_trigger = false  
 local voltage_increase = 0
 function on_beat(beat)
@@ -67,7 +69,7 @@ function on_beat(beat)
 end
 ```
 
-This function is special, in that it *can be linked to a clock output*, but if it is not linked to a clock output it will run at the tempo of the global clock.
+This function is special, in that it *can be linked to a clock output*, but if it is not linked to a clock output it will run at the tempo defined by the `bpm` variable.
 
 ### `on_knob(value,shift,button)`
 

@@ -5,7 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>yoctocore</title>
-  <script src="/static/vue.global.js"></script>
+  <script src="/static/vue.global.prod.js"></script>
+  <!-- <script src="/static/vue.global.js"></script> -->
   <link rel="stylesheet" href="/static/globals.css">
   <script src="/static/codemirror.js"></script>
   <link rel="stylesheet" href="/static/codemirror.css">
@@ -519,28 +520,6 @@
         });
       });
 
-    const slider = document.getElementById('tuning-slider');
-
-    // Update the background gradient based on slider value
-    slider.addEventListener('input', () => {
-      const value = slider.value; // Current slider value
-      const percentage = ((value - slider.min) / (slider.max - slider.min)) * 100;
-
-      if (value >= 0) {
-        // Fill from center to right for positive values
-        slider.style.background = `linear-gradient(to right, 
-            var(--bg-color) 50%, 
-            var(--bg-color-disabled) 50% ${percentage}%, 
-            var(--bg-color) ${percentage}%)`;
-      } else {
-        // Fill from center to left for negative values
-        slider.style.background = `linear-gradient(to right, 
-            var(--bg-color) ${percentage}%, 
-            var(--bg-color-disabled) ${percentage}% 50%, 
-            var(--bg-color-disabled) 50%, 
-            var(--bg-color) 50%)`;
-      }
-    });
   </script>
 
   <script src="/static/app.js"></script>
