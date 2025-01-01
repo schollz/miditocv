@@ -63,7 +63,7 @@ def set_voltages(voltages):
                     break
             for channel, voltage in enumerate(voltages):
                 send_sysex(output, f"setvolt_{channel+1:d}_{voltage:.5f}")
-            time.sleep(0.005)
+            time.sleep(0.025)
             not_done = False
         except:
             pygame.midi.quit()
@@ -87,7 +87,7 @@ def set_voltage(i, voltage):
                     output = pygame.midi.Output(device_id)
                     break
             send_voltage(output, i, voltage)
-            time.sleep(0.005)
+            time.sleep(0.025)
             not_done = False
         except:
             pygame.midi.quit()
@@ -113,7 +113,7 @@ def send_calibration(channel, slope, intercept):
             sysex_string = f"cali_{channel:d}_{slope:.5f}_{intercept:.5f}"
             print(sysex_string)
             send_sysex(output, sysex_string)
-            time.sleep(0.005)
+            time.sleep(0.025)
             not_done = False
         except:
             pygame.midi.quit()
@@ -141,7 +141,7 @@ def send_use_raw(use_raw=False):
                 sysex_string = f"useraw 0"
             # print(sysex_string)
             send_sysex(output, sysex_string)
-            time.sleep(0.005)
+            time.sleep(0.025)
             not_done = False
         except:
             pygame.midi.quit()
@@ -149,8 +149,8 @@ def send_use_raw(use_raw=False):
             continue
 
 
-NUM_TRIALS = 1
-NUM_POINTS = 30
+NUM_TRIALS = 5
+NUM_POINTS = 60
 
 
 def run_calibration(id, use_raw):
@@ -235,35 +235,37 @@ def create_printout(id, num_channels=8):
                     random_milliseconds = 1000 + i * 1000
                     recalibration_text += f"setTimeout(() => send_sysex('{sysex_string}'), {random_milliseconds});\n"
 
-                # total_error is calculated as the average relavtive error
-                total_error = (
-                    np.sum(np.divide(np.abs(x - y), np.abs(x))) * 100.0 / len(x)
-                )
-                y2 = np.divide((x - y), np.abs(x))
+                # total_error is calculated as the average relative error
+                total_error = np.sum(np.divide(np.abs(x - y), 1)) * 100.0 / len(x)
                 # plot vertical line from each point to 0 on the y-axis
                 for j in range(len(x)):
-                    if x[j] - y[j] > 0:
+                    cents = 1200 * (x[j] - y[j])
+                    if cents > 0:
+                        axs[i].plot([x[j], x[j]], [cents, 0], color="red", alpha=0.8)
+                        # plot dot
                         axs[i].plot(
-                            [x[j], x[j]], [x[j] - y[j], 0], color="red", alpha=0.8
+                            x[j],
+                            cents,
+                            color="red",
+                            linestyle="none",
+                            marker="o",
+                            markersize=3,
+                            markerfacecolor="red",
+                            markeredgecolor="red",
                         )
                     else:
+                        axs[i].plot([x[j], x[j]], [cents, 0], color="blue", alpha=0.8)
+                        # plot dot
                         axs[i].plot(
-                            [x[j], x[j]], [x[j] - y[j], 0], color="blue", alpha=0.8
+                            x[j],
+                            cents,
+                            color="blue",
+                            linestyle="none",
+                            marker="o",
+                            markersize=3,
+                            markerfacecolor="blue",
+                            markeredgecolor="blue",
                         )
-
-                axs[i].plot(
-                    x,
-                    x - y,
-                    label=f"Regression ({mode})",
-                    color="black",
-                    linewidth=2,
-                    alpha=0.9,
-                    linestyle="none",
-                    marker="o",
-                    markersize=3,
-                    markerfacecolor="black",
-                    markeredgecolor="black",
-                )
 
                 # plot 0 line
                 axs[i].plot(
@@ -279,9 +281,9 @@ def create_printout(id, num_channels=8):
                     f"Channel {channel_num}: {slopes[i]:.3f}x{intercept_string}, error={total_error:.1f}%"
                 )
                 axs[i].set_xlim(-5, 10)
-                axs[i].set_ylim(-0.4, 0.4)
+                axs[i].set_ylim(-200, 200)
                 axs[i].set_xlabel("Set Voltage")
-                axs[i].set_ylabel("Error")
+                axs[i].set_ylabel("Pitch error (cents)")
 
                 # axs[i].legend(loc="best")
             except FileNotFoundError:
