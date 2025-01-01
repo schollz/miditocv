@@ -47,6 +47,7 @@ int luaUpdateEnvironment(int index, const char *code) {
     lua_pop(L, 1);  // Remove error message
     return 1;
   }
+  // No need to pop anything here
   return 0;
 }
 
@@ -122,17 +123,13 @@ bool luaGetTrigger(int index) {
 }
 
 bool luaRunOnBeat(int index, int beat) {
-  // if envs[index].on_beat(beat) then
-  //  run it with the current beat
-  // end
   lua_getglobal(L, "envs");
   lua_pushinteger(L, index);
   lua_gettable(L, -2);             // envs[index]
   lua_getfield(L, -1, "on_beat");  // envs[index].on_beat
   if (!lua_isfunction(L, -1)) {
     // printf("[luaRunOnBeat] envs[%d].on_beat not defined or not a
-    // function.\n",
-    //        index);
+    //        function.\n ",index);
     lua_pop(L, 3);  // Remove envs, envs[index], and error message
     return false;
   }
@@ -152,7 +149,7 @@ bool luaRunOnBeat(int index, int beat) {
   const char *result = lua_tostring(L, -1);
   lua_pop(L, 2);  // Remove envs[index] and result
   // print string
-  printf("env[%d].on_beat(%d): %s\n", index, beat, result);
+  // printf("env[%d].on_beat(%d): %s\n", index, beat, result);
   return true;
 }
 

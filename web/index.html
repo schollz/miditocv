@@ -12,6 +12,10 @@
   <link rel="stylesheet" href="/static/codemirror.css">
   <link rel="stylesheet" href="/static/material-darker.css">
   <script src="/static/lua.js"></script>
+  <!-- https://github.com/schollz/luamin.js -->
+  <script src="/static/index.f2c0ec77.js"></script>
+  <!-- https://github.com/schollz/luabeautifier.js -->
+  <script src="/static/index.3d214d75.js"></script>
   <script src="/static/lua-formatter.js"></script>
   <link rel="stylesheet" href="/static/globals-adj.css">
 </head>
@@ -149,7 +153,7 @@
           <button @click="clearLua()">Reset</button>
         </div>
         <div class="col col-4" style="padding-left:1em; text-align:center;">
-          <button @click="uploadLoad()">Upload</button>
+          <button @click="uploadLua()">Upload</button>
         </div>
       </div>
       <div class="row" style="padding-left:1.5em; padding-bottom:1.5em; margin-top:0.5em;"

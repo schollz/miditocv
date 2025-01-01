@@ -140,8 +140,10 @@ void timer_callback_beat(bool on, int user_data) {
     } else {
       out->voltage_current = config->min_voltage;
     }
-  } else if (config->mode == MODE_CODE) {
-    // get the current bpm in the code
+  } else if (config->mode == MODE_CODE && on) {
+    if (luaRunOnBeat(user_data, 0)) {
+      out->voltage_set = luaGetVolts(user_data);
+    }
   }
 }
 
@@ -680,15 +682,23 @@ int main() {
     // big_file_test("test.bin", 2, 0);  // perform read/write test
   }
 
+  // initialize lua
+  luaInit();
+
   // initialize the yoctocore
   Yoctocore_init(&yocto);
-  // load the yoctocore data
-  uint64_t start_time = time_us_64();
+
+  uint64_t start_time;
+  // load the data
+  start_time = time_us_64();
   if (Yoctocore_load(&yocto)) {
     printf("loaded data in %lld us\n", time_us_64() - start_time);
   } else {
     printf("failed to load data\n");
   }
+
+  // // try loading the code for scene 0, output 0
+  // Yoctocore_load_code(&yocto, 0, 0);
 
   // initialize dac
   DAC_init(&dac);
@@ -757,10 +767,10 @@ int main() {
 
   // runlua();
   // print_memory_usage();
-  // sleep_ms(2000);
+  // sleep_ms(1000);
   // runlua();
   // print_memory_usage();
-  // sleep_ms(2000);
+  // sleep_ms(1000);
   uint32_t start_time_us = time_us_32();
 
   while (true) {
@@ -782,6 +792,34 @@ int main() {
       midi_receive_byte(ch);
     }
     timer_per[1] = time_us_32() - us;
+
+    // process any mode change
+    for (uint8_t i = 0; i < 8; i++) {
+      Config *config = &yocto.config[yocto.i][i];
+      Out *out = &yocto.out[i];
+      if (config->mode != out->mode_last) {
+        out->mode_last = config->mode;
+        switch (config->mode) {
+          case MODE_CODE:
+            // load the new code environment
+            Yoctocore_load_code(&yocto, yocto.i, i);
+            break;
+          default:
+            break;
+        }
+      } else {
+        // special case
+        if (config->mode == MODE_CODE) {
+          // check if the code has changed
+          if (out->code_updated) {
+            // load the new code
+            Yoctocore_load_code(&yocto, yocto.i, i);
+            // reset the flag
+            out->code_updated = false;
+          }
+        }
+      }
+    }
 
     // process timers
     us = time_us_32();
@@ -922,6 +960,7 @@ int main() {
         case MODE_CLOCK:
           break;
         case MODE_CODE:
+          out->voltage_current = out->voltage_set;
           break;
         case MODE_ENVELOPE:
           // mode envelope will trigger the envelope based on button press

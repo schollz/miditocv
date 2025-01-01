@@ -224,10 +224,9 @@ async function updateLocalScene(scene_num) {
 
     for (let output_num = 0; output_num < 8; output_num++) {
         for (let param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
-            let value = vm.scenes[scene_num].outputs[output_num][param];
             sysex_string = `${scene_num}_${output_num}_${hash_djb(param)}`;
             // skip code and code_len
-            if (param == "code_len") {
+            if (param == "code_len" || param == "code") {
                 continue;
             }
             for (let i = 0; i < 3; i++) {
@@ -242,6 +241,12 @@ async function updateLocalScene(scene_num) {
                 }
             }
         }
+    }
+    for (let output_num = 0; output_num < 8; output_num++) {
+        // get code
+        setTimeout(() => {
+            send_sysex(`${scene_num}_${output_num}_2090155648`);
+        }, output_num * 100);
     }
 
     disableWatchers = false;
@@ -285,7 +290,7 @@ function setupMidiInputListener() {
                         if (vm.current_scene == scene_num && vm.current_output == output_num) {
                             Vue.nextTick(() => {
                                 console.log(`[output_change] ${code_new}`);
-                                let beautify_code = LuaFormatter.beautifyLua(code_new).trim();
+                                let beautify_code = luaBeautifier.beautify(code_new).trim();
                                 console.log(`[output_change] ${beautify_code}`);
                                 myCodeMirror.setValue(beautify_code);
                                 outputCodeMirror.setValue("");
@@ -539,11 +544,6 @@ const app = createApp({
 	'c4',
 	'd4',
 	'e4',
-	S{
-		'g4',
-		'a4',
-		'b4'
-	}
 }
 function on_beat(beat)
 	local v = note_vals()
@@ -633,7 +633,7 @@ end`,
             document.getElementById('output').textContent = ''; // Clear the text content for the buffer
             // beautify the current code
             let code = scenes.value[current_scene.value].outputs[current_output.value].code;
-            let beautify_code = LuaFormatter.beautifyLua(code).trim();
+            let beautify_code = luaBeautifier.beautify(code).trim();
             myCodeMirror.setValue(beautify_code);
             setTimeout(() => {
                 myCodeMirror.refresh();
@@ -649,13 +649,12 @@ end`,
             let new_code = code;
             let beautify_code = code;
             try {
-                new_code = LuaFormatter.minifyLua(code).trim();
+                new_code = luamin.minify(code);
             } catch (error) {
                 console.log(`[executeLua]: ${error}`);
                 outputCodeMirror.setValue(`${error}`);
                 return;
             }
-            let code_needs_upload = false;
             let output_num = current_output.value + 1;
             if (new_code != code_last) {
                 console.log(`[executeLua]: new state`);
@@ -667,7 +666,6 @@ end`,
                 code_last = new_code;
                 outputCodeMirror.setValue(`-- ${new_code.length} bytes`);
                 outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n-- volts\ttrigger\t${function_name}`);
-                code_needs_upload = true;
             }
             luaState.then(async (L) => {
                 let value;
@@ -697,31 +695,57 @@ end`,
                 outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n  ${(Math.round(volts * 1000) / 1000).toFixed(3)}\t\t  ${trigger}\t\t  ${value}`);
             });
             // console.log(`[executeLua]: ${new_code}`);
-            beautify_code = LuaFormatter.beautifyLua(code).trim();
+            beautify_code = luaBeautifier.beautify(code).trim();
             myCodeMirror.setValue(beautify_code);
             // set the new code to the current output of the current scene
             scenes.value[current_scene.value].outputs[current_output.value].code = new_code;
 
-            if (window.yoctocoreDevice && code_needs_upload) {
-                console.log(`[executeLua]: uploading code`);
-                // upload the code to the device.
-                // split new_code into 32 byte chunks
-                let chunk_size = 32;
-                let num_chunks = Math.ceil(new_code.length / chunk_size);
-                for (let i = 0; i < num_chunks; i++) {
+        }
 
-                    let chunk = new_code.slice(i * chunk_size, (i + 1) * chunk_size);
-                    if (i == 0) {
-                        chunk = `LN${current_scene.value}${current_output.value}${chunk}`;
-                    } else {
-                        chunk = `LA${current_scene.value}${current_output.value}${chunk}`;
-                    }
-                    console.log(`[executeLua] ${chunk}`);
-                    // send chunk and wait 10 ms
-                    send_sysex(chunk);
-                    await new Promise(r => setTimeout(r, 10));
+        async function uploadLua() {
+
+            try {
+                let code = myCodeMirror.getValue();
+                let new_code = "";
+                try {
+                    new_code = luamin.minify(code);
+                } catch (error) {
+                    // show error in output
+                    outputCodeMirror.setValue(`${error}`);
+                    return;
                 }
+                new_code = new_code.trim();
+                luaState.then(async (L) => {
+                    await L.run(`update_env(${current_output.value}, [[${new_code}]])`);
+                });
+                await luaState;
+                console.log(`[uploadLua]: ${new_code}`);
+                if (window.yoctocoreDevice) {
+                    console.log(`[executeLua]: uploading code`);
+                    // upload the code to the device.
+                    // split new_code into 32 byte chunks
+                    let chunk_size = 32;
+                    let num_chunks = Math.ceil(new_code.length / chunk_size);
+                    for (let i = 0; i < num_chunks; i++) {
+                        let chunk = new_code.slice(i * chunk_size, (i + 1) * chunk_size);
+                        if (i == 0) {
+                            chunk = `LN${current_scene.value}${current_output.value}${chunk}`;
+                        } else if (i == num_chunks - 1) {
+                            chunk = `LE${current_scene.value}${current_output.value}${chunk}`;
+                        } else {
+                            chunk = `LA${current_scene.value}${current_output.value}${chunk}`;
+                        }
+                        console.log(`[executeLua] ${chunk}`);
+                        // send chunk and wait 10 ms
+                        send_sysex(chunk);
+                        await new Promise(r => setTimeout(r, 10));
+                    }
+                }
+            } catch (error) {
+                // show error in output
+                outputCodeMirror.setValue(`${error}`);
             }
+
         }
 
         function darkMode() {
@@ -817,7 +841,7 @@ end`,
             (newOutput) => {
                 console.log(`[output_change] ${current_scene.value} ${current_output.value}`);
                 Vue.nextTick(() => {
-                    let beautify_code = LuaFormatter.beautifyLua(newOutput.code).trim();
+                    let beautify_code = luaBeautifier.beautify(newOutput.code).trim();
                     console.log(`[output_change] ${beautify_code}`);
                     myCodeMirror.setValue(beautify_code);
                     clearLua();
@@ -1019,6 +1043,7 @@ end`,
             toggleLearning,
             inLearningMode,
             luaBeatNumber,
+            uploadLua,
         };
     },
 });
