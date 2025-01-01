@@ -688,14 +688,9 @@ int main() {
   // initialize lua
   luaInit();
   sleep_ms(1000);
-  print_memory_usage();
-  sleep_ms(1000);
 
   // initialize the yoctocore
   Yoctocore_init(&yocto);
-  sleep_ms(1000);
-  print_memory_usage();
-  sleep_ms(1000);
 
   uint64_t start_time;
   // load the data
@@ -706,60 +701,13 @@ int main() {
   } else {
     printf("failed to load data\n");
   }
-  sleep_ms(1000);
 
-  /* TESTING CODE */
+  // try loading the code for scene 0, output 0
   sleep_ms(1000);
-  printf("1st loaded code (%d): %s\n", yocto.config[yocto.i][0].code_len,
-         yocto.config[yocto.i][0].code);
-  // start_time = time_us_64();
-  // if (Yoctocore_load(&yocto)) {
-  //   printf("loaded data in %lld us\n", time_us_64() - start_time);
-  // } else {
-  //   printf("failed to load data\n");
-  // }
-  // sleep_ms(1000);
-  // printf("2nd loaded code (%d): %s\n", yocto.config[yocto.i][0].code_len,
-  //        yocto.config[yocto.i][0].code);
-  // // print the code in the first channel
-  // sleep_ms(1000);
-  // // print first 10 characters of code
-  // printf("after init loaded code (%d)\n", yocto.config[yocto.i][0].code_len);
-  // sleep_ms(1000);
-
-  // printf("after init loaded code (%d): %s\n",
-  // yocto.config[yocto.i][0].code_len,
-  //        yocto.config[yocto.i][0].code);
-  // // // for (uint8_t i = 0; i < 10; i++) {
-  // // //   // run on beat
-  // // //   printf("running on beat\n");
-  // // //   sleep_ms(1000);
-  // // //   luaRunOnBeat(0, 0);
-  // // //   sleep_ms(1000);
-  // // // }
-  // // // sleep_ms(100);
-  // sleep_ms(1000);
-  // print_memory_usage();
-  // sleep_ms(1000);
-  // Yoctocore_add_code(
-  //     &yocto, 0, 0,
-  //     "note_vals=S{'c4','d4','e4',S{'g4','e4','b4'}}function "
-  //     "on_beat(beat)local v=note_vals()volts=to_cv(v)return v end",
-  //     113, false);
-  // sleep_ms(1000);
-  // printf("saving code\n");
-  // Yoctcoroe_do_save(&yocto);
-  // sleep_ms(1000);
-  // start_time = time_us_64();
-  // if (Yoctocore_load(&yocto)) {
-  //   printf("loaded data in %lld us\n", time_us_64() - start_time);
-  // } else {
-  //   printf("failed to load data\n");
-  // }
-  // sleep_ms(1000);
-  // // print the code in the first channel
-  // printf("loaded code: %s\n", yocto.config[yocto.i][0].code);
-  // sleep_ms(1000);
+  start_time = time_us_64();
+  Yoctocore_load_code(&yocto, 0, 0);
+  printf("loaded code in %lld us\n", time_us_64() - start_time);
+  sleep_ms(1000);
 
   // initialize dac
   DAC_init(&dac);
@@ -862,11 +810,7 @@ int main() {
         out->mode_last = config->mode;
         switch (config->mode) {
           case MODE_CODE:
-            if (config->code_len > 0) {
-              printf("[out%d] code update: (%d): %s\n", i, config->code_len,
-                     config->code);
-              luaUpdateEnvironment(i, config->code);
-            }
+            // TODO: load the new code environment
             break;
           default:
             break;

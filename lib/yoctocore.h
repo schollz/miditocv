@@ -74,9 +74,7 @@ typedef struct Config {
   float release;
   uint8_t linked_to;
   uint8_t probability;
-  uint16_t code_len;
   int16_t note_tuning;
-  char *code;
 } Config;
 
 typedef struct NoteHeld {
@@ -140,8 +138,6 @@ void Yoctocore_init(Yoctocore *self) {
       self->config[scene][output].linked_to = 0;
       self->config[scene][output].probability = 100;
       self->config[scene][output].note_tuning = 0;
-      self->config[scene][output].code_len = 0;
-      self->config[scene][output].code = NULL;
     }
     // initialize lfo
     Noise_init(&self->out[output].noise, time_us_32());
@@ -174,99 +170,100 @@ void Yoctocore_schedule_save(Yoctocore *self) {
 
 void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
                         char *code, uint16_t code_len, bool append) {
-  if (code_len == 0) {
-    return;
-  }
+  // if (code_len == 0) {
+  //   return;
+  // }
 
-  if (self->config[scene][output].code == NULL || !append) {
-    // Allocate memory and copy the new code
-    self->config[scene][output].code = (char *)malloc(code_len);
-    if (self->config[scene][output].code == NULL) {
-      // Handle memory allocation failure
-      printf("failed to allocate memory\n");
-      return;
-    }
-    memcpy(self->config[scene][output].code, code, code_len);
-    self->config[scene][output].code_len = code_len;
-  } else {
-    // Append the new code to the existing code
-    uint16_t new_code_len = self->config[scene][output].code_len + code_len;
-    char *new_code = (char *)malloc(new_code_len + 1);
-    if (new_code == NULL) {
-      // Handle memory allocation failure
-      printf("failed to allocate memory\n");
-      return;
-    }
-    memcpy(new_code, self->config[scene][output].code,
-           self->config[scene][output].code_len);
-    memcpy(new_code + self->config[scene][output].code_len, code, code_len);
-    free(self->config[scene][output].code);
-    self->config[scene][output].code = new_code;
-    if (new_code_len > 0) {
-      // null terminate
-      self->config[scene][output].code[new_code_len] = '\0';
-    }
-    self->config[scene][output].code_len = new_code_len;
-  }
-  Yoctocore_schedule_save(self);
+  // if (self->config[scene][output].code == NULL || !append) {
+  //   // Allocate memory and copy the new code
+  //   self->config[scene][output].code = (char *)malloc(code_len);
+  //   if (self->config[scene][output].code == NULL) {
+  //     // Handle memory allocation failure
+  //     printf("failed to allocate memory\n");
+  //     return;
+  //   }
+  //   memcpy(self->config[scene][output].code, code, code_len);
+  //   self->config[scene][output].code_len = code_len;
+  // } else {
+  //   // Append the new code to the existing code
+  //   uint16_t new_code_len = self->config[scene][output].code_len + code_len;
+  //   char *new_code = (char *)malloc(new_code_len + 1);
+  //   if (new_code == NULL) {
+  //     // Handle memory allocation failure
+  //     printf("failed to allocate memory\n");
+  //     return;
+  //   }
+  //   memcpy(new_code, self->config[scene][output].code,
+  //          self->config[scene][output].code_len);
+  //   memcpy(new_code + self->config[scene][output].code_len, code, code_len);
+  //   free(self->config[scene][output].code);
+  //   self->config[scene][output].code = new_code;
+  //   if (new_code_len > 0) {
+  //     // null terminate
+  //     self->config[scene][output].code[new_code_len] = '\0';
+  //   }
+  //   self->config[scene][output].code_len = new_code_len;
+  // }
+  // Yoctocore_schedule_save(self);
 }
 
 #define CODE_CHUNK_SIZE \
   36  // Total buffer size including "LS"/"LE"/"LN", scene, and output
 
 void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
-  if (self->config[scene][output].code == NULL) {
-    printf("LE%d%d\n", scene, output);
-    return;
-  }
+  //   if (self->config[scene][output].code == NULL) {
+  //     printf("LE%d%d\n", scene, output);
+  //     return;
+  //   }
 
-  uint16_t code_len = self->config[scene][output].code_len;
-  uint16_t i = 0;
+  //   uint16_t code_len = self->config[scene][output].code_len;
+  //   uint16_t i = 0;
 
-  while (i < code_len) {
-    // Create a buffer with CODE_CHUNK_SIZE
-    char buffer[CODE_CHUNK_SIZE];
-    memset(buffer, 0, sizeof(buffer));
+  //   while (i < code_len) {
+  //     // Create a buffer with CODE_CHUNK_SIZE
+  //     char buffer[CODE_CHUNK_SIZE];
+  //     memset(buffer, 0, sizeof(buffer));
 
-    // Determine prefix: LS, LE, or LN
-    if (i == 0 && code_len - i <= (CODE_CHUNK_SIZE - 4)) {
-      // First and last chunk
-      buffer[0] = 'L';
-      buffer[1] = 'E';
-    } else if (i == 0) {
-      // First chunk
-      buffer[0] = 'L';
-      buffer[1] = 'S';
-    } else if (code_len - i <= (CODE_CHUNK_SIZE - 4)) {
-      // Last chunk
-      buffer[0] = 'L';
-      buffer[1] = 'E';
-    } else {
-      // Intermediate chunk
-      buffer[0] = 'L';
-      buffer[1] = 'N';
-    }
+  //     // Determine prefix: LS, LE, or LN
+  //     if (i == 0 && code_len - i <= (CODE_CHUNK_SIZE - 4)) {
+  //       // First and last chunk
+  //       buffer[0] = 'L';
+  //       buffer[1] = 'E';
+  //     } else if (i == 0) {
+  //       // First chunk
+  //       buffer[0] = 'L';
+  //       buffer[1] = 'S';
+  //     } else if (code_len - i <= (CODE_CHUNK_SIZE - 4)) {
+  //       // Last chunk
+  //       buffer[0] = 'L';
+  //       buffer[1] = 'E';
+  //     } else {
+  //       // Intermediate chunk
+  //       buffer[0] = 'L';
+  //       buffer[1] = 'N';
+  //     }
 
-    // Add the scene and output identifiers
-    buffer[2] = '0' + scene;
-    buffer[3] = '0' + output;
+  //     // Add the scene and output identifiers
+  //     buffer[2] = '0' + scene;
+  //     buffer[3] = '0' + output;
 
-    // Calculate the chunk size for code data
-    uint16_t chunk_size = (code_len - i > (CODE_CHUNK_SIZE - 4))
-                              ? (CODE_CHUNK_SIZE - 4)
-                              : (code_len - i);
+  //     // Calculate the chunk size for code data
+  //     uint16_t chunk_size = (code_len - i > (CODE_CHUNK_SIZE - 4))
+  //                               ? (CODE_CHUNK_SIZE - 4)
+  //                               : (code_len - i);
 
-    // Copy code data into the buffer, starting after the header
-    memcpy(&buffer[4], &self->config[scene][output].code[i], chunk_size);
-    i += chunk_size;
+  //     // Copy code data into the buffer, starting after the header
+  //     memcpy(&buffer[4], &self->config[scene][output].code[i], chunk_size);
+  //     i += chunk_size;
 
-#ifdef INCLUDE_MIDI
-    // Send the buffer as SysEx
-    send_buffer_as_sysex(
-        buffer,
-        4 + chunk_size);  // 4 for "LS"/"LE"/"LN", scene, output + chunk_size
-#endif
-  }
+  // #ifdef INCLUDE_MIDI
+  //     // Send the buffer as SysEx
+  //     send_buffer_as_sysex(
+  //         buffer,
+  //         4 + chunk_size);  // 4 for "LS"/"LE"/"LN", scene, output +
+  //         chunk_size
+  // #endif
+  //   }
 }
 
 void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
@@ -449,13 +446,6 @@ bool Yoctcoroe_do_save(Yoctocore *self) {
         printf("f_write error: %s (%d)\n", FRESULT_str(fr), fr);
         return false;
       }
-      // write the code char
-      fr = f_write(&file, self->config[scene][output].code,
-                   self->config[scene][output].code_len, &bw);
-      if (FR_OK != fr) {
-        printf("f_write error: %s (%d)\n", FRESULT_str(fr), fr);
-        return false;
-      }
       total_bytes_written += bw;
     }
   }
@@ -477,6 +467,79 @@ bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
   }
   self->debounce_save = 0;
   return Yoctcoroe_do_save(self);
+}
+bool Yoctocore_do_load_code(Yoctocore *self, uint8_t scene, uint8_t output,
+                            char **code, FSIZE_t *code_len) {
+  FRESULT fr;
+  FIL file;
+  UINT br;
+  char fname[32];
+
+  // Create the filename (1-indexed)
+  snprintf(fname, sizeof(fname), "scene%d_output%d.lua", scene + 1, output + 1);
+
+  // Open the file
+  fr = f_open(&file, fname, FA_READ);
+  if (fr != FR_OK) {
+    printf("f_open error: %s (%d): %s\n", FRESULT_str(fr), fr, fname);
+    return false;
+  }
+
+  // Get the file size
+  *code_len = f_size(&file);
+  if (*code_len == 0) {
+    printf("%s is empty\n", fname);
+    f_close(&file);
+    return false;
+  }
+
+  // Allocate memory for the file contents
+  *code = (char *)malloc(*code_len + 1);
+  if (*code == NULL) {
+    printf("Failed to allocate memory\n");
+    f_close(&file);
+    return false;
+  }
+
+  // Read the file contents
+  fr = f_read(&file, *code, *code_len, &br);
+  if (fr != FR_OK || br != *code_len) {
+    printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
+    free(*code);
+    f_close(&file);
+    return false;
+  }
+
+  // Null-terminate the code
+  (*code)[*code_len] = '\0';
+
+  // Close the file
+  fr = f_close(&file);
+  if (fr != FR_OK) {
+    printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
+    free(*code);
+    return false;
+  }
+
+  return true;
+}
+
+bool Yoctocore_load_code(Yoctocore *self, uint8_t scene, uint8_t output) {
+  char *code = NULL;
+  FSIZE_t code_len = 0;
+  // Load the code from the file
+  if (!Yoctocore_do_load_code(self, scene, output, &code, &code_len)) {
+    return false;
+  }
+  if (code_len == 0) {
+    free(code);
+    return false;
+  }
+  // Update the environment with the loaded code
+  bool result = (luaUpdateEnvironment(output, code) == 0);
+  // Free the allocated memory
+  free(code);
+  return result;
 }
 
 bool Yoctocore_load(Yoctocore *self) {
@@ -506,18 +569,6 @@ bool Yoctocore_load(Yoctocore *self) {
       if (FR_OK != fr) {
         printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
         return false;
-      }
-      // read the code char
-      fr = f_read(&file, self->config[scene][output].code,
-                  self->config[scene][output].code_len, &br);
-      if (FR_OK != fr) {
-        printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
-        return false;
-      }
-      if (self->config[scene][output].code_len > 0) {
-        // null terminate the code
-        self->config[scene][output].code[self->config[scene][output].code_len] =
-            '\0';
       }
     }
   }
