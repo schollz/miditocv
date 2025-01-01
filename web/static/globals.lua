@@ -408,7 +408,7 @@ trigger = false
 iteration_num = 0
 ]]
 function update_env(i, code)
-    print("[globals.lua] updating env " .. i .. " with code: " .. code)
+    print("[globals.lua] updating " .. i)
     local new_env_made = new_env(baseline_code .. code)
     if new_env_made then
         envs[i] = new_env_made

@@ -98,6 +98,7 @@ typedef struct Out {
   bool tuning;
   float voltage_calibration_intercept;
   float voltage_calibration_slope;
+  int8_t mode_last;
 } Out;
 
 typedef struct Yoctocore {
@@ -160,10 +161,15 @@ void Yoctocore_init(Yoctocore *self) {
     self->out[output].tuning = false;
     self->out[output].voltage_override = 0;
     self->out[output].voltage_do_override = false;
+    self->out[output].mode_last = -1;
   }
   self->debounce_save = 0;
   self->i = 0;
   self->global_tempo = 120;
+}
+
+void Yoctocore_schedule_save(Yoctocore *self) {
+  self->debounce_save = to_ms_since_boot(get_absolute_time());
 }
 
 void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
@@ -185,7 +191,7 @@ void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
   } else {
     // Append the new code to the existing code
     uint16_t new_code_len = self->config[scene][output].code_len + code_len;
-    char *new_code = (char *)malloc(new_code_len);
+    char *new_code = (char *)malloc(new_code_len + 1);
     if (new_code == NULL) {
       // Handle memory allocation failure
       printf("failed to allocate memory\n");
@@ -196,9 +202,13 @@ void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
     memcpy(new_code + self->config[scene][output].code_len, code, code_len);
     free(self->config[scene][output].code);
     self->config[scene][output].code = new_code;
+    if (new_code_len > 0) {
+      // null terminate
+      self->config[scene][output].code[new_code_len] = '\0';
+    }
     self->config[scene][output].code_len = new_code_len;
-    printf("newlen: %d\n", new_code_len);
   }
+  Yoctocore_schedule_save(self);
 }
 
 #define CODE_CHUNK_SIZE \
@@ -411,18 +421,7 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
   }
 }
 
-void Yoctocore_schedule_save(Yoctocore *self) {
-  self->debounce_save = to_ms_since_boot(get_absolute_time());
-}
-
-bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
-  if (self->debounce_save == 0) {
-    return false;
-  }
-  if (current_time - self->debounce_save < 1000) {
-    return false;
-  }
-  self->debounce_save = 0;
+bool Yoctcoroe_do_save(Yoctocore *self) {
   FRESULT fr;
   FIL file;
   UINT bw;
@@ -469,6 +468,17 @@ bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
   return true;
 }
 
+bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
+  if (self->debounce_save == 0) {
+    return false;
+  }
+  if (current_time - self->debounce_save < 1000) {
+    return false;
+  }
+  self->debounce_save = 0;
+  return Yoctcoroe_do_save(self);
+}
+
 bool Yoctocore_load(Yoctocore *self) {
   FRESULT fr;
   FIL file;
@@ -503,6 +513,11 @@ bool Yoctocore_load(Yoctocore *self) {
       if (FR_OK != fr) {
         printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
         return false;
+      }
+      if (self->config[scene][output].code_len > 0) {
+        // null terminate the code
+        self->config[scene][output].code[self->config[scene][output].code_len] =
+            '\0';
       }
     }
   }

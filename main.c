@@ -140,8 +140,13 @@ void timer_callback_beat(bool on, int user_data) {
     } else {
       out->voltage_current = config->min_voltage;
     }
-  } else if (config->mode == MODE_CODE) {
-    // get the current bpm in the code
+  } else if (config->mode == MODE_CODE && on) {
+    // print_memory_usage();
+    if (luaRunOnBeat(user_data, 0)) {
+      out->voltage_set = luaGetVolts(user_data);
+    }
+    // // get volts
+    // // TODO: get trigger and check triggering things
   }
 }
 
@@ -680,15 +685,81 @@ int main() {
     // big_file_test("test.bin", 2, 0);  // perform read/write test
   }
 
+  // initialize lua
+  luaInit();
+  sleep_ms(1000);
+  print_memory_usage();
+  sleep_ms(1000);
+
   // initialize the yoctocore
   Yoctocore_init(&yocto);
-  // load the yoctocore data
-  uint64_t start_time = time_us_64();
+  sleep_ms(1000);
+  print_memory_usage();
+  sleep_ms(1000);
+
+  uint64_t start_time;
+  // load the data
+  sleep_ms(1000);
+  start_time = time_us_64();
   if (Yoctocore_load(&yocto)) {
     printf("loaded data in %lld us\n", time_us_64() - start_time);
   } else {
     printf("failed to load data\n");
   }
+  sleep_ms(1000);
+
+  /* TESTING CODE */
+  sleep_ms(1000);
+  printf("1st loaded code (%d): %s\n", yocto.config[yocto.i][0].code_len,
+         yocto.config[yocto.i][0].code);
+  // start_time = time_us_64();
+  // if (Yoctocore_load(&yocto)) {
+  //   printf("loaded data in %lld us\n", time_us_64() - start_time);
+  // } else {
+  //   printf("failed to load data\n");
+  // }
+  // sleep_ms(1000);
+  // printf("2nd loaded code (%d): %s\n", yocto.config[yocto.i][0].code_len,
+  //        yocto.config[yocto.i][0].code);
+  // // print the code in the first channel
+  // sleep_ms(1000);
+  // // print first 10 characters of code
+  // printf("after init loaded code (%d)\n", yocto.config[yocto.i][0].code_len);
+  // sleep_ms(1000);
+
+  // printf("after init loaded code (%d): %s\n",
+  // yocto.config[yocto.i][0].code_len,
+  //        yocto.config[yocto.i][0].code);
+  // // // for (uint8_t i = 0; i < 10; i++) {
+  // // //   // run on beat
+  // // //   printf("running on beat\n");
+  // // //   sleep_ms(1000);
+  // // //   luaRunOnBeat(0, 0);
+  // // //   sleep_ms(1000);
+  // // // }
+  // // // sleep_ms(100);
+  // sleep_ms(1000);
+  // print_memory_usage();
+  // sleep_ms(1000);
+  // Yoctocore_add_code(
+  //     &yocto, 0, 0,
+  //     "note_vals=S{'c4','d4','e4',S{'g4','e4','b4'}}function "
+  //     "on_beat(beat)local v=note_vals()volts=to_cv(v)return v end",
+  //     113, false);
+  // sleep_ms(1000);
+  // printf("saving code\n");
+  // Yoctcoroe_do_save(&yocto);
+  // sleep_ms(1000);
+  // start_time = time_us_64();
+  // if (Yoctocore_load(&yocto)) {
+  //   printf("loaded data in %lld us\n", time_us_64() - start_time);
+  // } else {
+  //   printf("failed to load data\n");
+  // }
+  // sleep_ms(1000);
+  // // print the code in the first channel
+  // printf("loaded code: %s\n", yocto.config[yocto.i][0].code);
+  // sleep_ms(1000);
 
   // initialize dac
   DAC_init(&dac);
@@ -757,10 +828,10 @@ int main() {
 
   // runlua();
   // print_memory_usage();
-  // sleep_ms(2000);
+  // sleep_ms(1000);
   // runlua();
   // print_memory_usage();
-  // sleep_ms(2000);
+  // sleep_ms(1000);
   uint32_t start_time_us = time_us_32();
 
   while (true) {
@@ -782,6 +853,26 @@ int main() {
       midi_receive_byte(ch);
     }
     timer_per[1] = time_us_32() - us;
+
+    // process any mode change
+    for (uint8_t i = 0; i < 8; i++) {
+      Config *config = &yocto.config[yocto.i][i];
+      Out *out = &yocto.out[i];
+      if (config->mode != out->mode_last) {
+        out->mode_last = config->mode;
+        switch (config->mode) {
+          case MODE_CODE:
+            if (config->code_len > 0) {
+              printf("[out%d] code update: (%d): %s\n", i, config->code_len,
+                     config->code);
+              luaUpdateEnvironment(i, config->code);
+            }
+            break;
+          default:
+            break;
+        }
+      }
+    }
 
     // process timers
     us = time_us_32();
@@ -922,6 +1013,7 @@ int main() {
         case MODE_CLOCK:
           break;
         case MODE_CODE:
+          out->voltage_current = out->voltage_set;
           break;
         case MODE_ENVELOPE:
           // mode envelope will trigger the envelope based on button press
