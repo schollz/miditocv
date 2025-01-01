@@ -149,7 +149,7 @@ bool luaRunOnBeat(int index, int beat) {
   const char *result = lua_tostring(L, -1);
   lua_pop(L, 2);  // Remove envs[index] and result
   // print string
-  printf("env[%d].on_beat(%d): %s\n", index, beat, result);
+  // printf("env[%d].on_beat(%d): %s\n", index, beat, result);
   return true;
 }
 
