@@ -687,14 +687,12 @@ int main() {
 
   // initialize lua
   luaInit();
-  sleep_ms(1000);
 
   // initialize the yoctocore
   Yoctocore_init(&yocto);
 
   uint64_t start_time;
   // load the data
-  sleep_ms(1000);
   start_time = time_us_64();
   if (Yoctocore_load(&yocto)) {
     printf("loaded data in %lld us\n", time_us_64() - start_time);
@@ -702,12 +700,8 @@ int main() {
     printf("failed to load data\n");
   }
 
-  // try loading the code for scene 0, output 0
-  sleep_ms(1000);
-  start_time = time_us_64();
-  Yoctocore_load_code(&yocto, 0, 0);
-  printf("loaded code in %lld us\n", time_us_64() - start_time);
-  sleep_ms(1000);
+  // // try loading the code for scene 0, output 0
+  // Yoctocore_load_code(&yocto, 0, 0);
 
   // initialize dac
   DAC_init(&dac);
