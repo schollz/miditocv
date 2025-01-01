@@ -207,63 +207,121 @@ void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
   // Yoctocore_schedule_save(self);
 }
 
+bool Yoctocore_do_load_code(Yoctocore *self, uint8_t scene, uint8_t output,
+                            char **code, FSIZE_t *code_len) {
+  FRESULT fr;
+  FIL file;
+  UINT br;
+  char fname[32];
+
+  // Create the filename (1-indexed)
+  snprintf(fname, sizeof(fname), "scene%d_output%d.lua", scene + 1, output + 1);
+
+  // Open the file
+  fr = f_open(&file, fname, FA_READ);
+  if (fr != FR_OK) {
+    printf("f_open error: %s (%d): %s\n", FRESULT_str(fr), fr, fname);
+    return false;
+  }
+
+  // Get the file size
+  *code_len = f_size(&file);
+  if (*code_len == 0) {
+    printf("%s is empty\n", fname);
+    f_close(&file);
+    return false;
+  }
+
+  // Allocate memory for the file contents
+  *code = (char *)malloc(*code_len + 1);
+  if (*code == NULL) {
+    printf("Failed to allocate memory\n");
+    f_close(&file);
+    return false;
+  }
+
+  // Read the file contents
+  fr = f_read(&file, *code, *code_len, &br);
+  if (fr != FR_OK || br != *code_len) {
+    printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
+    free(*code);
+    f_close(&file);
+    return false;
+  }
+
+  // Null-terminate the code
+  (*code)[*code_len] = '\0';
+
+  // Close the file
+  fr = f_close(&file);
+  if (fr != FR_OK) {
+    printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
+    free(*code);
+    return false;
+  }
+
+  return true;
+}
+
 #define CODE_CHUNK_SIZE \
   36  // Total buffer size including "LS"/"LE"/"LN", scene, and output
 
 void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
-  //   if (self->config[scene][output].code == NULL) {
-  //     printf("LE%d%d\n", scene, output);
-  //     return;
-  //   }
+  // Load code
+  char *code;
+  FSIZE_t code_len;
+  if (!Yoctocore_do_load_code(self, scene, output, &code, &code_len)) {
+    return;
+  }
 
-  //   uint16_t code_len = self->config[scene][output].code_len;
-  //   uint16_t i = 0;
+  uint16_t i = 0;
 
-  //   while (i < code_len) {
-  //     // Create a buffer with CODE_CHUNK_SIZE
-  //     char buffer[CODE_CHUNK_SIZE];
-  //     memset(buffer, 0, sizeof(buffer));
+  while (i < code_len) {
+    // Create a buffer with CODE_CHUNK_SIZE
+    char buffer[CODE_CHUNK_SIZE];
+    memset(buffer, 0, sizeof(buffer));
 
-  //     // Determine prefix: LS, LE, or LN
-  //     if (i == 0 && code_len - i <= (CODE_CHUNK_SIZE - 4)) {
-  //       // First and last chunk
-  //       buffer[0] = 'L';
-  //       buffer[1] = 'E';
-  //     } else if (i == 0) {
-  //       // First chunk
-  //       buffer[0] = 'L';
-  //       buffer[1] = 'S';
-  //     } else if (code_len - i <= (CODE_CHUNK_SIZE - 4)) {
-  //       // Last chunk
-  //       buffer[0] = 'L';
-  //       buffer[1] = 'E';
-  //     } else {
-  //       // Intermediate chunk
-  //       buffer[0] = 'L';
-  //       buffer[1] = 'N';
-  //     }
+    // Determine prefix: LS, LE, or LN
+    if (i == 0 && code_len - i <= (CODE_CHUNK_SIZE - 4)) {
+      // First and last chunk
+      buffer[0] = 'L';
+      buffer[1] = 'E';
+    } else if (i == 0) {
+      // First chunk
+      buffer[0] = 'L';
+      buffer[1] = 'S';
+    } else if (code_len - i <= (CODE_CHUNK_SIZE - 4)) {
+      // Last chunk
+      buffer[0] = 'L';
+      buffer[1] = 'E';
+    } else {
+      // Intermediate chunk
+      buffer[0] = 'L';
+      buffer[1] = 'N';
+    }
 
-  //     // Add the scene and output identifiers
-  //     buffer[2] = '0' + scene;
-  //     buffer[3] = '0' + output;
+    // Add the scene and output identifiers
+    buffer[2] = '0' + scene;
+    buffer[3] = '0' + output;
 
-  //     // Calculate the chunk size for code data
-  //     uint16_t chunk_size = (code_len - i > (CODE_CHUNK_SIZE - 4))
-  //                               ? (CODE_CHUNK_SIZE - 4)
-  //                               : (code_len - i);
+    // Calculate the chunk size for code data
+    uint16_t chunk_size = (code_len - i > (CODE_CHUNK_SIZE - 4))
+                              ? (CODE_CHUNK_SIZE - 4)
+                              : (code_len - i);
 
-  //     // Copy code data into the buffer, starting after the header
-  //     memcpy(&buffer[4], &self->config[scene][output].code[i], chunk_size);
-  //     i += chunk_size;
+    // Copy code data into the buffer, starting after the header
+    memcpy(&buffer[4], &code[i], chunk_size);
+    i += chunk_size;
 
-  // #ifdef INCLUDE_MIDI
-  //     // Send the buffer as SysEx
-  //     send_buffer_as_sysex(
-  //         buffer,
-  //         4 + chunk_size);  // 4 for "LS"/"LE"/"LN", scene, output +
-  //         chunk_size
-  // #endif
-  //   }
+#ifdef INCLUDE_MIDI
+    // Send the buffer as SysEx
+    send_buffer_as_sysex(
+        buffer,
+        4 + chunk_size);  // 4 for "LS"/"LE"/"LN", scene, output + chunk_size
+#endif
+  }
+  // free code
+  free(code);
 }
 
 void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
@@ -467,61 +525,6 @@ bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
   }
   self->debounce_save = 0;
   return Yoctcoroe_do_save(self);
-}
-bool Yoctocore_do_load_code(Yoctocore *self, uint8_t scene, uint8_t output,
-                            char **code, FSIZE_t *code_len) {
-  FRESULT fr;
-  FIL file;
-  UINT br;
-  char fname[32];
-
-  // Create the filename (1-indexed)
-  snprintf(fname, sizeof(fname), "scene%d_output%d.lua", scene + 1, output + 1);
-
-  // Open the file
-  fr = f_open(&file, fname, FA_READ);
-  if (fr != FR_OK) {
-    printf("f_open error: %s (%d): %s\n", FRESULT_str(fr), fr, fname);
-    return false;
-  }
-
-  // Get the file size
-  *code_len = f_size(&file);
-  if (*code_len == 0) {
-    printf("%s is empty\n", fname);
-    f_close(&file);
-    return false;
-  }
-
-  // Allocate memory for the file contents
-  *code = (char *)malloc(*code_len + 1);
-  if (*code == NULL) {
-    printf("Failed to allocate memory\n");
-    f_close(&file);
-    return false;
-  }
-
-  // Read the file contents
-  fr = f_read(&file, *code, *code_len, &br);
-  if (fr != FR_OK || br != *code_len) {
-    printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
-    free(*code);
-    f_close(&file);
-    return false;
-  }
-
-  // Null-terminate the code
-  (*code)[*code_len] = '\0';
-
-  // Close the file
-  fr = f_close(&file);
-  if (fr != FR_OK) {
-    printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
-    free(*code);
-    return false;
-  }
-
-  return true;
 }
 
 bool Yoctocore_load_code(Yoctocore *self, uint8_t scene, uint8_t output) {

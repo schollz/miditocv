@@ -142,9 +142,9 @@ void timer_callback_beat(bool on, int user_data) {
     }
   } else if (config->mode == MODE_CODE && on) {
     // print_memory_usage();
-    if (luaRunOnBeat(user_data, 0)) {
-      out->voltage_set = luaGetVolts(user_data);
-    }
+    // if (luaRunOnBeat(user_data, 0)) {
+    //   out->voltage_set = luaGetVolts(user_data);
+    // }
     // // get volts
     // // TODO: get trigger and check triggering things
   }
