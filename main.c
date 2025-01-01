@@ -141,12 +141,9 @@ void timer_callback_beat(bool on, int user_data) {
       out->voltage_current = config->min_voltage;
     }
   } else if (config->mode == MODE_CODE && on) {
-    // print_memory_usage();
-    // if (luaRunOnBeat(user_data, 0)) {
-    //   out->voltage_set = luaGetVolts(user_data);
-    // }
-    // // get volts
-    // // TODO: get trigger and check triggering things
+    if (luaRunOnBeat(user_data, 0)) {
+      out->voltage_set = luaGetVolts(user_data);
+    }
   }
 }
 
@@ -804,10 +801,22 @@ int main() {
         out->mode_last = config->mode;
         switch (config->mode) {
           case MODE_CODE:
-            // TODO: load the new code environment
+            // load the new code environment
+            Yoctocore_load_code(&yocto, yocto.i, i);
             break;
           default:
             break;
+        }
+      } else {
+        // special case
+        if (config->mode == MODE_CODE) {
+          // check if the code has changed
+          if (out->code_updated) {
+            // load the new code
+            Yoctocore_load_code(&yocto, yocto.i, i);
+            // reset the flag
+            out->code_updated = false;
+          }
         }
       }
     }

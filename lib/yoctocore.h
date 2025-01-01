@@ -97,6 +97,7 @@ typedef struct Out {
   float voltage_calibration_intercept;
   float voltage_calibration_slope;
   int8_t mode_last;
+  bool code_updated;
 } Out;
 
 typedef struct Yoctocore {
@@ -168,43 +169,78 @@ void Yoctocore_schedule_save(Yoctocore *self) {
   self->debounce_save = to_ms_since_boot(get_absolute_time());
 }
 
-void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
-                        char *code, uint16_t code_len, bool append) {
-  // if (code_len == 0) {
-  //   return;
-  // }
+char *code_added = NULL;
+size_t code_added_len = 0;
 
-  // if (self->config[scene][output].code == NULL || !append) {
-  //   // Allocate memory and copy the new code
-  //   self->config[scene][output].code = (char *)malloc(code_len);
-  //   if (self->config[scene][output].code == NULL) {
-  //     // Handle memory allocation failure
-  //     printf("failed to allocate memory\n");
-  //     return;
-  //   }
-  //   memcpy(self->config[scene][output].code, code, code_len);
-  //   self->config[scene][output].code_len = code_len;
-  // } else {
-  //   // Append the new code to the existing code
-  //   uint16_t new_code_len = self->config[scene][output].code_len + code_len;
-  //   char *new_code = (char *)malloc(new_code_len + 1);
-  //   if (new_code == NULL) {
-  //     // Handle memory allocation failure
-  //     printf("failed to allocate memory\n");
-  //     return;
-  //   }
-  //   memcpy(new_code, self->config[scene][output].code,
-  //          self->config[scene][output].code_len);
-  //   memcpy(new_code + self->config[scene][output].code_len, code, code_len);
-  //   free(self->config[scene][output].code);
-  //   self->config[scene][output].code = new_code;
-  //   if (new_code_len > 0) {
-  //     // null terminate
-  //     self->config[scene][output].code[new_code_len] = '\0';
-  //   }
-  //   self->config[scene][output].code_len = new_code_len;
-  // }
-  // Yoctocore_schedule_save(self);
+void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
+                        char *code, uint16_t code_len, bool append,
+                        bool finish) {
+  if (code_len == 0) {
+    return;
+  }
+
+  if (code_added == NULL || !append) {
+    if (code_added != NULL) {
+      free(code_added);
+    }
+    // Allocate memory and copy the new code
+    code_added = (char *)malloc(code_len);
+    if (code_added == NULL) {
+      // Handle memory allocation failure
+      printf("failed to allocate memory\n");
+      return;
+    }
+    memcpy(code_added, code, code_len);
+    code_added_len = code_len;
+  } else {
+    // Append the new code to the existing code
+    size_t new_code_len = code_added_len + code_len;
+    char *new_code = (char *)malloc(new_code_len + 1);
+    if (new_code == NULL) {
+      // Handle memory allocation failure
+      printf("failed to allocate memory\n");
+      return;
+    }
+    memcpy(new_code, code_added, code_added_len);
+    memcpy(new_code + code_added_len, code, code_len);
+    free(code_added);
+    code_added = new_code;
+    if (new_code_len > 0) {
+      // null terminate
+      code_added[new_code_len] = '\0';
+    }
+    code_added_len = new_code_len;
+  }
+
+  if (finish) {
+    // write to disk
+    FRESULT fr;
+    FIL file;
+    UINT bw;
+    char fname[32];
+    snprintf(fname, sizeof(fname), "scene%d_output%d.lua", scene + 1,
+             output + 1);
+    fr = f_open(&file, fname, FA_WRITE | FA_CREATE_ALWAYS);
+    if (fr != FR_OK) {
+      printf("f_open error: %s (%d): %s\n", FRESULT_str(fr), fr, fname);
+      free(code_added);
+      return;
+    }
+    fr = f_write(&file, code_added, code_added_len, &bw);
+    if (fr != FR_OK || bw != code_added_len) {
+      printf("f_write error: %s (%d)\n", FRESULT_str(fr), fr);
+      free(code_added);
+      return;
+    }
+    fr = f_close(&file);
+    if (fr != FR_OK) {
+      printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
+    }
+    free(code_added);
+    // set code to be updated
+    self->out[output].code_updated = true;
+    printf("[%d%d] code %d bytes\n", scene, output, code_added_len);
+  }
 }
 
 bool Yoctocore_do_load_code(Yoctocore *self, uint8_t scene, uint8_t output,

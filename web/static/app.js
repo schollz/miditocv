@@ -722,22 +722,24 @@ end`,
                 console.log(`[uploadLua]: ${new_code}`);
                 if (window.yoctocoreDevice) {
                     console.log(`[executeLua]: uploading code`);
-                    // // upload the code to the device.
-                    // // split new_code into 32 byte chunks
-                    // let chunk_size = 32;
-                    // let num_chunks = Math.ceil(new_code.length / chunk_size);
-                    // for (let i = 0; i < num_chunks; i++) {
-                    //     let chunk = new_code.slice(i * chunk_size, (i + 1) * chunk_size);
-                    //     if (i == 0) {
-                    //         chunk = `LN${current_scene.value}${current_output.value}${chunk}`;
-                    //     } else {
-                    //         chunk = `LA${current_scene.value}${current_output.value}${chunk}`;
-                    //     }
-                    //     console.log(`[executeLua] ${chunk}`);
-                    //     // send chunk and wait 10 ms
-                    //     send_sysex(chunk);
-                    //     await new Promise(r => setTimeout(r, 10));
-                    // }
+                    // upload the code to the device.
+                    // split new_code into 32 byte chunks
+                    let chunk_size = 32;
+                    let num_chunks = Math.ceil(new_code.length / chunk_size);
+                    for (let i = 0; i < num_chunks; i++) {
+                        let chunk = new_code.slice(i * chunk_size, (i + 1) * chunk_size);
+                        if (i == 0) {
+                            chunk = `LN${current_scene.value}${current_output.value}${chunk}`;
+                        } else if (i == num_chunks - 1) {
+                            chunk = `LE${current_scene.value}${current_output.value}${chunk}`;
+                        } else {
+                            chunk = `LA${current_scene.value}${current_output.value}${chunk}`;
+                        }
+                        console.log(`[executeLua] ${chunk}`);
+                        // send chunk and wait 10 ms
+                        send_sysex(chunk);
+                        await new Promise(r => setTimeout(r, 10));
+                    }
                 }
             } catch (error) {
                 // show error in output

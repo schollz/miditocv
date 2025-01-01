@@ -3,7 +3,7 @@
 
 // #define DEBUG_MIDI 1
 #define MIDI_MAX_NOTES 128
-#define MIDI_MAX_TIME_ON 10000 // 10 seconds
+#define MIDI_MAX_TIME_ON 10000  // 10 seconds
 #define MIDI_RESET_EVERY_BEAT 16
 #define MIDI_CLOCK_MULTIPLIER 2
 
@@ -53,14 +53,12 @@ bool get_sysex_param_int_float_values(const char *param_name,
     value_str[length - param_len] = '\0';
 
     char *token = strtok(value_str, "_");
-    if (token == NULL)
-      return false;
+    if (token == NULL) return false;
 
     *out_int = strtol(token, NULL, 10);
 
     token = strtok(NULL, "_");
-    if (token == NULL)
-      return false;
+    if (token == NULL) return false;
     *out_value = strtof(token, NULL);
 
     return true;
@@ -90,22 +88,19 @@ bool get_sysex_param_int_and_two_float_values(const char *param_name,
 
     // Tokenize the string to extract the integer and two float values
     char *token = strtok(value_str, "_");
-    if (token == NULL)
-      return false;
+    if (token == NULL) return false;
 
     // Parse the integer
     *out_int = strtol(token, NULL, 10);
 
     // Parse the first float
     token = strtok(NULL, "_");
-    if (token == NULL)
-      return false;
+    if (token == NULL) return false;
     *out_value1 = strtof(token, NULL);
 
     // Parse the second float
     token = strtok(NULL, "_");
-    if (token == NULL)
-      return false;
+    if (token == NULL) return false;
     *out_value2 = strtof(token, NULL);
 
     return true;
@@ -161,13 +156,14 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   float val2;
   int vali;
   // check if sysex starts with LN (lua new)
-  if (sysex[0] == 'L' && (sysex[1] == 'A' || sysex[1] == 'N')) {
+  if (sysex[0] == 'L' &&
+      (sysex[1] == 'A' || sysex[1] == 'N' || sysex[1] == 'E')) {
     // 36 byte chunks are sent L[A|N]<scene><output><32bytes>
     printf("LA%d\n", length);
     uint8_t scene = sysex[2] - '0';
     uint8_t output = sysex[3] - '0';
     Yoctocore_add_code(&yocto, scene, output, (char *)sysex + 4, length - 4,
-                       sysex[1] == 'A');
+                       (sysex[1] == 'A' || sysex[1] == 'E'), sysex[1] == 'E');
   } else if (get_sysex_param_float_value("version", sysex, length, &val)) {
     printf("v1.0.0");
   } else if (get_sysex_param_float_value("diskmode", sysex, length, &val)) {
