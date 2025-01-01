@@ -512,7 +512,7 @@ const app = createApp({
         const scenes = ref(
             Array.from({ length: 8 }, () => ({
                 outputs: Array.from({ length: 8 }, () => ({
-                    mode: 10,
+                    mode: 0,
                     quantization: 0,
                     v_oct: 1.0,
                     root_note: 60,
@@ -655,6 +655,7 @@ end`,
                 outputCodeMirror.setValue(`${error}`);
                 return;
             }
+            let code_needs_upload = false;
             let output_num = current_output.value + 1;
             if (new_code != code_last) {
                 console.log(`[executeLua]: new state`);
@@ -666,6 +667,7 @@ end`,
                 code_last = new_code;
                 outputCodeMirror.setValue(`-- ${new_code.length} bytes`);
                 outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n-- volts\ttrigger\t${function_name}`);
+                code_needs_upload = true;
             }
             luaState.then(async (L) => {
                 let value;
@@ -677,6 +679,7 @@ end`,
                     }
                 } catch (error) {
                     value = error;
+                    code_needs_upload = false;
                 }
                 // wait for promise
                 await value;
@@ -699,7 +702,8 @@ end`,
             // set the new code to the current output of the current scene
             scenes.value[current_scene.value].outputs[current_output.value].code = new_code;
 
-            if (window.yoctocoreDevice) {
+            if (window.yoctocoreDevice && code_needs_upload) {
+                console.log(`[executeLua]: uploading code`);
                 // upload the code to the device.
                 // split new_code into 32 byte chunks
                 let chunk_size = 32;
