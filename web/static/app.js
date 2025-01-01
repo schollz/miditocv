@@ -290,7 +290,7 @@ function setupMidiInputListener() {
                         if (vm.current_scene == scene_num && vm.current_output == output_num) {
                             Vue.nextTick(() => {
                                 console.log(`[output_change] ${code_new}`);
-                                let beautify_code = LuaFormatter.beautifyLua(code_new).trim();
+                                let beautify_code = luaBeautifier.beautify(code_new).trim();
                                 console.log(`[output_change] ${beautify_code}`);
                                 myCodeMirror.setValue(beautify_code);
                                 outputCodeMirror.setValue("");
@@ -633,7 +633,7 @@ end`,
             document.getElementById('output').textContent = ''; // Clear the text content for the buffer
             // beautify the current code
             let code = scenes.value[current_scene.value].outputs[current_output.value].code;
-            let beautify_code = LuaFormatter.beautifyLua(code).trim();
+            let beautify_code = luaBeautifier.beautify(code).trim();
             myCodeMirror.setValue(beautify_code);
             setTimeout(() => {
                 myCodeMirror.refresh();
@@ -649,7 +649,7 @@ end`,
             let new_code = code;
             let beautify_code = code;
             try {
-                new_code = LuaFormatter.minifyLua(code).trim();
+                new_code = luamin.minify(code);
             } catch (error) {
                 console.log(`[executeLua]: ${error}`);
                 outputCodeMirror.setValue(`${error}`);
@@ -695,7 +695,7 @@ end`,
                 outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n  ${(Math.round(volts * 1000) / 1000).toFixed(3)}\t\t  ${trigger}\t\t  ${value}`);
             });
             // console.log(`[executeLua]: ${new_code}`);
-            beautify_code = LuaFormatter.beautifyLua(code).trim();
+            beautify_code = luaBeautifier.beautify(code).trim();
             myCodeMirror.setValue(beautify_code);
             // set the new code to the current output of the current scene
             scenes.value[current_scene.value].outputs[current_output.value].code = new_code;
@@ -708,7 +708,7 @@ end`,
                 let code = myCodeMirror.getValue();
                 let new_code = "";
                 try {
-                    new_code = LuaFormatter.minifyLua(code);
+                    new_code = luamin.minify(code);
                 } catch (error) {
                     // show error in output
                     outputCodeMirror.setValue(`${error}`);
@@ -839,7 +839,7 @@ end`,
             (newOutput) => {
                 console.log(`[output_change] ${current_scene.value} ${current_output.value}`);
                 Vue.nextTick(() => {
-                    let beautify_code = LuaFormatter.beautifyLua(newOutput.code).trim();
+                    let beautify_code = luaBeautifier.beautify(newOutput.code).trim();
                     console.log(`[output_change] ${beautify_code}`);
                     myCodeMirror.setValue(beautify_code);
                     clearLua();
