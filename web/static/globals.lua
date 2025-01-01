@@ -404,7 +404,7 @@ end
 
 local baseline_code = [[
 volts = 0
-trigger = 0
+trigger = false
 iteration_num = 0
 ]]
 function update_env(i, code)

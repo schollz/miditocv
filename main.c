@@ -140,6 +140,8 @@ void timer_callback_beat(bool on, int user_data) {
     } else {
       out->voltage_current = config->min_voltage;
     }
+  } else if (config->mode == MODE_CODE) {
+    // get the current bpm in the code
   }
 }
 

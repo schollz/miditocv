@@ -1,6 +1,8 @@
 // needed for lua
 #include <errno.h>
+#include <stdbool.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 int _link(const char *oldpath, const char *newpath) {
   errno = ENOSYS;
@@ -70,89 +72,115 @@ int luaInit() {
     return 1;
   }
 
-  // create 8 environments with a main() function that returns -10
+  // create 8 environments
   for (int i = 0; i < 8; i++) {
-    luaUpdateEnvironment(i, "function main() return -10,0 end");
+    luaUpdateEnvironment(i, "");
   }
 
   return 0;
 }
 
-int luaRunMain(int index, int beat, float *voltage, int *gate) {
-  lua_getglobal(L, "env_main");
-  if (!lua_isfunction(L, -1)) {
-    printf("[luaRunMain] env_main not defined or not a function.\n");
-    lua_pop(L, 1);
-    return 0;
-  }
-
+float luaGetBPM(int index) {
+  lua_getglobal(L, "envs");
   lua_pushinteger(L, index);
+  lua_gettable(L, -2);         // envs[index]
+  lua_getfield(L, -1, "bpm");  // envs[index].bpm
+  if (!lua_isnumber(L, -1)) {
+    printf("[luaGetBPM] envs[%d].bpm not defined or not a number.\n", index);
+    lua_pop(L, 3);  // Remove envs, envs[index], and error message
+    return 0.0f;
+  }
+  float bpm = lua_tonumber(L, -1);
+  lua_pop(L, 2);  // Remove envs[index] and bpm
+  return bpm;
+}
+
+float luaGetVolts(int index) {
+  lua_getglobal(L, "envs");
+  lua_pushinteger(L, index);
+  lua_gettable(L, -2);           // envs[index]
+  lua_getfield(L, -1, "volts");  // envs[index].volts
+  if (!lua_isnumber(L, -1)) {
+    printf("[luaGetVolts] envs[%d].volts not defined or not a number.\n",
+           index);
+    lua_pop(L, 3);  // Remove envs, envs[index], and error message
+    return 0.0f;
+  }
+  float volts = lua_tonumber(L, -1);
+  lua_pop(L, 2);  // Remove envs[index] and volts
+  return volts;
+}
+
+bool luaGetTrigger(int index) {
+  lua_getglobal(L, "envs");
+  lua_pushinteger(L, index);
+  lua_gettable(L, -2);             // envs[index]
+  lua_getfield(L, -1, "trigger");  // envs[index].trigger
+  bool trigger = lua_toboolean(L, -1);
+  lua_pop(L, 2);  // Remove envs[index] and trigger
+  return trigger;
+}
+
+bool luaRunOnBeat(int index, int beat) {
+  // if envs[index].on_beat(beat) then
+  //  run it with the current beat
+  // end
+  lua_getglobal(L, "envs");
+  lua_pushinteger(L, index);
+  lua_gettable(L, -2);             // envs[index]
+  lua_getfield(L, -1, "on_beat");  // envs[index].on_beat
+  if (!lua_isfunction(L, -1)) {
+    // printf("[luaRunOnBeat] envs[%d].on_beat not defined or not a
+    // function.\n",
+    //        index);
+    lua_pop(L, 3);  // Remove envs, envs[index], and error message
+    return false;
+  }
   lua_pushinteger(L, beat);
-
-  if (lua_pcall(L, 2, 2, 0) != LUA_OK) {
-    printf("[luaRunMain] error: %s\n", lua_tostring(L, -1));
-    lua_pop(L, 1);
-    return 0;
+  if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
+    printf("[luaRunOnBeat] error: %s\n", lua_tostring(L, -1));
+    lua_pop(L, 3);  // Remove envs, envs[index], and error message
+    return false;
   }
-
-  if (lua_gettop(L) < 2) {
-    printf("[luaRunMain] Not enough return values from env_main.\n");
-    lua_settop(L, 0);  // Clear the stack
-    return 0;
+  // return the result as a string
+  if (!lua_isstring(L, -1)) {
+    // printf("[luaRunOnBeat] envs[%d].on_beat did not return a string.\n",
+    // index);
+    lua_pop(L, 3);  // Remove envs, envs[index], and error message
+    return false;
   }
-
-  *gate = lua_tonumber(L, -1);
-  lua_pop(L, 1);
-  *voltage = lua_tonumber(L, -1);
-  lua_pop(L, 1);
-
-  return 1;
+  const char *result = lua_tostring(L, -1);
+  lua_pop(L, 2);  // Remove envs[index] and result
+  // print string
+  printf("env[%d].on_beat(%d): %s\n", index, beat, result);
+  return true;
 }
 
 int luaTest() {
   luaInit();
-
-  /*
-  a = S{60,62,S{70,75},67}
-  b = S{1,1,1,0}
-  c = S{10,13,15,S{17,20}}
-  function main(beat)
-      a:select(beat)
-      b:select(beat)
-      c:select(beat)
-      local u = a() + c()
-      -- gate(b()>0)
-      if (b()>0) then
-          trig()
-      end
-      -- trig()
-      if u~='skip' then
-          do return u end
-      end
-  end
-  */
   const char *code0 =
-      "a = S{60,62,S{70,75},67}\n"
-      "b = S{1,1,1,0}\n"
-      "c = S{10,13,15,S{17,20}}\n"
-      "function main(beat)\n"
-      "    a:select(beat)\n"
-      "    b:select(beat)\n"
-      "    c:select(beat)\n"
-      "    local u = a() + c()\n"
-      "    if (b()>0) then\n"
-      "        trig()\n"
-      "    end\n"
-      "    if u~='skip' then\n"
-      "        return u\n"
-      "    end\n"
-      "end";
+      "a=S{'a4','b4','c4'}\n"
+      "bpm = 120\n"
+      "volts = 5\n"
+      "function on_beat(beat)\n"
+      "  b = a()\n"
+      " volts = to_cv(b)\n"
+      " trigger = beat % 2 == 0\n"
+      "return b\n"
+      "end\n";
   luaUpdateEnvironment(0, code0);
-  for (uint8_t i = 0; i < 8; i++) {
-    float v;
-    int gate;
-    luaRunMain(0, i, &v, &gate);
-    printf("Result: %f %d\n", v, gate);
+  const char *code1 = "volts=10;";
+  luaUpdateEnvironment(1, code1);
+  // get bpm from env 0
+  printf("bpm0: %f\n", luaGetBPM(0));
+  printf("bpm1: %f\n", luaGetBPM(1));
+  for (uint8_t beat = 0; beat < 16; beat++) {
+    for (uint8_t channel = 0; channel < 2; channel++) {
+      if (luaRunOnBeat(channel, beat)) {
+        printf("volts0: %f, %d\n", luaGetVolts(channel),
+               luaGetTrigger(channel));
+      }
+    }
   }
 
   return 0;
