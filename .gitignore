@@ -5,9 +5,9 @@ web/*pem
 *.npy
 *.d
 *LuaJS/*
-*.parcel-cache/*
-*dist/*
-**node_modules/*
+web/.parcel-cache/*
+web/dist/*
+web/node_modules/*
 
 package-lock.json
 test.py
