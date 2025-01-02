@@ -518,13 +518,11 @@
           await L.run(data);
         });
         await window.luaState;
-        console.log(`[LuaJS] setting lua environments`);
-        console.log(data);
+        console.log(`[LuaJS] created lua environments`);
       } catch (error) {
         console.error('Error fetching or setting up Lua environment:', error);
       }
     }
-
     initializeLuaJS();
   </script>
 
