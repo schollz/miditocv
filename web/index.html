@@ -12,15 +12,11 @@
   <link rel="stylesheet" href="/static/codemirror.css">
   <link rel="stylesheet" href="/static/material-darker.css">
   <script src="/static/lua.js"></script>
-  <!-- https://github.com/schollz/luamin.js -->
-  <script src="/static/index.f2c0ec77.js"></script>
-  <!-- https://github.com/schollz/luabeautifier.js -->
-  <script src="/static/index.3d214d75.js"></script>
-  <script src="/static/lua-formatter.js"></script>
   <link rel="stylesheet" href="/static/globals-adj.css">
 </head>
 
 <body>
+  <script src="index.js" type="module"></script>
   <div id="app" class="app">
     <h1>yoctocore <span v-if="device_connected">- device connected</span><span v-else>- device not connected</span></h1>
     <div class="row">
@@ -510,20 +506,28 @@
   </div>
 
   <script type="module">
-    import emscriptenInit from '/static/dist/luajs.mjs';
-    const LuaJS = await emscriptenInit();
-    window.LuaJS = LuaJS;
-    window.luaState = LuaJS.newState();
-    fetch('/static/globals.lua')
-      .then(response => response.text())
-      .then(data => {
-        console.log(`[LuaJS] setting lua environemnts`);
-        luaState = LuaJS.newState();
-        luaState.then(async (L) => {
+    async function initializeLuaJS() {
+      const emscriptenInit = (await import('/static/dist/luajs.mjs')).default;
+      const LuaJS = await emscriptenInit();
+      window.LuaJS = LuaJS;
+      try {
+        const response = await fetch(window.globalsLua);
+        const data = await response.text();
+        window.luaState = window.LuaJS.newState();
+        window.luaState.then(async (L) => {
           await L.run(data);
         });
-      });
+        await window.luaState;
+        console.log(`[LuaJS] setting lua environments`);
+        console.log(data);
+      } catch (error) {
+        console.error('Error fetching or setting up Lua environment:', error);
+      }
+    }
+
+    initializeLuaJS();
   </script>
+
 
   <script src="/static/app.js"></script>
 

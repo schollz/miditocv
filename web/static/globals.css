@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+
 :root {
     --bg-color: #fff;
     --text-color: #000;
@@ -34,14 +36,12 @@
     --text-color-disabled: #a0a0a0;
 }
 
-/* Importing a Monochrome Font */
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
 
 
 @font-face {
     font-family: 'MonaspaceNeon';
-    src: url('static/neon/MonaspaceNeon-Regular.woff2') format('woff2'),
-        url('static/neon/MonaspaceNeon-Regular.woff') format('woff');
+    src: url('/static/neon/MonaspaceNeon-Regular.woff2') format('woff2'),
+        url('/static/neon/MonaspaceNeon-Regular.woff') format('woff');
     font-weight: 500;
     font-style: normal;
 }
