@@ -891,6 +891,13 @@ int main() {
       if (config->mode == MODE_CLOCK || config->mode == MODE_CODE) {
         SimpleTimer_start(&pool_timer[i]);
         // check bpm
+        if (config->mode == MODE_CODE) {
+          // get bpm
+          float code_bpm = luaGetBPM(i);
+          if (code_bpm > 30 && code_bpm < 300) {
+            config->clock_tempo = code_bpm;
+          }
+        }
         if (config->clock_tempo > 0) {
           SimpleTimer_update_bpm(&pool_timer[i], config->clock_tempo,
                                  division_values[config->clock_division]);
