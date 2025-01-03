@@ -51,6 +51,8 @@
 #define PARAM_CODE_LEN 709259102
 #define PARAM_NOTE_TUNING 2686914255
 
+#define MAGIC_UINT16 0x5A5A
+
 typedef struct Config {
   uint8_t mode;
   float min_voltage;
@@ -75,6 +77,7 @@ typedef struct Config {
   uint8_t linked_to;
   uint8_t probability;
   int16_t note_tuning;
+  uint16_t magic;
 } Config;
 
 typedef struct NoteHeld {
@@ -139,6 +142,7 @@ void Yoctocore_init(Yoctocore *self) {
       self->config[scene][output].linked_to = 0;
       self->config[scene][output].probability = 100;
       self->config[scene][output].note_tuning = 0;
+      self->config[scene][output].magic = MAGIC_UINT16;
     }
     // initialize lfo
     Noise_init(&self->out[output].noise, time_us_32());
@@ -607,6 +611,7 @@ bool Yoctocore_load(Yoctocore *self) {
       fr = f_read(&file, &self->config[scene][output], sizeof(Config), &br);
       if (FR_OK != fr) {
         printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
+        Yoctocore_init(self);
         return false;
       }
     }
@@ -615,7 +620,20 @@ bool Yoctocore_load(Yoctocore *self) {
   fr = f_close(&file);
   if (FR_OK != fr) {
     printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
+    Yoctocore_init(self);
     return false;
+  }
+
+  // check the magic numbers
+  for (uint8_t scene = 0; scene < 8; scene++) {
+    for (uint8_t output = 0; output < 8; output++) {
+      if (self->config[scene][output].magic != MAGIC_UINT16) {
+        printf("magic number mismatch\n");
+        // initialize the config
+        Yoctocore_init(self);
+        return false;
+      }
+    }
   }
   return true;
 }
