@@ -50,22 +50,20 @@ You can also return values from the functions, which is useful in debugging as i
 
 Here are examples of the functions.
 
-### `on_beat(beat)`
+### `on_beat(on)`
 
-This function is called every time a beat is detected. The `beat` is a number that increments every beat. You can return two numbers: the first is the voltage to set to the output and the second is a boolean of whether to trigger the output (if any envelopes or gates are linked to this). 
+This function is called every time a beat is detected. The `on` is a boolean for whether it is on the top of the beat or the bottom.
 
 ```lua
 bpm = 120 -- define bpm
--- local variables
-local envelope_trigger = false  
 local voltage_increase = 0
-function on_beat(beat)
+function on_beat(on)
     voltage_increase = voltage_increase + 0.1
     if voltage_increase > 10 then
         voltage_increase = 0
     end
     volts = voltage_increase
-    trigger = beat%2==0
+    trigger = on
 end
 ```
 
@@ -157,6 +155,19 @@ end
 ```
 
 ## Code Helper Functions
+
+### `er(k,n,w)`
+
+This function generates a sequins sequence for euclidean rhythms. The `k` is the number of hits, the `n` is the number of steps, and the `w` is the rotation of the sequence.
+
+```lua
+riddim = er(3,8,0) -- generates a euclidean rhythm with 3 hits in 8 steps
+function on_beat(on)
+    if on then 
+        trigger = riddim()
+    end
+end
+```
 
 ### `to_cv(value)`
 

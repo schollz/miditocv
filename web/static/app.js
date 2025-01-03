@@ -545,11 +545,12 @@ const app = createApp({
 	'd4',
 	'e4',
 }
+riddim = er(7,16)
 bpm = 60
 function on_beat(on)
 	local v = note_vals()
 	volts = to_cv(v)
-    trigger = on
+    trigger = riddim()
 	return v
 end`,
                     duration: 1,
