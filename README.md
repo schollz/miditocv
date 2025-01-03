@@ -19,7 +19,7 @@ The **bold** things are implemented.
 | Key Pressure     | **listen**    |               |                 |                   |               |
 | Channel Pressure | **listen**    |               |                 |                   |               |
 | Pitch bend       | **listen**    |               |                 |                   |               |
-| Clock            | start/stop    | tempo         | tap tempo       | division          |               |
+| Clock            | start/stop    |               | tap tempo       | division          | tempo         |
 | LFO              | pause         | period        | max voltage     | shape             |               |
 | Code             | key(on,shift) | knob(x,shift) | key(on,shift)   | knob(x,shift)     |               |
 
