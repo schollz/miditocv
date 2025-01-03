@@ -519,7 +519,7 @@ select:disabled:hover {
     height: 35px;
     /* Adjust as needed */
     display: block;
-    margin-bottom: 0.25em;
+    margin-bottom: 1em;
 }
 
 /* Slider container to hold the range slider */

@@ -38,7 +38,7 @@ function drawSparkline(index, data, mode) {
     // Resize canvas to fit parent
     const parent = canvas.parentElement;
     canvas.width = parent.offsetWidth;
-    canvas.height = 35; // Fixed height
+    canvas.height = 40; // Fixed height
 
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -495,17 +495,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // // ask for sparkline data (doubles as check if connected)
         const sparkline_update_time_ms = 50;
         setTimeout(() => {
-            // setInterval(() => {
-            //     if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
-            //         window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
-            //     }
-            //     // need to fix this to prevent multiple connects
-            //     // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
-            //     //     vm.device_connected = false;
-            //     //     setupMidi();
-            //     // }
-            // }, sparkline_update_time_ms);
-        }, 2000);
+            setInterval(() => {
+                if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
+                    window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
+                }
+                // need to fix this to prevent multiple connects
+                // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
+                //     vm.device_connected = false;
+                //     setupMidi();
+                // }
+            }, sparkline_update_time_ms);
+        }, 3000);
 
     }
 
