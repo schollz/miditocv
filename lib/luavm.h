@@ -82,74 +82,91 @@ int luaInit() {
 }
 
 float luaGetBPM(int index) {
-  lua_getglobal(L, "envs");
-  lua_pushinteger(L, index);
-  lua_gettable(L, -2);         // envs[index]
-  lua_getfield(L, -1, "bpm");  // envs[index].bpm
-  if (!lua_isnumber(L, -1)) {
-    printf("[luaGetBPM] envs[%d].bpm not defined or not a number.\n", index);
-    lua_pop(L, 3);  // Remove envs, envs[index], and error message
-    return 0.0f;
+  lua_getglobal(L, "envs");   // Push envs onto the stack
+  if (!lua_istable(L, -1)) {  // Check if envs is a table
+    lua_pop(L, 1);            // Pop envs
+    return -1;
   }
+
+  lua_pushinteger(L, index);
+  lua_gettable(L, -2);        // Push envs[index] onto the stack
+  if (!lua_istable(L, -1)) {  // Check if envs[index] is a table
+    lua_pop(L, 2);            // Pop envs and envs[index]
+    return -1;
+  }
+
+  lua_getfield(L, -1, "bpm");  // Push envs[index].bpm onto the stack
+  if (!lua_isnumber(L, -1)) {  // Check if bpm is a number
+    lua_pop(L, 3);             // Pop envs, envs[index], and bpm
+    return -1;
+  }
+
   float bpm = lua_tonumber(L, -1);
-  lua_pop(L, 2);  // Remove envs[index] and bpm
+  lua_pop(L, 3);  // Pop bpm, envs[index], and envs
+  lua_gc(L, LUA_GCCOLLECT, 0);
   return bpm;
 }
 
-float luaGetVolts(int index) {
-  lua_getglobal(L, "envs");
-  lua_pushinteger(L, index);
-  lua_gettable(L, -2);           // envs[index]
-  lua_getfield(L, -1, "volts");  // envs[index].volts
-  if (!lua_isnumber(L, -1)) {
-    printf("[luaGetVolts] envs[%d].volts not defined or not a number.\n",
-           index);
-    lua_pop(L, 3);  // Remove envs, envs[index], and error message
-    return 0.0f;
-  }
-  float volts = lua_tonumber(L, -1);
-  lua_pop(L, 2);  // Remove envs[index] and volts
-  return volts;
-}
-
-bool luaGetTrigger(int index) {
-  lua_getglobal(L, "envs");
-  lua_pushinteger(L, index);
-  lua_gettable(L, -2);             // envs[index]
-  lua_getfield(L, -1, "trigger");  // envs[index].trigger
-  bool trigger = lua_toboolean(L, -1);
-  lua_pop(L, 2);  // Remove envs[index] and trigger
-  return trigger;
-}
-
-bool luaRunOnBeat(int index, bool on) {
-  lua_getglobal(L, "envs");
-  lua_pushinteger(L, index);
-  lua_gettable(L, -2);             // envs[index]
-  lua_getfield(L, -1, "on_beat");  // envs[index].on_beat
-  if (!lua_isfunction(L, -1)) {
-    // printf("[luaRunOnBeat] envs[%d].on_beat not defined or not a
-    //        function.\n ",index);
-    lua_pop(L, 3);  // Remove envs, envs[index], and error message
+bool luaRunOnBeat(int index, bool on, float *volts, bool *trigger) {
+  lua_getglobal(L, "envs");   // Push envs onto the stack
+  if (!lua_istable(L, -1)) {  // Check if envs is a table
+    lua_pop(L, 1);            // Pop envs
     return false;
   }
-  lua_pushboolean(L, on);
-  if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
+
+  lua_pushinteger(L, index);
+  lua_gettable(L, -2);        // Push envs[index] onto the stack
+  if (!lua_istable(L, -1)) {  // Check if envs[index] is a table
+    lua_pop(L, 2);            // Pop envs and envs[index]
+    return false;
+  }
+
+  lua_getfield(L, -1, "on_beat");  // Push envs[index].on_beat onto the stack
+  if (!lua_isfunction(L, -1)) {    // Check if on_beat is a function
+    lua_pop(L, 3);                 // Pop envs, envs[index], and on_beat
+    return false;
+  }
+
+  lua_pushboolean(L, on);  // Push the argument for on_beat
+  if (lua_pcall(L, 1, LUA_MULTRET, 0) !=
+      LUA_OK) {  // Call on_beat with 1 argument, expecting 1 return
     printf("[luaRunOnBeat] error: %s\n", lua_tostring(L, -1));
-    lua_pop(L, 3);  // Remove envs, envs[index], and error message
+    lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
     return false;
   }
-  // return the result as a string
-  if (!lua_isstring(L, -1)) {
-    // printf("[luaRunOnBeat] envs[%d].on_beat did not return a string.\n",
-    // index);
-    lua_pop(L, 3);  // Remove envs, envs[index], and error message
+
+  // Check how many results were returned
+  int num_results = lua_gettop(L) - 2;
+  // Process the results if needed
+  if (num_results > 0) {
+    // uncomment to print result
+    // if (lua_isstring(L, -1)) {
+    //   const char *result = lua_tostring(L, -1);
+    //   printf("Result: %s\n", result);
+    // }
+    // Pop all results to clean up the stack
+    lua_pop(L, num_results);
+  }
+
+  // get volts
+  lua_getfield(L, -1, "volts");
+  if (!lua_isnumber(L, -1)) {
+    lua_pop(L, 3);  // Pop envs[index] and volts
     return false;
   }
-  const char *result = lua_tostring(L, -1);
-  lua_pop(L, 2);  // Remove envs[index] and result
-  // print string
-  // printf("env[%d].on_beat(%d): %s\n", index, beat, result);
+  *volts = lua_tonumber(L, -1);
+  lua_pop(L, 1);  // Pop volts
+
+  // get trigger
+  lua_getfield(L, -1, "trigger");
+  if (!lua_isboolean(L, -1)) {
+    lua_pop(L, 3);  // Pop envs[index] and trigger
+    return false;
+  }
+  *trigger = lua_toboolean(L, -1);
+  lua_pop(L, 3);  // Pop trigger and envs[index]
+
+  lua_gc(L, LUA_GCCOLLECT, 0);
   return true;
 }
 
@@ -173,12 +190,15 @@ int luaTest() {
   printf("bpm1: %f\n", luaGetBPM(1));
   for (uint8_t beat = 0; beat < 16; beat++) {
     for (uint8_t channel = 0; channel < 2; channel++) {
-      if (luaRunOnBeat(channel, beat % 2 == 0)) {
-        printf("volts0: %f, %d\n", luaGetVolts(channel),
-               luaGetTrigger(channel));
+      float volts;
+      bool trigger;
+      if (luaRunOnBeat(channel, beat % 2 == 0, &volts, &trigger)) {
+        printf("volts0: %f, %d\n", volts, trigger);
       }
     }
   }
+
+  lua_close(L);
 
   return 0;
 }

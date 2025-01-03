@@ -578,6 +578,11 @@ bool Yoctocore_load_code(Yoctocore *self, uint8_t scene, uint8_t output) {
     free(code);
     return false;
   }
+  // print out the code
+  printf("code %d bytes\n", code_len);
+  sleep_ms(100);
+  printf("code: %s\n", code);
+  sleep_ms(100);
   // Update the environment with the loaded code
   bool result = (luaUpdateEnvironment(output, code) == 0);
   // Free the allocated memory

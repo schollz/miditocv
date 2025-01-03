@@ -141,10 +141,13 @@ void timer_callback_beat(bool on, int user_data) {
     } else {
       out->voltage_current = config->min_voltage;
     }
-  } else if (config->mode == MODE_CODE && on) {
-    if (luaRunOnBeat(user_data, on)) {
-      out->voltage_set = luaGetVolts(user_data);
-      bool trigger = luaGetTrigger(user_data);
+  } else if (config->mode == MODE_CODE) {
+    print_memory_usage();
+    float volts;
+    bool trigger;
+    if (luaRunOnBeat(user_data, on, &volts, &trigger)) {
+      out->voltage_set = volts;
+      bool trigger = trigger;
       // find any linked outputs and activate the envelope
       for (uint8_t i = 0; i < 8; i++) {
         Config *config = &yocto.config[yocto.i][i];
@@ -152,13 +155,13 @@ void timer_callback_beat(bool on, int user_data) {
         if (config->linked_to == user_data + 1) {
           if (config->mode == MODE_ENVELOPE) {
             // trigger the envelope
-            printf("[out%d] env_off linked to out%d\n", i + 1,
-                   config->linked_to);
+            // printf("[out%d] env_off linked to out%d\n", i + 1,
+            //        config->linked_to);
             ADSR_gate(&out->adsr, on, ct);
           } else if (config->mode == MODE_GATE) {
             // trigger the gate
-            printf("[out%d] gate_off linked to out%d\n", i + 1,
-                   config->linked_to);
+            // printf("[out%d] gate_off linked to out%d\n", i + 1,
+            //        config->linked_to);
             if (on) {
               out->voltage_set = config->max_voltage;
             } else {
@@ -370,13 +373,14 @@ void midi_note_on(int channel, int note, int velocity) {
       if (outs_with_note_change[config->linked_to - 1]) {
         if (config->mode == MODE_ENVELOPE) {
           // trigger the envelope
-          printf("[out%d] env_on linked to out%d\n", i + 1, config->linked_to);
-          // set the max level to scale with the velocity
+          // printf("[out%d] env_on linked to out%d\n", i + 1,
+          // config->linked_to); set the max level to scale with the velocity
           out->adsr.max = linlin((float)velocity, 0.0f, 127.0f, 0.0f, 1.0f);
           ADSR_gate(&out->adsr, 1, ct);
         } else if (config->mode == MODE_GATE) {
           // trigger the gate
-          printf("[out%d] gate_on linked to out%d\n", i + 1, config->linked_to);
+          // printf("[out%d] gate_on linked to out%d\n", i + 1,
+          // config->linked_to);
           out->voltage_set = config->max_voltage;
         }
       }
@@ -708,6 +712,8 @@ int main() {
 
   // initialize lua
   luaInit();
+  sleep_ms(1000);
+  print_memory_usage();
 
   // initialize the yoctocore
   Yoctocore_init(&yocto);

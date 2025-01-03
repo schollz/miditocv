@@ -451,6 +451,7 @@ local baseline_code = [[
 volts = 0
 trigger = false
 iteration_num = 0
+bpm = 0
 ]]
 function update_env(i, code)
     print("[globals.lua] updating " .. i)

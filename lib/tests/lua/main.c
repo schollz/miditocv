@@ -11,5 +11,7 @@
 
 int main() {
   luaTest();
+  // print memory usage
+
   return 0;
 }
