@@ -545,9 +545,11 @@ const app = createApp({
 	'd4',
 	'e4',
 }
-function on_beat(beat)
+bpm = 60
+function on_beat(on)
 	local v = note_vals()
 	volts = to_cv(v)
+    trigger = on
 	return v
 end`,
                     duration: 1,

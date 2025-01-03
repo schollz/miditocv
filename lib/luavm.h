@@ -122,7 +122,7 @@ bool luaGetTrigger(int index) {
   return trigger;
 }
 
-bool luaRunOnBeat(int index, int beat) {
+bool luaRunOnBeat(int index, bool on) {
   lua_getglobal(L, "envs");
   lua_pushinteger(L, index);
   lua_gettable(L, -2);             // envs[index]
@@ -133,7 +133,7 @@ bool luaRunOnBeat(int index, int beat) {
     lua_pop(L, 3);  // Remove envs, envs[index], and error message
     return false;
   }
-  lua_pushinteger(L, beat);
+  lua_pushboolean(L, on);
   if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
     printf("[luaRunOnBeat] error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 3);  // Remove envs, envs[index], and error message
@@ -159,10 +159,10 @@ int luaTest() {
       "a=S{'a4','b4','c4'}\n"
       "bpm = 120\n"
       "volts = 5\n"
-      "function on_beat(beat)\n"
+      "function on_beat(on)\n"
       "  b = a()\n"
       " volts = to_cv(b)\n"
-      " trigger = beat % 2 == 0\n"
+      " trigger = on\n"
       "return b\n"
       "end\n";
   luaUpdateEnvironment(0, code0);
@@ -173,7 +173,7 @@ int luaTest() {
   printf("bpm1: %f\n", luaGetBPM(1));
   for (uint8_t beat = 0; beat < 16; beat++) {
     for (uint8_t channel = 0; channel < 2; channel++) {
-      if (luaRunOnBeat(channel, beat)) {
+      if (luaRunOnBeat(channel, beat % 2 == 0)) {
         printf("volts0: %f, %d\n", luaGetVolts(channel),
                luaGetTrigger(channel));
       }

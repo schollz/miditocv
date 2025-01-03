@@ -131,6 +131,7 @@ const uint8_t const_colors[11][3] = {
 };
 
 void timer_callback_beat(bool on, int user_data) {
+  uint32_t ct = to_ms_since_boot(get_absolute_time());
   Config *config = &yocto.config[yocto.i][user_data];
   Out *out = &yocto.out[user_data];
   if (config->mode == MODE_CLOCK) {
@@ -141,8 +142,31 @@ void timer_callback_beat(bool on, int user_data) {
       out->voltage_current = config->min_voltage;
     }
   } else if (config->mode == MODE_CODE && on) {
-    if (luaRunOnBeat(user_data, 0)) {
+    if (luaRunOnBeat(user_data, on)) {
       out->voltage_set = luaGetVolts(user_data);
+      bool trigger = luaGetTrigger(user_data);
+      // find any linked outputs and activate the envelope
+      for (uint8_t i = 0; i < 8; i++) {
+        Config *config = &yocto.config[yocto.i][i];
+        Out *out = &yocto.out[i];
+        if (config->linked_to == user_data + 1) {
+          if (config->mode == MODE_ENVELOPE) {
+            // trigger the envelope
+            printf("[out%d] env_off linked to out%d\n", i + 1,
+                   config->linked_to);
+            ADSR_gate(&out->adsr, on, ct);
+          } else if (config->mode == MODE_GATE) {
+            // trigger the gate
+            printf("[out%d] gate_off linked to out%d\n", i + 1,
+                   config->linked_to);
+            if (on) {
+              out->voltage_set = config->max_voltage;
+            } else {
+              out->voltage_set = config->min_voltage;
+            }
+          }
+        }
+      }
     }
   }
 }
