@@ -27,6 +27,21 @@ The **bold** things are implemented.
 
 The yoctocore is programmable with the [Lua language](https://www.lua.org/manual/5.4/manual.html), a powerful, efficient, lightweight, embeddable scripting language. 
 
+It is currently under development. Here is the implementation status:
+
+- [x] [`on_beat(on)`](#on_beaton)
+- [ ] [`on_knob(value,shift)`](#on_knobvalueshift)
+- [ ] [`on_button(value,shift)`](#on_buttonvalueshift)
+- [ ] [`on_note_on(channel,note,velocity)`](#on_note_onchannelnotevelocity)
+- [ ] [`on_note_off(channel,note)`](#on_note_offchannelnote)
+- [ ] [`on_cc(channel,cc,value)`](#on_ccchannelccvalue)
+- [ ] [`on_key_pressure(channel,key,pressure)`](#on_key_pressurechannelkeypressure)
+- [ ] [`on_channel_pressure(channel,pressure)`](#on_channel_pressurechannelpressure)
+- [ ] [`on_pitch_bend(channel,pitch)`](#on_pitch_bendchannelpitch)
+- [x] [`er(k,n,w)`](#erknw)
+- [x] [`to_cv(value)`](#to_cvvalue)
+- [x] [`S` - A Minimal Sequencing Library](#s---a-minimal-sequencing-library)
+
 The yoctocore has [an online editor](https://my.yoctocore.com) that you can use to test out your programs.
 
 Yoctocore programs are based around a set of [callback functions](https://en.wikipedia.org/wiki/Callback_(computer_programming)) that are run on specific routines.
@@ -69,12 +84,12 @@ end
 
 This function is special, in that it *can be linked to a clock output*, but if it is not linked to a clock output it will run at the tempo defined by the `bpm` variable.
 
-### `on_knob(value,shift,button)`
+### `on_knob(value,shift)`
 
-This function exposes the knob events. The `value` is the knob value (0-1023), the `shift` is a boolean of whether the shift button is pressed, and the `button` is the boolean of whether the button next to the knob is pressed.
+This function exposes the knob events. The `value` is the knob value (0-1023), the `shift` is a boolean of whether the shift button is pressed.
 
 ```lua
-function on_knob(value,shift,button)
+function on_knob(value,shift)
     if shift then 
         volts = value/1023.0
     else
