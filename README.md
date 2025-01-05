@@ -11,7 +11,7 @@ The **bold** things are implemented.
 
 | Category         | Button        | Knob          | Shift + Button  | Shift + Knob      | Button + Knob |
 | ---------------- | ------------- | ------------- | --------------- | ----------------- | ------------- |
-| Note             |               |               | **tuning note** | **change tuning** | **voltage**   |
+| Note             | listen        |               | **tuning note** | **change tuning** | **voltage**   |
 | Envelope         | **trigger**   | **attack**    |                 | **sustain**       | **release**   |
 | Gate             | **trigger**   |               |                 | probability       |               |
 | CC               | **listen**    |               |                 |                   |               |
