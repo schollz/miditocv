@@ -1000,13 +1000,13 @@ int main() {
               scale_quantize_voltage(config->quantization, config->root_note,
                                      config->v_oct, out->voltage_set);
           break;
-      case MODE_NOTE:
+        case MODE_NOTE:
           // mode pitch will set the voltage based on midi note
           // button + knob will override and set the voltage
           if (knob_val != -1 && button_val) {
-              // change the set voltage
-              out->voltage_set = linlin(knob_val, 0.0f, 1023.0f,
-                                        config->min_voltage, config->max_voltage);
+            // change the set voltage
+            out->voltage_set = linlin(knob_val, 0.0f, 1023.0f,
+                                      config->min_voltage, config->max_voltage);
           }
           // slew the voltage
           out->voltage_current = Slew_process(&out->slew, out->voltage_set, ct);
