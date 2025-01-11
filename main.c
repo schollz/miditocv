@@ -973,10 +973,9 @@ int main() {
       switch (config->mode) {
         case MODE_LFO:
           // mode lfo will set the voltage based on lfo
+          float old_period = config->lfo_period;
 
           if (knob_val != -1) {
-            float old_period = config->lfo_period;
-
             config->lfo_period = 10.1f - linlin(knob_val, 0.00001f, 1023.0f,
                                                     0.1f, 10.f);
             // printf("changed lfo %d period: %f -> %f\n", i, old_period, config->lfo_period);
@@ -985,7 +984,7 @@ int main() {
           // NB: `step` is basically how much % of the period got elapsed
           uint32_t elapsed_ms = ct - lfo_ct_last[i];
           lfo_ct_last[i] = ct;
-          float step = elapsed_ms / (config->lfo_period * 1000.f);
+          float step = elapsed_ms / (old_period * 1000.f);
           lfo_index_acc[i] = fmod(lfo_index_acc[i] + step, 1.f);
 
           // if (button_val) {
