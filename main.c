@@ -1017,6 +1017,15 @@ int main() {
               Slew_process(&out->portamento, out->voltage_current, ct);
           break;
         case MODE_CLOCK:
+          if (knob_val != -1 && button_val && !button_shift) {
+            // set the tempo
+            config->clock_tempo = linlin(knob_val, 0.0f, 1023.0f, 30.0, 300.0);
+            Yoctocore_schedule_save(&yocto);
+          } else if (knob_val != -1 && !button_val && button_shift) {
+            // set the division
+            config->clock_division = linlin(knob_val, 0.0f, 1023.0f, 0, 19);
+            Yoctocore_schedule_save(&yocto);
+          }
           break;
         case MODE_CODE:
           out->voltage_current = out->voltage_set;
