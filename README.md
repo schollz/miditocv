@@ -13,7 +13,7 @@ The **bold** things are implemented.
 | ---------------- | ------------- | ------------- | --------------- | ----------------- | ------------- |
 | Note             | listen        |               | **tuning note** | **change tuning** | **voltage**   |
 | Envelope         | **trigger**   | **attack**    |                 | **sustain**       | **release**   |
-| Gate             | **trigger**   |               |                 | probability       |               |
+| Gate             | **trigger**   |               |                 | **probability**   |               |
 | CC               | **listen**    |               |                 |                   |               |
 | Program change   | **listen**    |               |                 |                   |               |
 | Key Pressure     | **listen**    |               |                 |                   |               |

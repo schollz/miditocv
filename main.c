@@ -1023,6 +1023,14 @@ int main() {
           out->voltage_current = out->voltage_set;
           break;
         case MODE_GATE:
+          if (knob_val != -1) {
+            if (button_shift) {
+              // shift + knob will set the probability
+              config->probability = linlin(knob_val, 0.0f, 1023.0f, 0.0, 100.0);
+            }
+            Yoctocore_schedule_save(&yocto);
+          }
+
           out->voltage_current = out->voltage_set;
           break;
         default:
