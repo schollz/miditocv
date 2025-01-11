@@ -900,7 +900,13 @@ int main() {
             case MODE_CLOCK:
               // start and stop the clock
               if (button_shift && val) {
-                // TODO: tap tempo
+                // tap tempo
+                uint16_t bpm_tempo = TapTempo_tap(&out->taptempo);
+                if (bpm_tempo > 30 && bpm_tempo < 300) {
+                  config->clock_tempo = bpm_tempo;
+                  printf("[out%d] tap tempo %d\n", i + 1, bpm_tempo);
+                  Yoctocore_schedule_save(&yocto);
+                }
               } else if (val) {
                 // start/stop
                 out->clock_disabled = !out->clock_disabled;
