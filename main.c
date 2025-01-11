@@ -135,7 +135,7 @@ void timer_callback_beat(bool on, int user_data) {
   Config *config = &yocto.config[yocto.i][user_data];
   Out *out = &yocto.out[user_data];
   if (config->mode == MODE_CLOCK) {
-    if (on && !config->clock_disabled) {
+    if (on && !out->clock_disabled) {
       // trigger the clock
       out->voltage_current = config->max_voltage;
     } else {
