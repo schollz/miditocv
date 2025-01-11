@@ -346,23 +346,31 @@ void midi_note_on(int channel, int note, int velocity) {
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_NOTE &&
-        (config->midi_channel == channel || config->midi_channel == 0) &&
-        (out->note_on.time_on == 0 ||
-         (ct - out->note_on.time_on) > MAX_NOTE_HOLD_TIME_MS) &&
-        random_integer_in_range(0, 99) < config->probability) {
-      // set the voltage for the pitch
-      out->note_on.note = note;
-      out->note_on.time_on = ct;
-      out->voltage_set =
-          (float)(note - config->root_note) * config->v_oct / 12.0f +
-          config->min_voltage;
-      outs_with_note_change[i] = true;
+    if (config->mode == MODE_NOTE) {
+      // check if button is pressed
+      if (button_values[i]) {
+        // learn the channel
+        yocto.config[yocto.i][i].midi_channel = channel;
+        // save the config
+        Yoctocore_schedule_save(&yocto);
+      }
+      if ((config->midi_channel == channel || config->midi_channel == 0) &&
+          (out->note_on.time_on == 0 ||
+           (ct - out->note_on.time_on) > MAX_NOTE_HOLD_TIME_MS) &&
+          random_integer_in_range(0, 99) < config->probability) {
+        // set the voltage for the pitch
+        out->note_on.note = note;
+        out->note_on.time_on = ct;
+        out->voltage_set =
+            (float)(note - config->root_note) * config->v_oct / 12.0f +
+            config->min_voltage;
+        outs_with_note_change[i] = true;
 #ifdef DEBUG_MIDI
-      printf("[out%d] %d %d %f %f to %f\n", i + 1, note, config->root_note,
-             config->v_oct, config->min_voltage, out->voltage_set);
+        printf("[out%d] %d %d %f %f to %f\n", i + 1, note, config->root_note,
+               config->v_oct, config->min_voltage, out->voltage_set);
 #endif
-      break;  // TODO make this an option
+        break;  // TODO make this an option
+      }
     }
   }
   // find any linked outputs and activate the envelope
