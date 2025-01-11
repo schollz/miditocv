@@ -9,19 +9,19 @@ each scene has eight outputs. each output can be configured to a different mode.
 
 The **bold** things are implemented.
 
-| Category         | Button        | Knob          | Shift + Button  | Shift + Knob      | Button + Knob |
-| ---------------- | ------------- | ------------- | --------------- | ----------------- | ------------- |
-| Note             | listen        |               | **tuning note** | **change tuning** | **voltage**   |
-| Envelope         | **trigger**   | **attack**    |                 | **sustain**       | **release**   |
-| Gate             | **trigger**   |               |                 | probability       |               |
-| CC               | **listen**    |               |                 |                   |               |
-| Program change   | **listen**    |               |                 |                   |               |
-| Key Pressure     | **listen**    |               |                 |                   |               |
-| Channel Pressure | **listen**    |               |                 |                   |               |
-| Pitch bend       | **listen**    |               |                 |                   |               |
-| Clock            | start/stop    |               | tap tempo       | division          | tempo         |
-| LFO              | pause         | period        | max voltage     | shape             |               |
-| Code             | key(on,shift) | knob(x,shift) | key(on,shift)   | knob(x,shift)     |               |
+| Category         | Button         | Knob          | Shift + Button  | Shift + Knob      | Button + Knob |
+| ---------------- | -------------- | ------------- | --------------- | ----------------- | ------------- |
+| Note             | **listen**     |               | **tuning note** | **change tuning** | **voltage**   |
+| Envelope         | **trigger**    | **attack**    |                 | **sustain**       | **release**   |
+| Gate             | **trigger**    |               |                 | **probability**   |               |
+| CC               | **listen**     |               |                 |                   |               |
+| Program change   | **listen**     |               |                 |                   |               |
+| Key Pressure     | **listen**     |               |                 |                   |               |
+| Channel Pressure | **listen**     |               |                 |                   |               |
+| Pitch bend       | **listen**     |               |                 |                   |               |
+| Clock            | **start/stop** |               | **tap tempo**   | **division**      | **tempo**     |
+| LFO              | pause          | period        | max voltage     | shape             |               |
+| Code             | key(on,shift)  | knob(x,shift) | key(on,shift)   | knob(x,shift)     |               |
 
 ## Code
 

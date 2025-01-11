@@ -31,13 +31,24 @@ typedef struct {
 
 // Constants
 #define LFO_TRANSITION_DURATION_MS 3000.0f
+#define TWO_PI 6.28318530718f
+
+// Normalize phase to 0 to 2*pi range
+static inline float normalize_phase(float phase) {
+  while (phase < 0.0f) phase += TWO_PI;
+  while (phase >= TWO_PI) phase -= TWO_PI;
+  return phase;
+}
 
 // Triangle wave function
 float triangle_wave(float t_ms, float period_ms, float min_val, float max_val,
                     float phase) {
   float t = t_ms / 1000.0f;
   float period = period_ms / 1000.0f;
-  float value = (2.0f / M_PI) * asinf(sinf(2.0f * M_PI * (t / period) + phase));
+  float adjusted_phase =
+      normalize_phase(phase + M_PI / 2.0f);  // Phase alignment
+  float value =
+      (2.0f / M_PI) * asinf(sinf(2.0f * M_PI * (t / period) + adjusted_phase));
   value = min_val + (max_val - min_val) * (value + 1.0f) / 2.0f;
   return value;
 }
@@ -47,7 +58,9 @@ float sine_wave(float t_ms, float period_ms, float min_val, float max_val,
                 float phase) {
   float t = t_ms / 1000.0f;
   float period = period_ms / 1000.0f;
-  float value = sinf(2.0f * M_PI * (t / period) + phase);
+  float adjusted_phase =
+      normalize_phase(phase);  // Sine requires no additional adjustment
+  float value = sinf(2.0f * M_PI * (t / period) + adjusted_phase);
   value = min_val + (max_val - min_val) * (value + 1.0f) / 2.0f;
   return value;
 }
@@ -57,6 +70,8 @@ float sawtooth_wave(float t_ms, float period_ms, float min_val, float max_val,
                     float phase) {
   float t = t_ms / 1000.0f;
   float period = period_ms / 1000.0f;
+  float adjusted_phase =
+      normalize_phase(phase - M_PI / 2.0f);  // Phase alignment
   float value = 2.0f * (t / period - floorf(t / period + 0.5f));
   value = min_val + (max_val - min_val) * (value + 1.0f) / 2.0f;
   return value;
@@ -67,8 +82,9 @@ float square_wave(float t_ms, float period_ms, float min_val, float max_val,
                   float phase) {
   float t = t_ms / 1000.0f;
   float period = period_ms / 1000.0f;
+  float adjusted_phase = normalize_phase(phase);  // Sine-aligned phase
   float value =
-      (sinf(2.0f * M_PI * (t / period) + phase) > 0.0f) ? 1.0f : -1.0f;
+      (sinf(2.0f * M_PI * (t / period) + adjusted_phase) > 0.0f) ? 1.0f : -1.0f;
   value = min_val + (max_val - min_val) * (value + 1.0f) / 2.0f;
   return value;
 }
@@ -85,6 +101,7 @@ float drunk_wave(float t_ms, float period_ms, float min_val, float max_val,
   Slew_process2(slew, t_ms);
   return ((slew->current_value + 1.0f) / 2.0f) * (max_val - min_val) + min_val;
 }
+
 // Get LFO value based on type
 float get_lfo_value(LFO_Type type, float t_ms, float period_ms, float min_val,
                     float max_val, float phase, Noise *noise, Slew *slew) {

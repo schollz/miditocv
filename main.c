@@ -137,7 +137,7 @@ void timer_callback_beat(bool on, int user_data) {
   Config *config = &yocto.config[yocto.i][user_data];
   Out *out = &yocto.out[user_data];
   if (config->mode == MODE_CLOCK) {
-    if (on) {
+    if (on && !out->clock_disabled) {
       // trigger the clock
       out->voltage_current = config->max_voltage;
     } else {
@@ -348,23 +348,31 @@ void midi_note_on(int channel, int note, int velocity) {
   for (uint8_t i = 0; i < 8; i++) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
-    if (config->mode == MODE_NOTE &&
-        (config->midi_channel == channel || config->midi_channel == 0) &&
-        (out->note_on.time_on == 0 ||
-         (ct - out->note_on.time_on) > MAX_NOTE_HOLD_TIME_MS) &&
-        random_integer_in_range(0, 99) < config->probability) {
-      // set the voltage for the pitch
-      out->note_on.note = note;
-      out->note_on.time_on = ct;
-      out->voltage_set =
-          (float)(note - config->root_note) * config->v_oct / 12.0f +
-          config->min_voltage;
-      outs_with_note_change[i] = true;
+    if (config->mode == MODE_NOTE) {
+      // check if button is pressed
+      if (button_values[i]) {
+        // learn the channel
+        yocto.config[yocto.i][i].midi_channel = channel;
+        // save the config
+        Yoctocore_schedule_save(&yocto);
+      }
+      if ((config->midi_channel == channel || config->midi_channel == 0) &&
+          (out->note_on.time_on == 0 ||
+           (ct - out->note_on.time_on) > MAX_NOTE_HOLD_TIME_MS) &&
+          random_integer_in_range(0, 99) < config->probability) {
+        // set the voltage for the pitch
+        out->note_on.note = note;
+        out->note_on.time_on = ct;
+        out->voltage_set =
+            (float)(note - config->root_note) * config->v_oct / 12.0f +
+            config->min_voltage;
+        outs_with_note_change[i] = true;
 #ifdef DEBUG_MIDI
-      printf("[out%d] %d %d %f %f to %f\n", i + 1, note, config->root_note,
-             config->v_oct, config->min_voltage, out->voltage_set);
+        printf("[out%d] %d %d %f %f to %f\n", i + 1, note, config->root_note,
+               config->v_oct, config->min_voltage, out->voltage_set);
 #endif
-      break;  // TODO make this an option
+        break;  // TODO make this an option
+      }
     }
   }
   // find any linked outputs and activate the envelope
@@ -894,6 +902,20 @@ int main() {
                 out->tuning = !out->tuning;
                 printf("[out%d] tuning %d\n", i + 1, out->tuning);
               }
+            case MODE_CLOCK:
+              // start and stop the clock
+              if (button_shift && val) {
+                // tap tempo
+                uint16_t bpm_tempo = TapTempo_tap(&out->taptempo);
+                if (bpm_tempo > 30 && bpm_tempo < 300) {
+                  config->clock_tempo = bpm_tempo;
+                  printf("[out%d] tap tempo %d\n", i + 1, bpm_tempo);
+                  Yoctocore_schedule_save(&yocto);
+                }
+              } else if (val) {
+                // start/stop
+                out->clock_disabled = !out->clock_disabled;
+              }
             default:
               break;
           }
@@ -1019,6 +1041,15 @@ int main() {
               Slew_process(&out->portamento, out->voltage_current, ct);
           break;
         case MODE_CLOCK:
+          if (knob_val != -1 && button_val && !button_shift) {
+            // set the tempo
+            config->clock_tempo = linlin(knob_val, 0.0f, 1023.0f, 30.0, 300.0);
+            Yoctocore_schedule_save(&yocto);
+          } else if (knob_val != -1 && !button_val && button_shift) {
+            // set the division
+            config->clock_division = linlin(knob_val, 0.0f, 1023.0f, 0, 19);
+            Yoctocore_schedule_save(&yocto);
+          }
           break;
         case MODE_CODE:
           out->voltage_current = out->voltage_set;
@@ -1047,6 +1078,14 @@ int main() {
           out->voltage_current = out->voltage_set;
           break;
         case MODE_GATE:
+          if (knob_val != -1) {
+            if (button_shift) {
+              // shift + knob will set the probability
+              config->probability = linlin(knob_val, 0.0f, 1023.0f, 0.0, 100.0);
+            }
+            Yoctocore_schedule_save(&yocto);
+          }
+
           out->voltage_current = out->voltage_set;
           break;
         default:

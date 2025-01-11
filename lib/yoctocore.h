@@ -10,6 +10,7 @@
 #include "dac.h"
 #include "lfo.h"
 #include "slew.h"
+#include "taptempo.h"
 #include "utils.h"
 
 #define MODE_NOTE 0
@@ -101,6 +102,8 @@ typedef struct Out {
   float voltage_calibration_slope;
   int8_t mode_last;
   bool code_updated;
+  bool clock_disabled;
+  TapTempo taptempo;
 } Out;
 
 typedef struct Yoctocore {
@@ -163,6 +166,9 @@ void Yoctocore_init(Yoctocore *self) {
     self->out[output].voltage_override = 0;
     self->out[output].voltage_do_override = false;
     self->out[output].mode_last = -1;
+    self->out[output].code_updated = false;
+    self->out[output].clock_disabled = false;
+    TapTempo_init(&self->out[output].taptempo);
   }
   self->debounce_save = 0;
   self->i = 0;
