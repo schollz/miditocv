@@ -135,7 +135,7 @@ void timer_callback_beat(bool on, int user_data) {
   Config *config = &yocto.config[yocto.i][user_data];
   Out *out = &yocto.out[user_data];
   if (config->mode == MODE_CLOCK) {
-    if (on) {
+    if (on && !config->clock_disabled) {
       // trigger the clock
       out->voltage_current = config->max_voltage;
     } else {
@@ -896,6 +896,14 @@ int main() {
                 // toggle tuning mode
                 out->tuning = !out->tuning;
                 printf("[out%d] tuning %d\n", i + 1, out->tuning);
+              }
+            case MODE_CLOCK:
+              // start and stop the clock
+              if (button_shift && val) {
+                // TODO: tap tempo
+              } else if (val) {
+                // start/stop
+                out->clock_disabled = !out->clock_disabled;
               }
             default:
               break;

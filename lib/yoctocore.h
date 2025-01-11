@@ -101,6 +101,7 @@ typedef struct Out {
   float voltage_calibration_slope;
   int8_t mode_last;
   bool code_updated;
+  bool clock_disabled;
 } Out;
 
 typedef struct Yoctocore {
@@ -163,6 +164,8 @@ void Yoctocore_init(Yoctocore *self) {
     self->out[output].voltage_override = 0;
     self->out[output].voltage_do_override = false;
     self->out[output].mode_last = -1;
+    self->out[output].code_updated = false;
+    self->out[output].clock_disabled = false;
   }
   self->debounce_save = 0;
   self->i = 0;
