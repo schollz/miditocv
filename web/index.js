@@ -1,11 +1,8 @@
 import * as luaparse from 'luaparse';
-import luamin from 'luamin';
+const luamin = require('lua-format')
 import luaScript from './static/globals.lua';
 import { formatText } from 'lua-fmt';
 import markdownit from 'markdown-it'
-const md = markdownit()
-const result = md.render('# markdown-it rulezz!');
-console.log(result);
 
 // configure luamin so it doesn't rewrite variable names
 luamin.options = { renameVariables: false };
@@ -25,10 +22,24 @@ window.luaBeautifier = {
   beautify: beautifyLua,
 };
 
+const minify = (luaCode) => {
+  const Settings = {
+    RenameVariables: false,
+    RenameGlobals: false,
+    SolveMath: false,
+    Indentation: '\t'
+  };
+  const minified_code = luamin.Minify(luaCode, Settings);
+  if (minified_code.includes('\n\n\n\n')) {
+    return minified_code.split('\n\n\n\n')[1];
+  }
+  return minified_code;
+}
+
 // Attach `luamin` and `luaparse` to the `window` object
 window.luamin = {
   parse: luaparse.parse,
-  minify: luamin.minify,
+  minify: minify,
 };
 
 window.globalsLua = luaScript;
