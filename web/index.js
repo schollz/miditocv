@@ -44,7 +44,7 @@ window.luamin = {
 
 window.globalsLua = luaScript;
 
-window.markdownParser = md;
+window.markdownParser = markdownit();
 
 // find any class marked `markdown` and render it
 document.querySelectorAll('.markydown').forEach((el) => {
