@@ -38,7 +38,7 @@ typedef struct {
 // Normalize phase to 0 to 2*pi range
 static inline float normalize_phase(float phase) {
   while (phase < 0.0f) phase += TWO_PI;
-  while (phase >= TWO_PI) phase -= TWO_PI;
+  while (phase > TWO_PI) phase -= TWO_PI;
   return phase;
 }
 

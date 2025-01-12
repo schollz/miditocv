@@ -1021,14 +1021,17 @@ int main() {
           //   printf("elapsed=%d ms, p=%f ms, pct=%f\n", elapsed_ms,
           //   (config->lfo_period * 1000.f) , step);
           // }
+          float voltage =
+              get_lfo_value(config->lfo_waveform, lfo_index_acc[i] * 1000,
+                            1 * 1000, config->min_voltage, config->max_voltage,
+                            0, &out->noise, &out->slew_lfo);
+
           if (out->lfo_disabled) {
             break;
           }
 
-          out->voltage_set =
-              get_lfo_value(config->lfo_waveform, lfo_index_acc[i] * 1000,
-                            1 * 1000, config->min_voltage, config->max_voltage,
-                            0, &out->noise, &out->slew_lfo);
+          out->voltage_set = voltage;
+
           // quantize
           out->voltage_current =
               scale_quantize_voltage(config->quantization, config->root_note,
