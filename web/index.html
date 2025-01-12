@@ -5,18 +5,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>yoctocore</title>
-  <script src="/static/vue.global.prod.js"></script>
-  <!-- <script src="/static/vue.global.js"></script> -->
   <link rel="stylesheet" href="/static/globals.css">
-  <script src="/static/codemirror.js"></script>
   <link rel="stylesheet" href="/static/codemirror.css">
   <link rel="stylesheet" href="/static/material-darker.css">
-  <script src="/static/lua.js"></script>
   <link rel="stylesheet" href="/static/globals-adj.css">
 </head>
 
 <body>
-  <script src="index.js" type="module"></script>
   <div id="app" class="app appbox">
     <h1>yoctocore <span v-if="device_connected">- device connected</span><span v-else>- device not connected</span></h1>
     <div class="row">
@@ -522,7 +517,10 @@
 </pre>
 
   </div>
-
+  <script src="/static/vue.global.prod.js"></script>
+  <script src="/static/codemirror.js"></script>
+  <script src="/static/lua.js"></script>
+  <script src="index.js" type="module"></script>
   <script type="module">
     async function initializeLuaJS() {
       const emscriptenInit = (await import('/static/dist/luajs.mjs')).default;
@@ -543,9 +541,7 @@
     }
     initializeLuaJS();
   </script>
-
-
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js" type="module"></script>
 
 </body>
 

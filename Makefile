@@ -80,3 +80,10 @@ web: web/localhost.pem
 	@($(BROWSERSYNC_CMD) &) && \
 	echo "Starting local SSL proxy..." && \
 	$(SSL_PROXY_CMD)
+
+
+publish:
+	npm install --verbose -g npm@latest
+	npm install --verbose -g parcel@latest
+	cd web && npm install
+	cd web && parcel build index.html
