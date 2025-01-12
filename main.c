@@ -38,6 +38,11 @@ bool usb_midi_present = false;
   util_clamp((ymin + (x - xmin) * (ymax - ymin) / (xmax - xmin)), (ymin), \
              (ymax))
 
+#define linexp(x, xmin, xmax, ymin, ymax)                                     \
+  util_clamp(((ymin) *                                                        \
+              powf(((ymax) / (ymin)), (((x) - (xmin)) / ((xmax) - (xmin))))), \
+             (ymin), (ymax))
+
 #define BLOCKS_PER_SECOND SAMPLE_RATE / SAMPLES_PER_BUFFER
 static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #define DURATION_HOLD 500
@@ -800,7 +805,7 @@ int main() {
 
   uint32_t ct_last = ct;
   for (uint8_t i = 0; i < 8; i++) {
-      lfo_ct_last[i] = ct;
+    lfo_ct_last[i] = ct;
   }
 
   printf("Starting main loop\n");
@@ -976,9 +981,15 @@ int main() {
           float old_period = config->lfo_period;
 
           if (knob_val != -1) {
-            config->lfo_period = 10.1f - linlin(knob_val, 0.00001f, 1023.0f,
-                                                    0.1f, 10.f);
-            // printf("changed lfo %d period: %f -> %f\n", i, old_period, config->lfo_period);
+            if (knob_val < 512) {
+              config->lfo_period =
+                  10.0f / linexp(knob_val, 0.001f, 512, 0.0333f, 10.0f);
+            } else {
+              config->lfo_period =
+                  10.0f / linexp(knob_val, 512, 1023.0f, 10.0f, 1000.f);
+            }
+            // printf("changed lfo %d period: %f -> %f\n", i, old_period,
+            // config->lfo_period);
           }
 
           // NB: `step` is basically how much % of the period got elapsed
@@ -988,13 +999,14 @@ int main() {
           lfo_index_acc[i] = fmod(lfo_index_acc[i] + step, 1.f);
 
           // if (button_val) {
-          //   printf("elapsed=%d ms, p=%f ms, pct=%f\n", elapsed_ms, (config->lfo_period * 1000.f) , step);
+          //   printf("elapsed=%d ms, p=%f ms, pct=%f\n", elapsed_ms,
+          //   (config->lfo_period * 1000.f) , step);
           // }
 
           out->voltage_set =
-              get_lfo_value(config->lfo_waveform, lfo_index_acc[i] * 1000, 1 * 1000,
-                            config->min_voltage, config->max_voltage, 0,
-                            &out->noise, &out->slew_lfo);
+              get_lfo_value(config->lfo_waveform, lfo_index_acc[i] * 1000,
+                            1 * 1000, config->min_voltage, config->max_voltage,
+                            0, &out->noise, &out->slew_lfo);
           // quantize
           out->voltage_current =
               scale_quantize_voltage(config->quantization, config->root_note,
