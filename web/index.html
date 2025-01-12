@@ -83,8 +83,8 @@
       <div class="col col-1" v-for="(output, index) in scenes[current_scene].outputs" :key="index">
         <canvas :id="'sparkline-' + index" class="sparkline"></canvas>
         <button
-          :class="[current_output !== index && 'inactive', current_output === index && 'active', getButtonClass(output.mode)]"
-          @click="select_output(index)">
+          :class="[current_output !== index && 'inactive', current_output === index && 'active', copied_output===index && 'copied', getButtonClass(output.mode)]"
+          @click="select_output(index, $event)">
           {{ index + 1 }}
         </button>
       </div>

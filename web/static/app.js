@@ -289,9 +289,7 @@ function setupMidiInputListener() {
                         // update the code mirror if it is visible
                         if (vm.current_scene == scene_num && vm.current_output == output_num) {
                             Vue.nextTick(() => {
-                                console.log(`[output_change] ${code_new}`);
                                 let beautify_code = luaBeautifier.beautify(code_new).trim();
-                                console.log(`[output_change] ${beautify_code}`);
                                 myCodeMirror.setValue(beautify_code);
                                 outputCodeMirror.setValue("");
 
@@ -567,6 +565,7 @@ end`,
         const current_bpm = ref(0);
         const current_scene = ref(0);
         const current_output = ref(0);
+        const copied_output = ref(null);
         const selected_output = computed(() => {
             return scenes.value[current_scene.value].outputs[current_output.value];
         });
@@ -842,10 +841,10 @@ end`,
         watch(
             () => selected_output.value,
             (newOutput) => {
+                // check if Ctrl is held
                 console.log(`[output_change] ${current_scene.value} ${current_output.value}`);
                 Vue.nextTick(() => {
                     let beautify_code = luaBeautifier.beautify(newOutput.code).trim();
-                    console.log(`[output_change] ${beautify_code}`);
                     myCodeMirror.setValue(beautify_code);
                     clearLua();
                 });
@@ -860,7 +859,7 @@ end`,
                 updateLocalScene(newScene);
                 // update the scene on the device
                 sysex_string = `0_0_${hash_djb("scene")}_${newScene}`;
-                console.log(`[sending_sysex] ${sysex_string}`);
+                // console.log(`[sending_sysex] ${sysex_string}`);
                 send_sysex(sysex_string);
             }
         );
@@ -1014,14 +1013,36 @@ end`,
             current_scene.value = index;
         };
 
-        const select_output = (index) => {
-            current_output.value = index;
+        const select_output = (index, event) => {
+            console.log(event);
+            if (copied_output.value !== null) {
+                if (event.ctrlKey) {
+                    if (copied_output.value == index) {
+                        // disable copying
+                        copied_output.value = null;
+                    } else {
+                        // copy the `copied_output` to the `index`
+                        console.log(`[copy_output] ${copied_output.value} to ${index}`);
+                        scenes.value[current_scene.value].outputs[index] = JSON.parse(JSON.stringify(scenes.value[current_scene.value].outputs[copied_output.value]));
+                    }
+                } else {
+                    current_output.value = index;
+                }
+            } else {
+                if (event.ctrlKey) {
+                    copied_output.value = index;
+                } else {
+                    copied_output.value = null;
+                }
+                current_output.value = index;
+            }
         };
 
         return {
             scenes,
             current_scene,
             current_output,
+            copied_output,
             selected_output,
             select_scene,
             select_output,

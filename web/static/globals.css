@@ -569,3 +569,7 @@ select:disabled:hover {
 .CodeMirror {
     margin-bottom: 1em;
 }
+
+.copied {
+    border-radius: 40%;
+}
