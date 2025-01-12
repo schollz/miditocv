@@ -103,6 +103,7 @@ typedef struct Out {
   int8_t mode_last;
   bool code_updated;
   bool clock_disabled;
+  bool lfo_disabled;
   TapTempo taptempo;
 } Out;
 
@@ -168,6 +169,7 @@ void Yoctocore_init(Yoctocore *self) {
     self->out[output].mode_last = -1;
     self->out[output].code_updated = false;
     self->out[output].clock_disabled = false;
+    self->out[output].lfo_disabled = false;
     TapTempo_init(&self->out[output].taptempo);
   }
   self->debounce_save = 0;

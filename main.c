@@ -907,6 +907,7 @@ int main() {
                 out->tuning = !out->tuning;
                 printf("[out%d] tuning %d\n", i + 1, out->tuning);
               }
+              break;
             case MODE_CLOCK:
               // start and stop the clock
               if (button_shift && val) {
@@ -921,6 +922,13 @@ int main() {
                 // start/stop
                 out->clock_disabled = !out->clock_disabled;
               }
+              break;
+            case MODE_LFO:
+              if (button_shift && val) {
+                // toggle lfo
+                out->lfo_disabled = !out->lfo_disabled;
+              }
+              break;
             default:
               break;
           }
@@ -981,12 +989,23 @@ int main() {
           float old_period = config->lfo_period;
 
           if (knob_val != -1) {
-            if (knob_val < 512) {
-              config->lfo_period =
-                  10.0f / linexp(knob_val, 0.001f, 512, 0.0333f, 10.0f);
+            if (button_shift && !button_val) {
+              // set the max voltage
+              config->max_voltage =
+                  linlin(knob_val, 0.0f, 1023.0f, config->min_voltage, 10.0f);
+            } else if (!button_shift && button_val) {
+              // set the lfo shape
+              config->lfo_waveform = (uint8_t)linlin(
+                  knob_val, 0.0f, 1023.0f, 0.0f, (float)LFO_SHAPE_MAX);
+
             } else {
-              config->lfo_period =
-                  10.0f / linexp(knob_val, 512, 1023.0f, 10.0f, 1000.f);
+              if (knob_val < 512) {
+                config->lfo_period =
+                    10.0f / linexp(knob_val, 0.001f, 512, 0.0333f, 10.0f);
+              } else {
+                config->lfo_period =
+                    10.0f / linexp(knob_val, 512, 1023.0f, 10.0f, 1000.f);
+              }
             }
             // printf("changed lfo %d period: %f -> %f\n", i, old_period,
             // config->lfo_period);
@@ -1002,6 +1021,9 @@ int main() {
           //   printf("elapsed=%d ms, p=%f ms, pct=%f\n", elapsed_ms,
           //   (config->lfo_period * 1000.f) , step);
           // }
+          if (out->lfo_disabled) {
+            break;
+          }
 
           out->voltage_set =
               get_lfo_value(config->lfo_waveform, lfo_index_acc[i] * 1000,

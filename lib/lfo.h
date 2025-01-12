@@ -17,6 +17,8 @@ typedef enum {
   LFO_DRUNK,
 } LFO_Type;
 
+#define LFO_SHAPE_MAX 4
+
 // LFO struct definition
 typedef struct {
   LFO_Type current_type;

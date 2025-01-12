@@ -20,7 +20,7 @@ The **bold** things are implemented.
 | Channel Pressure | **listen**     |               |                 |                   |               |
 | Pitch bend       | **listen**     |               |                 |                   |               |
 | Clock            | **start/stop** |               | **tap tempo**   | **division**      | **tempo**     |
-| LFO              | pause          | period        | max voltage     | shape             |               |
+| LFO              |                | **period**    | **pause**       | **max voltage**   | **shape**     |
 | Code             | key(on,shift)  | knob(x,shift) | key(on,shift)   | knob(x,shift)     |               |
 
 ## Code
