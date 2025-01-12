@@ -83,8 +83,8 @@ web: web/localhost.pem
 
 
 publish:
-	npm install --verbose -g npm@latest
-	npm install --verbose -g parcel@latest
+	# npm install --verbose -g npm@latest
+	# npm install --verbose -g parcel@latest
 	cd web && npm install
 	cd web && rm -rf dist
 	cd web && parcel build index.html --dist-dir ./dist --no-optimize
