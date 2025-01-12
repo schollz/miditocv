@@ -13,7 +13,10 @@
 
 <body>
   <div id="app" class="app appbox">
-    <h1>yoctocore <span v-if="device_connected">- device connected</span><span v-else>- device not connected</span></h1>
+    <h1 style="margin-bottom:0;">yoctocore</h1>
+    <p style="margin-bottom:2em;">device<span v-if="device_connected" style="color:green;"> connected</span><span
+        style="color:red;" v-else> not
+        connected</span>.</p>
     <div class="row">
       <div class="col col-3">
         <button @click="darkMode()">
@@ -31,7 +34,7 @@
     </div>
     <div class="row routing" style="padding-bottom:1em;">
       <!-- Buttons for pass through -->
-      <div class="col col-3" v-for="(isActive, inputName) in midi_input_active" :key="inputName">
+      <div class="col col-4" v-for="(isActive, inputName) in midi_input_active" :key="inputName">
         <button :class="{ active: isActive, inactive: !isActive }" @click="toggleActivation(inputName)"
           style="font-size:0.9em;">
           {{ inputName }} {{ isActive ? 'Active' : 'Inactive' }}
