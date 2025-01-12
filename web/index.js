@@ -2,6 +2,10 @@ import * as luaparse from 'luaparse';
 import luamin from 'luamin';
 import luaScript from './static/globals.lua';
 import { formatText } from 'lua-fmt';
+import markdownit from 'markdown-it'
+const md = markdownit()
+const result = md.render('# markdown-it rulezz!');
+console.log(result);
 
 // Beautify Lua code
 function beautifyLua(luaCode) {
@@ -25,3 +29,13 @@ window.luamin = {
 };
 
 window.globalsLua = luaScript;
+
+window.markdownParser = md;
+
+// find any class marked `markdown` and render it
+document.querySelectorAll('.markydown').forEach((el) => {
+  // remove <pre> and </pre> tags
+  let text = el.innerText.replace(/<pre>/g, '').replace(/<\/pre>/g, '');
+  console.log(text);
+  el.innerHTML = markdownParser.render(text);
+});
