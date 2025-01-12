@@ -149,7 +149,6 @@ void timer_callback_beat(bool on, int user_data) {
       out->voltage_current = config->min_voltage;
     }
   } else if (config->mode == MODE_CODE) {
-    print_memory_usage();
     float volts;
     bool trigger;
     if (luaRunOnBeat(user_data, on, &volts, &trigger)) {
@@ -255,13 +254,13 @@ void timer_callback_ws2812(bool on, int user_data) {
   WS2812_show(&ws2812);
 }
 
-void timer_callback_print_memory_usage(bool on, int user_data) {
-  // print_memory_usage();
-  printf("time per iteration: %d %d %d %d\n", time_per_iteration, timer_per[0],
-         timer_per[1], timer_per[2]);
-  // for (uint8_t i = 0; i < 16; i++) {
-  //   printf("timer[%d]: %d\n", i, timer_per[i + 3]);
-  // }
+void timer_callback_check_memory_usage(bool on, int user_data) {
+  uint32_t free_heap = getFreeHeap();
+  if (free_heap < 161216) {
+    uint64_t ct = time_us_64();
+    luaGarbageCollect();
+    printf("GC %d %lld\n", free_heap, time_us_64() - ct);
+  }
 }
 
 void timer_callback_update_voltage(bool on, int user_data) {
@@ -706,7 +705,7 @@ int main() {
 
   // initialize WS2812
   WS2812_init(&ws2812, WS2812_PIN, pio0, WS2812_SM, 16);
-  WS2812_set_brightness(&ws2812, 100);
+  WS2812_set_brightness(&ws2812, 50);
   for (uint8_t i = 0; i < 16; i++) {
     WS2812_fill(&ws2812, i, 255, 0, 255);
   }
@@ -790,10 +789,10 @@ int main() {
   SimpleTimer_init(&pool_timer[9], 1000.0f / 30.0f * 30.0f, 1.0f, 0,
                    timer_callback_ws2812, 0, ct);
   SimpleTimer_start(&pool_timer[9]);
-  // setup a timer at 1 second to print memory usage
-  SimpleTimer_init(&pool_timer[10], 1000.0f / 1000.0f * 30, 1.0f, 0,
-                   timer_callback_print_memory_usage, 0, ct);
-  // SimpleTimer_start(&pool_timer[10]);
+  // setup a timer at 3 second to print memory usage
+  SimpleTimer_init(&pool_timer[10], 1000.0f / 3000.0f * 30, 1.0f, 0,
+                   timer_callback_check_memory_usage, 0, ct);
+  SimpleTimer_start(&pool_timer[10]);
   // setup a timer at 4 ms intervals to update voltages
   SimpleTimer_init(&pool_timer[11], 1000.0f / 4.0f * 30, 1.0f, 0,
                    timer_callback_update_voltage, 0, ct);

@@ -497,16 +497,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // // ask for sparkline data (doubles as check if connected)
         const sparkline_update_time_ms = 50;
         setTimeout(() => {
-            setInterval(() => {
-                if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
-                    window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
-                }
-                // need to fix this to prevent multiple connects
-                // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
-                //     vm.device_connected = false;
-                //     setupMidi();
-                // }
-            }, sparkline_update_time_ms);
+            // setInterval(() => {
+            //     if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
+            //         window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
+            //     }
+            //     // need to fix this to prevent multiple connects
+            //     // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
+            //     //     vm.device_connected = false;
+            //     //     setupMidi();
+            //     // }
+            // }, sparkline_update_time_ms);
         }, 3000);
 
     }
@@ -542,18 +542,24 @@ const app = createApp({
                     linked_to: 0,
                     probability: 100,
                     note_tuning: 0,
-                    code: `note_vals = S{
-	'c4',
-	'd4',
-	'e4',
+                    code: `note_vals =
+  S {
+  "c4",
+  "d4",
+  "e4"
 }
-riddim = er(7,16)
+riddim = er(7, 16)
 bpm = 60
 function on_beat(on)
-	local v = note_vals()
-	volts = to_cv(v)
+  if on then
+    local v = note_vals()
+    volts = to_cv(v)
+    do
+      return v
+    end
     trigger = riddim()
-	return v
+  end
+  return "off"
 end`,
                     duration: 1,
                     setpoint_voltage: 0,
@@ -718,6 +724,7 @@ end`,
                 let new_code = "";
                 try {
                     new_code = luamin.minify(code);
+                    console.log(`[uploadLua]: ${new_code}`);
                 } catch (error) {
                     // show error in output
                     outputCodeMirror.setValue(`${error}`);
@@ -854,6 +861,7 @@ end`,
                     let beautify_code = luaBeautifier.beautify(newOutput.code).trim();
                     myCodeMirror.setValue(beautify_code);
                     clearLua();
+                    console.log("loaded code");
                 });
             }
         );

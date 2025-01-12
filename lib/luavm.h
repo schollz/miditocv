@@ -103,7 +103,6 @@ float luaGetBPM(int index) {
 
   float bpm = lua_tonumber(L, -1);
   lua_pop(L, 3);  // Pop bpm, envs[index], and envs
-  lua_gc(L, LUA_GCCOLLECT, 0);
   return bpm;
 }
 
@@ -166,9 +165,10 @@ bool luaRunOnBeat(int index, bool on, float *volts, bool *trigger) {
   *trigger = lua_toboolean(L, -1);
   lua_pop(L, 3);  // Pop trigger and envs[index]
 
-  lua_gc(L, LUA_GCCOLLECT, 0);
   return true;
 }
+
+void luaGarbageCollect() { lua_gc(L, LUA_GCCOLLECT, 0); }
 
 int luaTest() {
   luaInit();

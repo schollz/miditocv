@@ -7,6 +7,9 @@ const md = markdownit()
 const result = md.render('# markdown-it rulezz!');
 console.log(result);
 
+// configure luamin so it doesn't rewrite variable names
+luamin.options = { renameVariables: false };
+
 // Beautify Lua code
 function beautifyLua(luaCode) {
   try {
