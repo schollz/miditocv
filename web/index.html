@@ -63,14 +63,23 @@
       </div>
     </span>
 
-    <!-- Scene Selection Dropdown -->
-    <div class="dropdown">
-      <label for="scene-select">Select Scene:</label>
-      <select id="scene-select" v-model="current_scene">
-        <option v-for="(scene, index) in scenes" :key="index" :value="index">
-          Scene {{ index + 1 }}
-        </option>
-      </select>
+
+    <div class="row" style="margin-bottom:1em;">
+      <div class="col col-6">
+        <div class="dropdown">
+          <select id="scene-select" v-model="current_scene">
+            <option v-for="(scene, index) in scenes" :key="index" :value="index">
+              Scene {{ index + 1 }}
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="col col-1" style="text-align:center;">
+        >
+      </div>
+      <div class="col col-5 box" style="padding: 0.75em;">
+        Output {{ current_output !== null ? current_output + 1 : '' }}
+      </div>
     </div>
 
 
@@ -78,7 +87,6 @@
 
     <!-- Output Selection Buttons -->
     <!-- label for button row -->
-    <h3>Outputs</h3>
     <div class="button-row row">
       <div class="col col-1" v-for="(output, index) in scenes[current_scene].outputs" :key="index">
         <canvas :id="'sparkline-' + index" class="sparkline"></canvas>
@@ -508,10 +516,7 @@
     <pre>
 ## Documentation
 
-Click on any square to select that output.
-*Control* + click to copy the output to select it as a copy and then *Control* + 
-click other outputs to copy from the original to others. 
-Control-click th first one to disable.
+**Copying an output:** Ctrl+Click on an output to paste the current selected output's settings to the clicked output.
   
 
 </pre>

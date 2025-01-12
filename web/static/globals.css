@@ -516,7 +516,7 @@ select:disabled:hover {
     width: 100%;
     height: 35px;
     /* Adjust as needed */
-    display: block;
+    display: none;
     margin-bottom: 1em;
 }
 

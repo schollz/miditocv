@@ -623,7 +623,10 @@ end`,
             if (sparklineData[index].length > maxDataPoints) {
                 sparklineData[index].shift();
             }
-
+            // set all `.sparkline` elements to block
+            document.querySelectorAll('.sparkline').forEach((el) => {
+                el.style.display = 'block';
+            });
             // Redraw the sparkline
             const mode = scenes.value[current_scene.value].outputs[index].mode;
             drawSparkline(index, sparklineData[index], mode);
@@ -1019,27 +1022,36 @@ end`,
 
         const select_output = (index, event) => {
             console.log(event);
-            if (copied_output.value !== null) {
-                if (event.ctrlKey) {
-                    if (copied_output.value == index) {
-                        // disable copying
-                        copied_output.value = null;
-                    } else {
-                        // copy the `copied_output` to the `index`
-                        console.log(`[copy_output] ${copied_output.value} to ${index}`);
-                        scenes.value[current_scene.value].outputs[index] = JSON.parse(JSON.stringify(scenes.value[current_scene.value].outputs[copied_output.value]));
-                    }
-                } else {
-                    current_output.value = index;
+            if (event.ctrlKey) {
+                if (index != current_output.value) {
+                    // copy the `copied_output` to the `index`
+                    console.log(`[copy_output] ${copied_output.value} to ${index}`);
+                    scenes.value[current_scene.value].outputs[index] = JSON.parse(JSON.stringify(scenes.value[current_scene.value].outputs[current_output.value]));
                 }
             } else {
-                if (event.ctrlKey) {
-                    copied_output.value = index;
-                } else {
-                    copied_output.value = null;
-                }
                 current_output.value = index;
             }
+            // if (copied_output.value !== null) {
+            //     if (event.ctrlKey) {
+            //         if (copied_output.value == index) {
+            //             // disable copying
+            //             copied_output.value = null;
+            //         } else {
+            //             // copy the `copied_output` to the `index`
+            //             console.log(`[copy_output] ${copied_output.value} to ${index}`);
+            //             scenes.value[current_scene.value].outputs[index] = JSON.parse(JSON.stringify(scenes.value[current_scene.value].outputs[copied_output.value]));
+            //         }
+            //     } else {
+            //         current_output.value = index;
+            //     }
+            // } else {
+            //     if (event.ctrlKey) {
+            //         copied_output.value = index;
+            //     } else {
+            //         copied_output.value = null;
+            //     }
+            //     current_output.value = index;
+            // }
         };
 
         return {
