@@ -727,8 +727,8 @@ int main() {
 
   // initialize lua
   luaInit();
-  sleep_ms(1000);
-  print_memory_usage();
+  // sleep_ms(1000);
+  // print_memory_usage();
 
   // initialize the yoctocore
   Yoctocore_init(&yocto);
