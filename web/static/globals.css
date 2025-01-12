@@ -399,11 +399,6 @@ body {
     text-align: center;
 }
 
-.app {
-    width: 100%;
-    max-width: 800px;
-    margin: 4em;
-}
 
 .active {
     font-weight: bold;
@@ -480,11 +475,14 @@ body {
 }
 
 
-#app {
+.appbox {
     border: solid var(--border-color);
     background: var(--bg-color);
     padding: 2em;
     box-shadow: 8px 8px 0px var(--shadow-color);
+    width: 100%;
+    max-width: 800px;
+    margin: 4em;
 }
 
 input:disabled,
