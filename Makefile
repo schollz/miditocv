@@ -69,7 +69,7 @@ web/localhost.pem:
 	cd web && mkcert localhost
 
 .PHONY: web
-BROWSERSYNC_CMD = cd web && npm install && npx parcel index.html
+BROWSERSYNC_CMD = cd web && npm install && parcel index.html --no-source-maps
 SSL_PROXY_CMD = cd web && local-ssl-proxy --key localhost-key.pem --cert localhost.pem --source 8000 --target 1234
 web: web/localhost.pem
 	-pkill -f -9 browsersync
