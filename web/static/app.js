@@ -544,20 +544,20 @@ const app = createApp({
                     note_tuning: 0,
                     code: `note_vals =
   S {
-  "c4",
-  "d4",
-  "e4"
+  "c6",
+  S {"d2", "d3"},
+  S {"e4", "f4", "g5"}
 }
 riddim = er(7, 16)
 bpm = 60
 function on_beat(on)
   if on then
     local v = note_vals()
+    trigger = riddim()
     volts = to_cv(v)
     do
       return v
     end
-    trigger = riddim()
   end
   return "off"
 end`,
@@ -680,7 +680,7 @@ end`,
                 await luaState;
                 code_last = new_code;
                 outputCodeMirror.setValue(`-- ${new_code.length} bytes`);
-                outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n-- volts\ttrigger\t${function_name}`);
+                outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n-- volts\ttrigger\t    ${function_name}`);
             }
             luaState.then(async (L) => {
                 let value;
@@ -707,7 +707,7 @@ end`,
                 // get the 'trigger' boolean 
                 let trigger = await L.run(`return envs[${output_num}].trigger`);
                 // append to output
-                outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n  ${(Math.round(volts * 1000) / 1000).toFixed(3)}\t\t  ${trigger}\t\t  ${value}`);
+                outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n  ${(Math.round(volts * 1000) / 1000).toFixed(3).padStart(6, ' ')}    ${trigger}\t\t  ${value}`);
             });
             // console.log(`[executeLua]: ${new_code}`);
             beautify_code = luaBeautifier.beautify(code).trim();
@@ -904,7 +904,8 @@ end`,
             () => selected_output.value.mode,
             (newMode) => {
                 console.log(`Mode changed to ${newMode}`);
-                if (newMode == 7) {
+                if (newMode == definitionsModes.value.MODE_CODE) {
+                    console.log(`[mode_code]`);
                     clearLua();
                 }
                 // const modeDefaults = defaultValues[newMode] || {};
