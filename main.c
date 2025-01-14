@@ -826,6 +826,10 @@ int main() {
     uint32_t us = time_us_32();
 #ifdef INCLUDE_MIDI
     tud_task();
+    // NB: i'm really not sure this is really needed
+    if (tud_cdc_connected()) {
+        tud_cdc_write_flush();
+    }
     midi_comm_task(midi_sysex_callback, midi_note_on, midi_note_off,
                    midi_key_pressure, midi_cc, midi_program_change,
                    midi_channel_pressure, midi_pitch_bend, midi_start,

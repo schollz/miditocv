@@ -13,6 +13,17 @@ typedef void (*callback_uint16)(uint16_t);
 typedef void (*callback_uint8_buffer)(uint8_t *buffer, int length);
 typedef void (*callback_void)();
 
+// TODO: put this in a usb_descriptors.h file
+enum
+    {
+        ITF_NUM_CDC            = 0,
+        ITF_NUM_CDC_DATA,
+        ITF_NUM_MIDI,
+        ITF_NUM_MIDI_STREAMING,
+        ITF_NUM_TOTAL
+    };
+
+
 uint32_t send_buffer_as_sysex(char *buffer, uint32_t bufsize) {
   uint8_t sysex_data[bufsize + 2];  // +2 for SysEx start and end bytes
 
@@ -22,7 +33,7 @@ uint32_t send_buffer_as_sysex(char *buffer, uint32_t bufsize) {
   }
   sysex_data[bufsize + 1] = 0xF7;  // End of SysEx
 
-  uint32_t v = tud_midi_n_stream_write(0, 0, sysex_data, sizeof(sysex_data));
+  uint32_t v = tud_midi_n_stream_write(ITF_NUM_MIDI, 0, sysex_data, sizeof(sysex_data));
   tud_task();
   return v;
 }
@@ -41,7 +52,7 @@ uint32_t send_text_as_sysex(const char *text) {
   sysex_data[text_length + 1] = 0xF7;  // End of SysEx
 
   // Call the stream write function with the SysEx message
-  uint32_t v = tud_midi_n_stream_write(0, 0, sysex_data, sizeof(sysex_data));
+  uint32_t v = tud_midi_n_stream_write(ITF_NUM_MIDI, 0, sysex_data, sizeof(sysex_data));
   tud_task();
   return v;
 }
@@ -55,7 +66,7 @@ void send_midi_clock() {
     midi_message[0] = 0xF8;  // Timing Clock command
 
     // Send the MIDI message
-    tud_midi_n_stream_write(0, 0, midi_message, sizeof(midi_message));
+    tud_midi_n_stream_write(ITF_NUM_MIDI, 0, midi_message, sizeof(midi_message));
     tud_task();
   }
 }
@@ -69,7 +80,7 @@ void send_midi_start() {
     midi_message[0] = 0xFA;  // Start command
 
     // Send the MIDI message
-    tud_midi_n_stream_write(0, 0, midi_message, sizeof(midi_message));
+    tud_midi_n_stream_write(ITF_NUM_MIDI, 0, midi_message, sizeof(midi_message));
     tud_task();
   }
 }
@@ -83,7 +94,7 @@ void send_midi_stop() {
     midi_message[0] = 0xFC;  // Stop command
 
     // Send the MIDI message
-    tud_midi_n_stream_write(0, 0, midi_message, sizeof(midi_message));
+    tud_midi_n_stream_write(ITF_NUM_MIDI, 0, midi_message, sizeof(midi_message));
     tud_task();
   }
 }
@@ -102,7 +113,7 @@ void send_midi_note_on(uint8_t note, uint8_t velocity) {
     midi_message[2] = velocity;        // Note velocity
 
     // Send the MIDI message
-    tud_midi_n_stream_write(0, 0, midi_message, sizeof(midi_message));
+    tud_midi_n_stream_write(ITF_NUM_MIDI, 0, midi_message, sizeof(midi_message));
     tud_task();
   }
 }
