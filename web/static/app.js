@@ -91,7 +91,19 @@ function generateSparklineData() {
     return Array.from({ length: 20 }, () => Math.random()); // Replace with real data
 }
 
+// create dictionary
+let hash_djb_store = {};
 function hash_djb(str) {
+    str = str.toString();
+    str = str.trim();
+    str = str.toLowerCase();
+    if (hash_djb_store[str]) {
+        return hash_djb_store[str];
+    } else {
+        console.log(`[hash_djb] ${str} ${Object.keys(hash_djb_store).length}`);
+        hash_djb_store[str] = `${Object.keys(hash_djb_store).length}`;
+        return hash_djb_store[str];
+    }
     let hash = 5381; // Initialize hash value as in the C code
     let i = 0; // Iterator for the string
 
@@ -102,10 +114,6 @@ function hash_djb(str) {
     hash = hash >>> 0;
     return hash;
 }
-
-assert(hash_djb("helloworld") == 4294815105);
-assert(hash_djb("hello") == 261238937);
-assert(hash_djb("world") == 279393645);
 
 
 function parseStructAndHashVariables(cCode) {
@@ -129,6 +137,8 @@ function parseStructAndHashVariables(cCode) {
     while ((result = variablePattern.exec(structBody)) !== null) {
         variables.push(result[1]); // Collect variable names
     }
+    variables.push("code");
+    variables.push("scene");
 
     // Generate hashes for each variable name
     const variableHashes = variables.map(varName => ({
@@ -171,9 +181,9 @@ typedef struct Config {
     float release;
     uint8_t linked_to;
     uint8_t probability;
-    uint16_t code_len;
-    uint8_t note_tuning;
     char *code;
+    uint8_t note_tuning;
+    char scene;
   } Config;
 
 `;
@@ -255,7 +265,7 @@ async function updateLocalScene(scene_num) {
     for (let output_num = 0; output_num < 8; output_num++) {
         // get code
         setTimeout(() => {
-            send_sysex(`${scene_num}_${output_num}_2090155648`);
+            send_sysex(`${scene_num}_${output_num}_${hash_djb("code")}`);
         }, output_num * 100);
     }
 

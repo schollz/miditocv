@@ -25,32 +25,31 @@
 #define MODE_LFO 9
 #define MODE_CODE 10
 
-#define PARAM_SCENE 274204627
-#define PARAM_MODE 2090515018
-#define PARAM_MIN_VOLTAGE 2621916282
-#define PARAM_MAX_VOLTAGE 147793276
-#define PARAM_SLEW_TIME 1829861614
-#define PARAM_V_OCT 277629184
-#define PARAM_ROOT_NOTE 3088989278
-#define PARAM_QUANTIZATION 1091620620
-#define PARAM_PORTATMENTO 2099825230
-#define PARAM_MIDI_CHANNEL 2841142336
-#define PARAM_MIDI_PRIORITY_CHANNEL 1809248577
-#define PARAM_MIDI_CC 3330665741
-#define PARAM_CLOCK_TEMPO 616644629
-#define PARAM_CLOCK_DIVISION 546580981
-#define PARAM_LFO_PERIOD 1640348328
-#define PARAM_LFO_DEPTH 2117883034
-#define PARAM_LFO_WAVEFORM 889877196
-#define PARAM_ATTACK 4070033917
-#define PARAM_DECAY 256485099
-#define PARAM_SUSTAIN 2977350188
-#define PARAM_RELEASE 1050875750
-#define PARAM_LINKED_TO 303481310
-#define PARAM_PROBABILITY 451533126
-#define PARAM_CODE 2090155648
-#define PARAM_CODE_LEN 709259102
-#define PARAM_NOTE_TUNING 2686914255
+#define PARAM_MODE 0
+#define PARAM_MIN_VOLTAGE 1
+#define PARAM_MAX_VOLTAGE 2
+#define PARAM_SLEW_TIME 3
+#define PARAM_V_OCT 4
+#define PARAM_ROOT_NOTE 5
+#define PARAM_QUANTIZATION 6
+#define PARAM_PORTAMENTO 7
+#define PARAM_MIDI_CHANNEL 8
+#define PARAM_MIDI_PRIORITY_CHANNEL 9
+#define PARAM_MIDI_CC 10
+#define PARAM_CLOCK_TEMPO 11
+#define PARAM_CLOCK_DIVISION 12
+#define PARAM_LFO_PERIOD 13
+#define PARAM_LFO_DEPTH 14
+#define PARAM_LFO_WAVEFORM 15
+#define PARAM_ATTACK 16
+#define PARAM_DECAY 17
+#define PARAM_SUSTAIN 18
+#define PARAM_RELEASE 19
+#define PARAM_LINKED_TO 20
+#define PARAM_PROBABILITY 21
+#define PARAM_NOTE_TUNING 22
+#define PARAM_SCENE 23
+#define PARAM_CODE 24
 
 #define MAGIC_UINT16 0x5A5A
 
@@ -397,7 +396,7 @@ void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
     case PARAM_QUANTIZATION:
       config->quantization = (uint8_t)val;
       break;
-    case PARAM_PORTATMENTO:
+    case PARAM_PORTAMENTO:
       config->portamento = val;
       break;
     case PARAM_V_OCT:
@@ -483,7 +482,7 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
       return config->mode;
     case PARAM_QUANTIZATION:
       return config->quantization;
-    case PARAM_PORTATMENTO:
+    case PARAM_PORTAMENTO:
       return config->portamento;
     case PARAM_V_OCT:
       return config->v_oct;
@@ -689,7 +688,7 @@ void Yoctocore_process_sysex(Yoctocore *self, uint8_t *buffer) {
       Yoctocore_print_code(self, scene, output);
     } else {
       self->yoctocore_getting = to_ms_since_boot(get_absolute_time());
-      printf_sysex("%d %d %" PRIu32 " %f\n", scene, output, param_hash,
+      printf_sysex("%d %d %" PRIu32 " %2.2f\n", scene, output, param_hash,
                    Yoctocore_get(self, scene, output, param_hash));
     }
   }
