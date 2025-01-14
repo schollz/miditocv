@@ -194,6 +194,7 @@ void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
   if (code_added == NULL || !append) {
     if (code_added != NULL) {
       free(code_added);
+      code_added = NULL;
     }
     // Allocate memory and copy the new code
     code_added = (char *)malloc(code_len);
@@ -236,12 +237,14 @@ void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
     if (fr != FR_OK) {
       printf("f_open error: %s (%d): %s\n", FRESULT_str(fr), fr, fname);
       free(code_added);
+      code_added = NULL;
       return;
     }
     fr = f_write(&file, code_added, code_added_len, &bw);
     if (fr != FR_OK || bw != code_added_len) {
       printf("f_write error: %s (%d)\n", FRESULT_str(fr), fr);
       free(code_added);
+      code_added = NULL;
       return;
     }
     fr = f_close(&file);
@@ -249,6 +252,7 @@ void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
       printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
     }
     free(code_added);
+    code_added = NULL;
     // set code to be updated
     self->out[output].code_updated = true;
     printf("[%d%d] code %d bytes\n", scene, output, code_added_len);
@@ -293,6 +297,7 @@ bool Yoctocore_do_load_code(Yoctocore *self, uint8_t scene, uint8_t output,
   if (fr != FR_OK || br != *code_len) {
     printf("f_read error: %s (%d)\n", FRESULT_str(fr), fr);
     free(*code);
+    *code = NULL;
     f_close(&file);
     return false;
   }
@@ -305,6 +310,7 @@ bool Yoctocore_do_load_code(Yoctocore *self, uint8_t scene, uint8_t output,
   if (fr != FR_OK) {
     printf("f_close error: %s (%d)\n", FRESULT_str(fr), fr);
     free(*code);
+    *code = NULL;
     return false;
   }
 
@@ -370,6 +376,7 @@ void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
   }
   // free code
   free(code);
+  code = NULL;
 }
 
 void Yoctocore_set(Yoctocore *self, uint8_t scene, uint8_t output,
@@ -584,6 +591,7 @@ bool Yoctocore_load_code(Yoctocore *self, uint8_t scene, uint8_t output) {
   }
   if (code_len == 0) {
     free(code);
+    code = NULL;
     return false;
   }
   // print out the code
@@ -595,6 +603,7 @@ bool Yoctocore_load_code(Yoctocore *self, uint8_t scene, uint8_t output) {
   bool result = (luaUpdateEnvironment(output, code) == 0);
   // Free the allocated memory
   free(code);
+  code = NULL;
   return result;
 }
 
