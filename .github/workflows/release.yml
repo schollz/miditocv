@@ -45,7 +45,7 @@ jobs:
         run: echo "PICO_SDK_PATH=$GITHUB_WORKSPACE/pico-sdk" >> $GITHUB_ENV
       - name: Build yoctocore
         run: |
-          make yoctocore
+          make yoctocore-release
           cp yoctocore.uf2 yoctocore_${{ github.event.release.name }}.uf2
       - name: Release
         uses: softprops/action-gh-release@v2

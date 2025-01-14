@@ -11,6 +11,11 @@ yoctocore: luascripts pico-extras build
 	echo "build success"
 	cp build/*.uf2 yoctocore.uf2
 
+yoctocore-release: luascripts pico-extras release
+	make -C build -j$(NPROCS)
+	echo "build success"
+	cp build/*.uf2 yoctocore.uf2
+
 luascripts:
 	npm install -g luamin || true
 	luamin --version || true
@@ -19,13 +24,16 @@ luascripts:
 	xxd -i globals.lua > lib/lua_globals.h
 	rm globals.lua
 
-
 lua:
 	lua web/static/globals.lua
 
 build: 
 	mkdir -p build
 	cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..
+
+release:
+	mkdir -p build
+	cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
 
 envs:
 	export PICO_EXTRAS_PATH=/home/zns/pico/pico-extras 

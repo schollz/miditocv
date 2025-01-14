@@ -342,7 +342,7 @@ void midi_note_on(int channel, int note, int velocity) {
     // add the current bpm
     sprintf(sparkline_update, "%s_%d", sparkline_update,
             (int)yocto.global_tempo);
-    printf("%s\n", sparkline_update);
+    printf_sysex("%s\n", sparkline_update);
     return;
   }
 
