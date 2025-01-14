@@ -676,8 +676,8 @@ void Yoctocore_process_sysex(Yoctocore *self, uint8_t *buffer) {
     if (param_hash == PARAM_CODE) {
       Yoctocore_print_code(self, scene, output);
     } else {
-      printf("%d %d %" PRIu32 " %f\n", scene, output, param_hash,
-             Yoctocore_get(self, scene, output, param_hash));
+      printf_sysex("%d %d %" PRIu32 " %f\n", scene, output, param_hash,
+                   Yoctocore_get(self, scene, output, param_hash));
     }
   }
 }

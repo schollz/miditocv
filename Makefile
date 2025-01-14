@@ -22,9 +22,10 @@ luascripts:
 
 lua:
 	lua web/static/globals.lua
+
 build: 
 	mkdir -p build
-	cd build && cmake ..
+	cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..
 
 envs:
 	export PICO_EXTRAS_PATH=/home/zns/pico/pico-extras 

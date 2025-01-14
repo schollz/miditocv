@@ -159,13 +159,13 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   if (sysex[0] == 'L' &&
       (sysex[1] == 'A' || sysex[1] == 'N' || sysex[1] == 'E')) {
     // 36 byte chunks are sent L[A|N]<scene><output><32bytes>
-    printf("LA%d\n", length);
+    printf_sysex("LA%d\n", length);
     uint8_t scene = sysex[2] - '0';
     uint8_t output = sysex[3] - '0';
     Yoctocore_add_code(&yocto, scene, output, (char *)sysex + 4, length - 4,
                        (sysex[1] == 'A' || sysex[1] == 'E'), sysex[1] == 'E');
   } else if (get_sysex_param_float_value("version", sysex, length, &val)) {
-    printf("v1.0.0");
+    printf_sysex("v1.0.0");
   } else if (get_sysex_param_float_value("diskmode", sysex, length, &val)) {
     sleep_ms(10);
     reset_usb_boot(0, 0);
@@ -202,8 +202,9 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
       // get calibration
       Yoctocore_get_calibrations(&yocto);
       for (uint8_t i = 0; i < 8; i++) {
-        printf("cali %d %f %f\n", i, yocto.out[i].voltage_calibration_slope,
-               yocto.out[i].voltage_calibration_intercept);
+        printf_sysex("cali %d %f %f\n", i,
+                     yocto.out[i].voltage_calibration_slope,
+                     yocto.out[i].voltage_calibration_intercept);
       }
     } else {
       // set calibration

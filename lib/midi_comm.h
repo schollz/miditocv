@@ -290,5 +290,5 @@ void midi_comm_task(callback_uint8_buffer sysex_callback,
   }
 }
 
-#define printf printf_sysex
+// #define printf printf_sysex
 #endif
