@@ -226,6 +226,7 @@ async function updateLocalScene(scene_num) {
     disableWatchers = true;
     // get all parameters
 
+    let time_per_event = []
     for (let output_num = 0; output_num < 8; output_num++) {
         for (let param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
             sysex_string = `${scene_num}_${output_num}_${hash_djb(param)}`;
@@ -236,9 +237,12 @@ async function updateLocalScene(scene_num) {
             for (let i = 0; i < 3; i++) {
                 try {
                     console.log(`[sending_sysex] ${param} ${sysex_string}`);
+                    const start_time = Date.now();
                     send_sysex(sysex_string);
                     await waitForTriggerOrTimeout(200);
                     await Vue.nextTick();
+                    const end_time = Date.now();
+                    time_per_event.push(end_time - start_time);
                     break;
                 } catch (error) {
                     console.log('Retrying the current iteration due to timeout...');
@@ -246,6 +250,8 @@ async function updateLocalScene(scene_num) {
             }
         }
     }
+    // print average time_per_event
+    console.log(`[updateLocalScene] ${time_per_event.reduce((a, b) => a + b, 0) / time_per_event.length} ms`);
     for (let output_num = 0; output_num < 8; output_num++) {
         // get code
         setTimeout(() => {
@@ -288,6 +294,7 @@ function setupMidiInputListener() {
                         // ending the code
                         codeTexts[scene_num][output_num] += code;
                         let code_new = codeTexts[scene_num][output_num];
+                        console.log(`[code_received] ${scene_num} ${output_num} ${code_new}`);
                         // update the code in the vm
                         vm.scenes[scene_num].outputs[output_num].code = code_new;
                         // update the code mirror if it is visible

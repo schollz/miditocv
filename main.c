@@ -942,6 +942,12 @@ int main() {
     if (ct - ct_last < 2) {
       continue;
     }
+    ct_last = ct;
+
+    // if getting data, skip this for now
+    if (ct - yocto.yoctocore_getting < 10) {
+      continue;
+    }
 
     // yoctocore save (if debounced)
     start_time = time_us_64();

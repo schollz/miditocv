@@ -117,6 +117,7 @@ typedef struct Yoctocore {
   // debounces
   uint32_t debounce_save;
   float global_tempo;
+  uint32_t yoctocore_getting;
 } Yoctocore;
 
 void Yoctocore_init(Yoctocore *self) {
@@ -304,6 +305,8 @@ bool Yoctocore_do_load_code(Yoctocore *self, uint8_t scene, uint8_t output,
 
   // Null-terminate the code
   (*code)[*code_len] = '\0';
+  printf("[%d%d] code %d bytes:\n----\n%s\n----\n", scene, output, *code_len,
+         *code);
 
   // Close the file
   fr = f_close(&file);
@@ -685,6 +688,7 @@ void Yoctocore_process_sysex(Yoctocore *self, uint8_t *buffer) {
     if (param_hash == PARAM_CODE) {
       Yoctocore_print_code(self, scene, output);
     } else {
+      self->yoctocore_getting = to_ms_since_boot(get_absolute_time());
       printf_sysex("%d %d %" PRIu32 " %f\n", scene, output, param_hash,
                    Yoctocore_get(self, scene, output, param_hash));
     }
