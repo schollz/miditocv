@@ -278,8 +278,16 @@ The `dist` folder can now be used.
 
 ## Debugger
 
+### Pre-requisites
+
+```bash
+sudo apt install gdb-multiarch openocd minicom
+```
 
 **uploading:**
+
+(Make sure to make in debug mode).
+
 ```bash
 cd build && make && sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program yoctocore.elf verify reset exit"
 ```
