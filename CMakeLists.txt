@@ -25,10 +25,6 @@ pico_sdk_init()
 # Tell CMake where to find the executable source file
 add_executable(${PROJECT_NAME} 
     main.c
-    ${CMAKE_CURRENT_LIST_DIR}/lib/hw_config.c
-    ${CMAKE_CURRENT_LIST_DIR}/lib/pcg_basic.c
-    ${CMAKE_CURRENT_LIST_DIR}/lib/libmidi.c
-    ${CMAKE_CURRENT_LIST_DIR}/lib/usb_descriptors.c
 )
 
 
@@ -36,10 +32,6 @@ add_executable(${PROJECT_NAME}
 add_subdirectory(lib/sdio build)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lua-5.4.6/src)
 
-# generate pio
-pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/WS2812.pio)
-pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/uart_rx.pio)
-# pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/buttonmatrix3.pio)
 
 # Create map/bin/hex/uf2 files
 pico_add_extra_outputs(${PROJECT_NAME})
@@ -48,7 +40,6 @@ pico_add_extra_outputs(${PROJECT_NAME})
 target_link_libraries(${PROJECT_NAME} 
     pico_stdlib
     pico_multicore
-    FatFs_SPI
     hardware_clocks
     hardware_flash
     hardware_adc
@@ -56,7 +47,6 @@ target_link_libraries(${PROJECT_NAME}
     hardware_i2c
     hardware_sync
     hardware_spi
-    lua
 )
 
 # target_compile_options(command_line PUBLIC -Wall -Wextra -Wno-unused-function -Wno-unused-parameter)
@@ -107,18 +97,18 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     USBD_PID=0x1836
 )
 
-# if INCLUDE_MIDI
-target_link_libraries(${PROJECT_NAME} 
-    tinyusb_device
-    tinyusb_board
-)
-pico_enable_stdio_usb(${PROJECT_NAME} 0)
-pico_enable_stdio_uart(${PROJECT_NAME} 1)
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
-
-# # if NOT INCLUDE_MIDI
-# pico_enable_stdio_usb(${PROJECT_NAME} 1)
+# # if INCLUDE_MIDI
+# target_link_libraries(${PROJECT_NAME} 
+#     tinyusb_device
+#     tinyusb_board
+# )
+# pico_enable_stdio_usb(${PROJECT_NAME} 0)
 # pico_enable_stdio_uart(${PROJECT_NAME} 1)
+# target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+
+# if NOT INCLUDE_MIDI
+pico_enable_stdio_usb(${PROJECT_NAME} 1)
+pico_enable_stdio_uart(${PROJECT_NAME} 1)
 
 
 pico_add_extra_outputs(${PROJECT_NAME})

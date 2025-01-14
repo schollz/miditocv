@@ -6,7 +6,7 @@ GOVERSION = go1.21.11
 GOBIN = $(HOME)/go/bin
 GOINSTALLPATH = $(GOBIN)/$(GOVERSION)
 
-yoctocore: luascripts pico-extras build 
+yoctocore: pico-extras build 
 	make -C build -j$(NPROCS)
 	echo "build success"
 	cp build/*.uf2 yoctocore.uf2
@@ -37,6 +37,7 @@ pico-extras:
 	
 changebaud:
 	-curl localhost:7083 
+	sleep 1
 
 resetpico2:
 	-amidi -p $$(amidi -l | grep 'yoctocore\|zeptoboard\|ectocore' | awk '{print $$2}') -S "F0 64 69 73 6B 6D 6F 64 65 31 F7"
@@ -46,7 +47,7 @@ resetpico2:
 	-amidi -p $$(amidi -l | grep 'yoctocore\|zeptoboard\|ectocore' | awk '{print $$2}') -S "F0 64 69 73 6B 6D 6F 64 65 31 F7"
 	sleep 0.1
 
-upload: resetpico2 changebaud yoctocore
+upload: resetpico2 changebaud
 	./dev/upload.sh 
 
 
