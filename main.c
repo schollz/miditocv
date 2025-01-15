@@ -256,6 +256,7 @@ void timer_callback_ws2812(bool on, int user_data) {
 
 void timer_callback_check_memory_usage(bool on, int user_data) {
   uint32_t free_heap = getFreeHeap();
+  printf_sysex("free_heap %d\n", free_heap);
   if (free_heap < 161216) {
     uint64_t ct = time_us_64();
     luaGarbageCollect();

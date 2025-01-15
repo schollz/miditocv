@@ -2,7 +2,11 @@ module github.com/schollz/yoctocore/dev/yoctocore-fs
 
 go 1.23.3
 
-require github.com/dop251/goja v0.0.0-20250114131315-46d383d606d3
+require (
+	github.com/dop251/goja v0.0.0-20250114131315-46d383d606d3
+	github.com/schollz/logger v1.2.0
+	gitlab.com/gomidi/midi/v2 v2.2.19
+)
 
 require (
 	github.com/dlclark/regexp2 v1.11.4 // indirect
