@@ -6,7 +6,7 @@ GOVERSION = go1.21.11
 GOBIN = $(HOME)/go/bin
 GOINSTALLPATH = $(GOBIN)/$(GOVERSION)
 
-yoctocore: luascripts pico-extras build 
+yoctocore: luascripts pico-extras build
 	make -C build -j$(NPROCS)
 	echo "build success"
 	cp build/*.uf2 yoctocore.uf2
@@ -27,25 +27,25 @@ luascripts:
 lua:
 	lua web/static/globals.lua
 
-build: 
+build:
 	mkdir -p build
-	cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..
+	cd build && cmake ..
 
 release:
 	mkdir -p build
 	cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
 
 envs:
-	export PICO_EXTRAS_PATH=/home/zns/pico/pico-extras 
-	export PICO_SDK_PATH=/home/zns/pico/pico-sdk 
+	export PICO_EXTRAS_PATH=/home/zns/pico/pico-extras
+	export PICO_SDK_PATH=/home/zns/pico/pico-sdk
 
 pico-extras:
 	git clone https://github.com/raspberrypi/pico-extras.git pico-extras
 	cd pico-extras && git checkout sdk-1.5.1
 	cd pico-extras && git submodule update -i
-	
+
 changebaud:
-	-curl localhost:7083 
+	-curl localhost:7083
 
 resetpico2:
 	-amidi -p $$(amidi -l | grep 'yoctocore\|zeptoboard\|ectocore' | awk '{print $$2}') -S "F0 64 69 73 6B 6D 6F 64 65 31 F7"
@@ -56,7 +56,7 @@ resetpico2:
 	sleep 0.1
 
 upload: resetpico2 changebaud yoctocore
-	./dev/upload.sh 
+	./dev/upload.sh
 
 
 clean:
@@ -74,7 +74,7 @@ ignore:
 
 web/localhost.pem:
 	go install -v filippo.io/mkcert@latest
-	cd web && mkcert -install 
+	cd web && mkcert -install
 	cd web && mkcert localhost
 
 .PHONY: web
