@@ -109,12 +109,54 @@ const float division_values[19] = {
 #include "lib/midicallback.h"
 #endif
 
+void on_successful_lua_callback(int i, float volts, bool trigger) {
+  uint32_t ct = to_ms_since_boot(get_absolute_time());
+  bool shift = button_values[8];
+  Out *out = &yocto.out[i];
+
+  out->voltage_set = volts;
+
+  // find any linked outputs and activate the envelope
+  for (uint8_t i2 = 0; i2 < 8; i2++) {
+    Config *config = &yocto.config[yocto.i][i2];
+    Out *out = &yocto.out[i2];
+    if (config->linked_to == i + 1) {
+      if (config->mode == MODE_ENVELOPE) {
+        // trigger the envelope
+        // printf("[out%d] env_off linked to out%d\n", i2 + 1,
+        //        config->linked_to);
+        ADSR_gate(&out->adsr, trigger, ct);
+      } else if (config->mode == MODE_GATE) {
+        // trigger the gate
+        // printf("[out%d] gate_off linked to out%d\n", i2 + 1,
+        //        config->linked_to);
+        if (trigger) {
+          out->voltage_set = config->max_voltage;
+        } else {
+          out->voltage_set = config->min_voltage;
+        }
+      }
+    }
+  }
+}
+
 void timer_callback_sample_knob(bool on, int user_data) {
   for (uint8_t i = 0; i < 8; i++) {
     int16_t val_changed =
         KnobChange_update(&pool_knobs[i], MCP3208_read(&mcp3208, i, false));
     if (val_changed != -1) {
       printf("Knob %d: %d\n", i, val_changed);
+      Config *config = &yocto.config[yocto.i][i];
+      if (config->mode == MODE_CODE) {
+        float volts;
+        bool trigger;
+        bool shift = button_values[8];
+        float val = val_changed/1023.0f;
+        printf("Lua on_knob #%d - val=%f\n", i, val);
+        if (luaRunOnKnob(i, val, shift, &volts, &trigger)) {
+          on_successful_lua_callback(i, volts, trigger);
+        }
+      }
     }
   }
 }
@@ -138,7 +180,6 @@ const uint8_t const_colors[11][3] = {
 };
 
 void timer_callback_beat(bool on, int user_data) {
-  uint32_t ct = to_ms_since_boot(get_absolute_time());
   Config *config = &yocto.config[yocto.i][user_data];
   Out *out = &yocto.out[user_data];
   if (config->mode == MODE_CLOCK) {
@@ -152,30 +193,7 @@ void timer_callback_beat(bool on, int user_data) {
     float volts;
     bool trigger;
     if (luaRunOnBeat(user_data, on, &volts, &trigger)) {
-      out->voltage_set = volts;
-      bool trigger = trigger;
-      // find any linked outputs and activate the envelope
-      for (uint8_t i = 0; i < 8; i++) {
-        Config *config = &yocto.config[yocto.i][i];
-        Out *out = &yocto.out[i];
-        if (config->linked_to == user_data + 1) {
-          if (config->mode == MODE_ENVELOPE) {
-            // trigger the envelope
-            // printf("[out%d] env_off linked to out%d\n", i + 1,
-            //        config->linked_to);
-            ADSR_gate(&out->adsr, on, ct);
-          } else if (config->mode == MODE_GATE) {
-            // trigger the gate
-            // printf("[out%d] gate_off linked to out%d\n", i + 1,
-            //        config->linked_to);
-            if (on) {
-              out->voltage_set = config->max_voltage;
-            } else {
-              out->voltage_set = config->min_voltage;
-            }
-          }
-        }
-      }
+      on_successful_lua_callback(user_data, volts, trigger);
     }
   }
 }
@@ -927,6 +945,15 @@ int main() {
               if (button_shift && val) {
                 // toggle lfo
                 out->lfo_disabled = !out->lfo_disabled;
+              }
+              break;
+            case MODE_CODE:
+              float volts;
+              bool trigger;
+              bool shift = button_values[8];
+              printf("Lua on_button #%d - val=%d\n", i, val);
+              if (luaRunOnButton(i, val, shift, &volts, &trigger)) {
+                on_successful_lua_callback(i, volts, trigger);
               }
               break;
             default:
