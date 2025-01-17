@@ -405,7 +405,7 @@ void midi_note_on(int channel, int note, int velocity) {
       if (luaRunOnNoteOn(i, channel, note, velocity, &volts, &trigger)) {
         // on_successful_lua_callback(i, volts, trigger);
         out->voltage_set = volts;
-        outs_with_note_change[i] = true;
+        outs_with_note_change[i] = trigger;
       }
     }
   }
