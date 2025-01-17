@@ -29,7 +29,7 @@ lua:
 
 build:
 	mkdir -p build
-	cd build && cmake ..
+	cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..
 
 release:
 	mkdir -p build
