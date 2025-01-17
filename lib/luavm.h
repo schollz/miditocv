@@ -102,7 +102,7 @@ bool loadVoltsTrigger(float *volts, bool *trigger) {
   // get volts
   lua_getfield(L, -1, "volts");
   if (!lua_isnumber(L, -1)) {
-    lua_pop(L, 3);  // Pop envs[index] and volts
+    lua_pop(L, 1);  // Pop volts
     return false;
   }
   *volts = lua_tonumber(L, -1);
