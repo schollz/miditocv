@@ -325,7 +325,7 @@ void midi_note_off(int channel, int note) {
       float volts;
       bool trigger;
       bool shift = button_values[8];
-      printf("Lua on_note_on #%d - ch=%d, note=%d\n", i, channel, note);
+      printf("Lua on_note_off #%d - ch=%d, note=%d\n", i, channel, note);
       if (luaRunOnNoteOff(i, channel, note, &volts, &trigger)) {
         // on_successful_lua_callback(i, volts, trigger);
         out->voltage_set = volts;
