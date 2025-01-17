@@ -109,35 +109,43 @@ const float division_values[19] = {
 #include "lib/midicallback.h"
 #endif
 
+void update_linked_outs(bool triggering_outs[], bool trigger, uint32_t ct) {
+  for (uint8_t i2 = 0; i2 < 8; i2++) {
+    Config *config = &yocto.config[yocto.i][i2];
+    Out *out = &yocto.out[i2];
+
+    if (config->linked_to < 1)                     continue;
+    if (! triggering_outs[config->linked_to - 1])  continue;
+
+    if (config->mode == MODE_ENVELOPE) {
+      // trigger the envelope
+      printf("[out%d] env_off linked to out%d\n", i2 + 1,
+             config->linked_to);
+      ADSR_gate(&out->adsr, trigger, ct);
+    } else if (config->mode == MODE_GATE) {
+      // trigger the gate
+      printf("[out%d] gate_off linked to out%d\n", i2 + 1,
+             config->linked_to);
+      if (trigger) {
+        out->voltage_set = config->max_voltage;
+      } else {
+        out->voltage_set = config->min_voltage;
+      }
+      }
+    }
+  }
+
 void on_successful_lua_callback(int i, float volts, bool trigger) {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   bool shift = button_values[8];
   Out *out = &yocto.out[i];
+  bool triggering_outs[8] = { false };
 
   out->voltage_set = volts;
 
   // find any linked outputs and activate the envelope
-  for (uint8_t i2 = 0; i2 < 8; i2++) {
-    Config *config = &yocto.config[yocto.i][i2];
-    Out *out = &yocto.out[i2];
-    if (config->linked_to == i + 1) {
-      if (config->mode == MODE_ENVELOPE) {
-        // trigger the envelope
-        // printf("[out%d] env_off linked to out%d\n", i2 + 1,
-        //        config->linked_to);
-        ADSR_gate(&out->adsr, trigger, ct);
-      } else if (config->mode == MODE_GATE) {
-        // trigger the gate
-        // printf("[out%d] gate_off linked to out%d\n", i2 + 1,
-        //        config->linked_to);
-        if (trigger) {
-          out->voltage_set = config->max_voltage;
-        } else {
-          out->voltage_set = config->min_voltage;
-        }
-      }
-    }
-  }
+  triggering_outs[i] = true;
+  update_linked_outs(triggering_outs, trigger, ct);
 }
 
 void timer_callback_sample_knob(bool on, int user_data) {
@@ -313,27 +321,20 @@ void midi_note_off(int channel, int note) {
       out->note_on.time_on = 0;
       outs_with_note_change[i] = true;
       printf("[out%d] note_off %d\n", i + 1, note);
-    }
-  }
-  // find any linked outputs and activate the envelope
-  for (uint8_t i = 0; i < 8; i++) {
-    Config *config = &yocto.config[yocto.i][i];
-    Out *out = &yocto.out[i];
-    if (config->linked_to > 0) {
-      if (outs_with_note_change[config->linked_to - 1]) {
-        if (config->mode == MODE_ENVELOPE) {
-          // trigger the envelope
-          printf("[out%d] env_off linked to out%d\n", i + 1, config->linked_to);
-          ADSR_gate(&out->adsr, 0, ct);
-        } else if (config->mode == MODE_GATE) {
-          // trigger the gate
-          printf("[out%d] gate_off linked to out%d\n", i + 1,
-                 config->linked_to);
-          out->voltage_set = config->min_voltage;
-        }
+    } else if (config->mode == MODE_CODE) {
+      float volts;
+      bool trigger;
+      bool shift = button_values[8];
+      printf("Lua on_note_on #%d - ch=%d, note=%d\n", i, channel, note);
+      if (luaRunOnNoteOff(i, channel, note, &volts, &trigger)) {
+        // on_successful_lua_callback(i, volts, trigger);
+        out->voltage_set = volts;
+        outs_with_note_change[i] = true;
       }
     }
   }
+  // find any linked outputs and activate the envelope
+  update_linked_outs(outs_with_note_change, false, ct);
 }
 
 void midi_note_on(int channel, int note, int velocity) {
@@ -396,29 +397,20 @@ void midi_note_on(int channel, int note, int velocity) {
 #endif
         break;  // TODO make this an option
       }
-    }
-  }
-  // find any linked outputs and activate the envelope
-  for (uint8_t i = 0; i < 8; i++) {
-    Config *config = &yocto.config[yocto.i][i];
-    Out *out = &yocto.out[i];
-    if (config->linked_to > 0) {
-      if (outs_with_note_change[config->linked_to - 1]) {
-        if (config->mode == MODE_ENVELOPE) {
-          // trigger the envelope
-          // printf("[out%d] env_on linked to out%d\n", i + 1,
-          // config->linked_to); set the max level to scale with the velocity
-          out->adsr.max = linlin((float)velocity, 0.0f, 127.0f, 0.0f, 1.0f);
-          ADSR_gate(&out->adsr, 1, ct);
-        } else if (config->mode == MODE_GATE) {
-          // trigger the gate
-          // printf("[out%d] gate_on linked to out%d\n", i + 1,
-          // config->linked_to);
-          out->voltage_set = config->max_voltage;
-        }
+    } else if (config->mode == MODE_CODE) {
+      float volts;
+      bool trigger;
+      bool shift = button_values[8];
+      printf("Lua on_note_on #%d - ch=%d, note=%d, vel=%d\n", i, channel, note, velocity);
+      if (luaRunOnNoteOn(i, channel, note, velocity, &volts, &trigger)) {
+        // on_successful_lua_callback(i, volts, trigger);
+        out->voltage_set = volts;
+        outs_with_note_change[i] = true;
       }
     }
   }
+  // find any linked outputs and activate the envelope
+  update_linked_outs(outs_with_note_change, true, ct);
 }
 
 void midi_cc(int channel, int cc, int value) {
@@ -431,7 +423,7 @@ void midi_cc(int channel, int cc, int value) {
       if (config->midi_channel == channel && config->midi_cc == cc) {
         // set the voltage
         out->voltage_set =
-            linlin(value, 0, 127, config->min_voltage, config->max_voltage);
+          linlin(value, 0, 127, config->min_voltage, config->max_voltage);
         printf("[cc%d] %f\n", i + 1, out->voltage_current);
       } else if (button_values[i]) {
         // listen and learn the channel and cc
@@ -439,6 +431,14 @@ void midi_cc(int channel, int cc, int value) {
         yocto.config[yocto.i][i].midi_cc = cc;
         // save the config
         Yoctocore_schedule_save(&yocto);
+      }
+    } else if (config->mode == MODE_CODE) {
+      float volts;
+      bool trigger;
+      bool shift = button_values[8];
+      printf("Lua on_cc #%d - cc=%d, cal=%d\n", i, cc, value);
+      if (luaRunOnCc(i, cc, value, &volts, &trigger)) {
+        on_successful_lua_callback(i, volts, trigger);
       }
     }
   }
