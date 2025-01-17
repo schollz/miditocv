@@ -23,7 +23,7 @@ pico_sdk_init()
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall")
 
 # Tell CMake where to find the executable source file
-add_executable(${PROJECT_NAME} 
+add_executable(${PROJECT_NAME}
     main.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/hw_config.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/pcg_basic.c
@@ -45,7 +45,7 @@ pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/uart_rx.pio)
 pico_add_extra_outputs(${PROJECT_NAME})
 
 # Link to pico_stdlib (gpio, time, etc. functions)
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME}
     pico_stdlib
     pico_multicore
     FatFs_SPI
@@ -80,7 +80,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 
     # pins
     SDCARD_CMD_GPIO=11
-    SDCARD_D0_GPIO=12 
+    SDCARD_D0_GPIO=12
     I2C0_SDA_PIN=4
     I2C0_SCL_PIN=5
     I2C1_SDA_PIN=2
@@ -93,7 +93,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     WS2812_PIN=7
     WS2812_SM=2
     WS2812_NUM_LEDS=16
-    
+
     # constants
     REFERENCE_5V=5.0
     MAX_NOTE_HOLD_TIME_MS=30000
@@ -108,11 +108,17 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 )
 
 # if INCLUDE_MIDI
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME}
     tinyusb_device
     tinyusb_board
 )
-pico_enable_stdio_usb(${PROJECT_NAME} 0)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    pico_enable_stdio_usb(${PROJECT_NAME} 0)
+    add_compile_definitions(PICO_STDIO_USB_ENABLE=0)
+else()
+    pico_enable_stdio_usb(${PROJECT_NAME} 1)
+    add_compile_definitions(PICO_STDIO_USB_ENABLE=1)
+endif()
 pico_enable_stdio_uart(${PROJECT_NAME} 1)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 

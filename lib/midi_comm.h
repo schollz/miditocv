@@ -13,6 +13,7 @@ typedef void (*callback_uint16)(uint16_t);
 typedef void (*callback_uint8_buffer)(uint8_t *buffer, int length);
 typedef void (*callback_void)();
 
+
 uint32_t send_buffer_as_sysex(char *buffer, uint32_t bufsize) {
   uint8_t sysex_data[bufsize + 2];  // +2 for SysEx start and end bytes
 

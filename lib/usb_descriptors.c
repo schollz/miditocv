@@ -35,31 +35,38 @@
  *   [MSB]       MIDI | HID | MSC | CDC          [LSB]
  */
 #define _PID_MAP(itf, n) ((CFG_TUD_##itf) << (n))
-#define USB_PID                                                      \
-  (0x4000 | _PID_MAP(CDC, 0) | _PID_MAP(MSC, 1) | _PID_MAP(HID, 2) | \
+#define USB_PID                                                         \
+  (0x4000 | _PID_MAP(CDC, 0) | _PID_MAP(MSC, 1) | _PID_MAP(HID, 2) |    \
    _PID_MAP(MIDI, 3) | _PID_MAP(VENDOR, 4))
 
 //--------------------------------------------------------------------+
 // Device Descriptors
 //--------------------------------------------------------------------+
 tusb_desc_device_t const desc_device = {
-    .bLength = sizeof(tusb_desc_device_t),
-    .bDescriptorType = TUSB_DESC_DEVICE,
-    .bcdUSB = 0x0200,
-    .bDeviceClass = 0x00,
-    .bDeviceSubClass = 0x00,
-    .bDeviceProtocol = 0x00,
-    .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
+  .bLength = sizeof(tusb_desc_device_t),
+  .bDescriptorType = TUSB_DESC_DEVICE,
+  .bcdUSB = 0x0200,
 
-    .idVendor = 0xCafe,
-    .idProduct = USB_PID,
-    .bcdDevice = 0x0100,
+#if CFG_TUD_CDC
+  .bDeviceClass = TUSB_CLASS_MISC,
+  .bDeviceSubClass = MISC_SUBCLASS_COMMON,
+  .bDeviceProtocol = MISC_PROTOCOL_IAD,
+#else
+  .bDeviceClass = 0x00,
+  .bDeviceSubClass = 0x00,
+  .bDeviceProtocol = 0x00,
+#endif
+  .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
-    .iManufacturer = 0x01,
-    .iProduct = 0x02,
-    .iSerialNumber = 0x03,
+  .idVendor = 0xCafe,
+  .idProduct = USB_PID,
+  .bcdDevice = 0x0100,
 
-    .bNumConfigurations = 0x01};
+  .iManufacturer = 0x01,
+  .iProduct = 0x02,
+  .iSerialNumber = 0x03,
+
+  .bNumConfigurations = 0x01};
 
 // Invoked when received GET DEVICE DESCRIPTOR
 // Application return pointer to descriptor
@@ -71,37 +78,64 @@ uint8_t const* tud_descriptor_device_cb(void) {
 // Configuration Descriptor
 //--------------------------------------------------------------------+
 
-enum { ITF_NUM_MIDI = 0, ITF_NUM_MIDI_STREAMING, ITF_NUM_TOTAL };
-
-#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_MIDI_DESC_LEN)
-
-#if CFG_TUSB_MCU == OPT_MCU_LPC175X_6X || \
-    CFG_TUSB_MCU == OPT_MCU_LPC177X_8X || CFG_TUSB_MCU == OPT_MCU_LPC40XX
-// LPC 17xx and 40xx endpoint type (bulk/interrupt/iso) are fixed by its number
-// 0 control, 1 In, 2 Bulk, 3 Iso, 4 In etc ...
-#define EPNUM_MIDI 0x02
+#if CFG_TUD_CDC
+enum
+  {
+    ITF_NUM_CDC            = 0,
+    ITF_NUM_CDC_DATA,
+    ITF_NUM_MIDI,
+    ITF_NUM_MIDI_STREAMING,
+    ITF_NUM_TOTAL
+  };
 #else
-#define EPNUM_MIDI 0x01
+enum { ITF_NUM_MIDI = 0, ITF_NUM_MIDI_STREAMING, ITF_NUM_TOTAL };
 #endif
 
-uint8_t const desc_fs_configuration[] = {
-    // Config number, interface count, string index, total length, attribute,
-    // power in mA
-    TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN,
-                          TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+#define CONFIG_TOTAL_LEN (TUD_CONFIG_DESC_LEN + CFG_TUD_CDC * TUD_CDC_DESC_LEN + TUD_MIDI_DESC_LEN)
 
-    // Interface number, string index, EP Out & EP In address, EP size
-    TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 0, EPNUM_MIDI, 0x80 | EPNUM_MIDI, 64)};
+/* #if CFG_TUSB_MCU == OPT_MCU_LPC175X_6X ||                            \
+ *     CFG_TUSB_MCU == OPT_MCU_LPC177X_8X || CFG_TUSB_MCU == OPT_MCU_LPC40XX
+ * // LPC 17xx and 40xx endpoint type (bulk/interrupt/iso) are fixed by its number
+ * // 0 control, 1 In, 2 Bulk, 3 Iso, 4 In etc ...
+ * #define EPNUM_MIDI 0x02
+ * #else
+ * #define EPNUM_MIDI 0x01
+ * #endif */
+
+#define EPNUM_MIDI 0x04
+
+#define EPNUM_CDC_NOTIF 0x81
+#define EPNUM_CDC_OUT   0x02
+#define EPNUM_CDC_IN    0x82
+
+uint8_t const desc_fs_configuration[] = {
+  // Config number, interface count, string index, total length, attribute,
+  // power in mA
+  TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN,
+                        TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+
+#if CFG_TUD_CDC
+  // Interface number, string index, EP Out & EP In address, EP size
+  TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, 64),
+#endif
+
+  // Interface number, string index, EP Out & EP In address, EP size
+  TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 0, EPNUM_MIDI, 0x80 | EPNUM_MIDI, 64)};
 
 #if TUD_OPT_HIGH_SPEED
 uint8_t const desc_hs_configuration[] = {
-    // Config number, interface count, string index, total length, attribute,
-    // power in mA
-    TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN,
-                          TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+  // Config number, interface count, string index, total length, attribute,
+  // power in mA
+  TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN,
+                        TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
 
-    // Interface number, string index, EP Out & EP In address, EP size
-    TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 0, EPNUM_MIDI, 0x80 | EPNUM_MIDI, 512)};
+#if CFG_TUD_CDC
+  // Interface number, string index, EP Out & EP In address, EP size
+  TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, 512),
+#endif
+
+  // Interface number, string index, EP Out & EP In address, EP size
+  TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 0, EPNUM_MIDI, 0x80 | EPNUM_MIDI, 512)};
 #endif
 
 // Invoked when received GET CONFIGURATION DESCRIPTOR
@@ -113,7 +147,7 @@ uint8_t const* tud_descriptor_configuration_cb(uint8_t index) {
 #if TUD_OPT_HIGH_SPEED
   // Although we are highspeed, host may be fullspeed.
   return (tud_speed_get() == TUSB_SPEED_HIGH) ? desc_hs_configuration
-                                              : desc_fs_configuration;
+    : desc_fs_configuration;
 #else
   return desc_fs_configuration;
 #endif
@@ -125,21 +159,25 @@ uint8_t const* tud_descriptor_configuration_cb(uint8_t index) {
 
 // array of pointer to string descriptors
 char const* string_desc_arr[] = {
-    (const char[]){0x09, 0x04},  // 0: is supported language is English (0x0409)
-    "Raspberry Pi",              // 1: Manufacturer
+  (const char[]){0x09, 0x04},  // 0: is supported language is English (0x0409)
+  "Raspberry Pi",              // 1: Manufacturer
 #ifdef INCLUDE_BOARDCORE
-    "zeptoboard",  // 2: Product
+  "zeptoboard",  // 2: Product
 #endif
 #ifdef INCLUDE_ZEPTOCORE
-    "zeptocore",  // 2: Product
+  "zeptocore",  // 2: Product
 #endif
 #ifdef INCLUDE_ECTOCORE
-    "ectocore",  // 2: Product
+  "ectocore",  // 2: Product
 #endif
 #ifdef INCLUDE_YOCTOCORE
-    "yoctocore",  // 2: Product
+  "yoctocore",  // 2: Product
 #endif
-    "123456",  // 3: Serials, should use chip ID
+  "123456",  // 3: Serials, should use chip ID
+
+#if CFG_TUD_CDC
+  "Yoctocore CDC Device", // 4: CDC Interface
+#endif
 };
 
 static uint16_t _desc_str[32];
