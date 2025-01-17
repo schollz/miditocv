@@ -131,9 +131,9 @@ void update_linked_outs(bool triggering_outs[], bool trigger, uint32_t ct) {
       } else {
         out->voltage_set = config->min_voltage;
       }
-      }
     }
   }
+}
 
 void on_successful_lua_callback(int i, float volts, bool trigger) {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
