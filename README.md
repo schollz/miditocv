@@ -87,14 +87,14 @@ This function is special, in that it *can be linked to a clock output*, but if i
 
 ### `on_knob(value,shift)`
 
-This function exposes the knob events. The `value` is the knob value (0-1023), the `shift` is a boolean of whether the shift button is pressed.
+This function exposes the knob events. The `value` is the knob value (0.0-1.0), the `shift` is a boolean of whether the shift button is pressed.
 
 ```lua
 function on_knob(value,shift)
-    if shift then 
-        volts = value/1023.0
+    if shift then
+        volts = value
     else
-        volts = value/1023.0 * 5.0
+        volts = value * 5.0
     end
 end
 ```
