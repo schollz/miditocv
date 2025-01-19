@@ -31,8 +31,8 @@ It is currently under development. Here is the implementation status:
 
 - [x] [`volts` and `trigger`](#volts-and-trigger)
 - [x] [`on_beat(on)`](#on_beaton)
-- [ ] [`on_knob(value,shift)`](#on_knobvalueshift)
-- [ ] [`on_button(value,shift)`](#on_buttonvalueshift)
+- [x] [`on_knob(value,shift)`](#on_knobvalueshift)
+- [x] [`on_button(value,shift)`](#on_buttonvalueshift)
 - [ ] [`on_note_on(channel,note,velocity)`](#on_note_onchannelnotevelocity)
 - [ ] [`on_note_off(channel,note)`](#on_note_offchannelnote)
 - [ ] [`on_cc(channel,cc,value)`](#on_ccchannelccvalue)
