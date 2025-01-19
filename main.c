@@ -49,6 +49,10 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #define DURATION_HOLD_LONG 1250
 #define FLASH_TARGET_OFFSET (5 * 256 * 1024)
 
+#if CFG_TUD_CDC
+char cdc_rx_buffer[CFG_TUD_CDC_RX_BUFSIZE];
+#endif
+
 //
 #include "ff.h" /* Obtains integer types */
 //
@@ -858,6 +862,16 @@ int main() {
       midi_receive_byte(ch);
     }
     timer_per[1] = time_us_32() - us;
+
+#if CFG_TUD_CDC
+    // process serial input
+    if (tud_cdc_connected()) {
+        int count = tud_cdc_read(cdc_rx_buffer, CFG_TUD_CDC_RX_BUFSIZE);
+        if (count) {
+            // printf("Received: %s\n", cdc_rx_buffer);
+        }
+    }
+#endif
 
     // process any mode change
     for (uint8_t i = 0; i < 8; i++) {
