@@ -49,10 +49,6 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #define DURATION_HOLD_LONG 1250
 #define FLASH_TARGET_OFFSET (5 * 256 * 1024)
 
-#if CFG_TUD_CDC
-char cdc_rx_buffer[CFG_TUD_CDC_RX_BUFSIZE];
-#endif
-
 //
 #include "ff.h" /* Obtains integer types */
 //
@@ -97,6 +93,11 @@ uint32_t time_per_iteration = 0;
 uint32_t timer_per[32];
 uint32_t lfo_ct_last[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 float lfo_index_acc[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+#if CFG_TUD_CDC
+char cdc_rx_buffer[CFG_TUD_CDC_RX_BUFSIZE];
+#endif
+
 // const clockDivisions = [
 //   "/512", "/256", "/128", "/64", "/32", "/16", "/8", "/4", "/2", "x1", "x2",
 //   "x3", "x4", "x6", "x8", "x12", "x16", "x24", "x48"
