@@ -239,7 +239,7 @@ async function updateLocalScene(scene_num) {
     let time_per_event = []
     for (let output_num = 0; output_num < 8; output_num++) {
         for (let param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
-            sysex_string = `${scene_num}_${output_num}_${hash_djb(param)}`;
+            const sysex_string = `${scene_num}_${output_num}_${hash_djb(param)}`;
             // skip code and code_len
             if (param == "code_len" || param == "code") {
                 continue;
@@ -285,8 +285,9 @@ function setupMidiInputListener() {
                     sysex += String.fromCharCode(midiMessage.data[i]);
                 }
                 console.log(`[recv] ${sysex}`);
-                fields = sysex.split(" ");
-                fields_ = sysex.split("_");
+		console.log(sysex);
+                let fields = sysex.split(" ");
+                let fields_ = sysex.split("_");
                 // see if it starts with version=
                 if (sysex.startsWith("LS") || sysex.startsWith("LN") || sysex.startsWith("LE")) {
                     // code starting, continuing, and ending needs to appended to codeTexts
@@ -448,7 +449,7 @@ function setupMidi() {
                 if (output.name.includes("yoctocore")) {
                     window.yoctocoreDevice = output;
                     console.log("output device connected");
-                    sysex_string = `0_0_${hash_djb("scene")}`;
+                    const sysex_string = `0_0_${hash_djb("scene")}`;
                     console.log(`[sending_sysex] ${sysex_string}`);
                     send_sysex(sysex_string);
                     vm.device_connected = true;
@@ -513,7 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.setupMidi = setupMidi;
         setTimeout(() => {
             setupMidi();
-        }, 1000);
+        }, 100);
         // // ask for sparkline data (doubles as check if connected)
         const sparkline_update_time_ms = 50;
         setTimeout(() => {
