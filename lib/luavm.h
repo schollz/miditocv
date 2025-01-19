@@ -23,7 +23,7 @@ int _unlink(const char *pathname) {
 //
 #include "lua_globals.h"
 
-lua_State *L;
+lua_State *L = NULL;
 
 /**
 function update_env(i, code)
@@ -31,6 +31,10 @@ function update_env(i, code)
 end
 **/
 int luaUpdateEnvironment(int index, const char *code) {
+  if (L == NULL) {
+    printf("[luaUpdateEnvironment] Lua VM not initialized.\n");
+    return 1;
+  }
   lua_getglobal(L, "update_env");
   if (!lua_isfunction(L, -1)) {
     printf(
@@ -121,7 +125,7 @@ bool loadVoltsTrigger(float *volts, bool *trigger) {
 }
 
 float luaGetBPM(int index) {
-  if(! withLuaEnv(index)) return -1;
+  if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1, "bpm");  // Push envs[index].bpm onto the stack
   if (!lua_isnumber(L, -1)) {  // Check if bpm is a number
@@ -135,7 +139,7 @@ float luaGetBPM(int index) {
 }
 
 bool luaRunOnBeat(int index, bool on, float *volts, bool *trigger) {
-  if(! withLuaEnv(index)) return false;
+  if (!withLuaEnv(index)) return false;
 
   lua_getfield(L, -1, "on_beat");  // Push envs[index].on_beat onto the stack
   if (!lua_isfunction(L, -1)) {    // Check if on_beat is a function
@@ -164,7 +168,7 @@ bool luaRunOnBeat(int index, bool on, float *volts, bool *trigger) {
     lua_pop(L, num_results);
   }
 
-  if (! loadVoltsTrigger(volts, trigger)) {
+  if (!loadVoltsTrigger(volts, trigger)) {
     lua_pop(L, 2);  // Pop envs[index]
     return false;
   }
@@ -172,8 +176,9 @@ bool luaRunOnBeat(int index, bool on, float *volts, bool *trigger) {
   return true;
 }
 
-bool luaRunOnKnob(int index, float val, bool shift, float *volts, bool *trigger) {
-  if(! withLuaEnv(index)) return false;
+bool luaRunOnKnob(int index, float val, bool shift, float *volts,
+                  bool *trigger) {
+  if (!withLuaEnv(index)) return false;
 
   lua_getfield(L, -1, "on_knob");  // Push envs[index].on_knob onto the stack
   if (!lua_isfunction(L, -1)) {    // Check if on_knob is a function
@@ -204,7 +209,7 @@ bool luaRunOnKnob(int index, float val, bool shift, float *volts, bool *trigger)
     lua_pop(L, num_results);
   }
 
-  if (! loadVoltsTrigger(volts, trigger)) {
+  if (!loadVoltsTrigger(volts, trigger)) {
     lua_pop(L, 2);  // Pop envs[index]
     return false;
   }
@@ -212,12 +217,14 @@ bool luaRunOnKnob(int index, float val, bool shift, float *volts, bool *trigger)
   return true;
 }
 
-bool luaRunOnButton(int index, bool val, bool shift, float *volts, bool *trigger) {
-  if(! withLuaEnv(index)) return false;
+bool luaRunOnButton(int index, bool val, bool shift, float *volts,
+                    bool *trigger) {
+  if (!withLuaEnv(index)) return false;
 
-  lua_getfield(L, -1, "on_button");  // Push envs[index].on_button onto the stack
-  if (!lua_isfunction(L, -1)) {    // Check if on_button is a function
-    lua_pop(L, 3);                 // Pop envs, envs[index], and on_button
+  lua_getfield(L, -1,
+               "on_button");     // Push envs[index].on_button onto the stack
+  if (!lua_isfunction(L, -1)) {  // Check if on_button is a function
+    lua_pop(L, 3);               // Pop envs, envs[index], and on_button
     return false;
   }
 
@@ -244,7 +251,7 @@ bool luaRunOnButton(int index, bool val, bool shift, float *volts, bool *trigger
     lua_pop(L, num_results);
   }
 
-  if (! loadVoltsTrigger(volts, trigger)) {
+  if (!loadVoltsTrigger(volts, trigger)) {
     lua_pop(L, 2);  // Pop envs[index]
     return false;
   }
@@ -252,12 +259,14 @@ bool luaRunOnButton(int index, bool val, bool shift, float *volts, bool *trigger
   return true;
 }
 
-bool luaRunOnNoteOn(int index, int channel, int note, int velocity, float *volts, bool *trigger) {
-  if(! withLuaEnv(index)) return false;
+bool luaRunOnNoteOn(int index, int channel, int note, int velocity,
+                    float *volts, bool *trigger) {
+  if (!withLuaEnv(index)) return false;
 
-  lua_getfield(L, -1, "on_note_on");  // Push envs[index].on_button onto the stack
-  if (!lua_isfunction(L, -1)) {    // Check if on_note_on is a function
-    lua_pop(L, 3);                 // Pop envs, envs[index], and on_button
+  lua_getfield(L, -1,
+               "on_note_on");    // Push envs[index].on_button onto the stack
+  if (!lua_isfunction(L, -1)) {  // Check if on_note_on is a function
+    lua_pop(L, 3);               // Pop envs, envs[index], and on_button
     return false;
   }
 
@@ -285,7 +294,7 @@ bool luaRunOnNoteOn(int index, int channel, int note, int velocity, float *volts
     lua_pop(L, num_results);
   }
 
-  if (! loadVoltsTrigger(volts, trigger)) {
+  if (!loadVoltsTrigger(volts, trigger)) {
     lua_pop(L, 2);  // Pop envs[index]
     return false;
   }
@@ -293,12 +302,14 @@ bool luaRunOnNoteOn(int index, int channel, int note, int velocity, float *volts
   return true;
 }
 
-bool luaRunOnNoteOff(int index, int channel, int note, float *volts, bool *trigger) {
-  if(! withLuaEnv(index)) return false;
+bool luaRunOnNoteOff(int index, int channel, int note, float *volts,
+                     bool *trigger) {
+  if (!withLuaEnv(index)) return false;
 
-  lua_getfield(L, -1, "on_note_off");  // Push envs[index].on_button onto the stack
-  if (!lua_isfunction(L, -1)) {    // Check if on_note_off is a function
-    lua_pop(L, 3);                 // Pop envs, envs[index], and on_button
+  lua_getfield(L, -1,
+               "on_note_off");   // Push envs[index].on_button onto the stack
+  if (!lua_isfunction(L, -1)) {  // Check if on_note_off is a function
+    lua_pop(L, 3);               // Pop envs, envs[index], and on_button
     return false;
   }
 
@@ -325,7 +336,7 @@ bool luaRunOnNoteOff(int index, int channel, int note, float *volts, bool *trigg
     lua_pop(L, num_results);
   }
 
-  if (! loadVoltsTrigger(volts, trigger)) {
+  if (!loadVoltsTrigger(volts, trigger)) {
     lua_pop(L, 2);  // Pop envs[index]
     return false;
   }
@@ -334,11 +345,11 @@ bool luaRunOnNoteOff(int index, int channel, int note, float *volts, bool *trigg
 }
 
 bool luaRunOnCc(int index, int cc, int value, float *volts, bool *trigger) {
-  if(! withLuaEnv(index)) return false;
+  if (!withLuaEnv(index)) return false;
 
   lua_getfield(L, -1, "on_cc");  // Push envs[index].on_button onto the stack
-  if (!lua_isfunction(L, -1)) {    // Check if on_cc is a function
-    lua_pop(L, 3);                 // Pop envs, envs[index], and on_button
+  if (!lua_isfunction(L, -1)) {  // Check if on_cc is a function
+    lua_pop(L, 3);               // Pop envs, envs[index], and on_button
     return false;
   }
 
@@ -365,7 +376,7 @@ bool luaRunOnCc(int index, int cc, int value, float *volts, bool *trigger) {
     lua_pop(L, num_results);
   }
 
-  if (! loadVoltsTrigger(volts, trigger)) {
+  if (!loadVoltsTrigger(volts, trigger)) {
     lua_pop(L, 2);  // Pop envs[index]
     return false;
   }
