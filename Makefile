@@ -21,6 +21,7 @@ luascripts:
 	luamin --version || true
 	xxd --version || true
 	luamin -f web/static/globals.lua > globals.lua || true
+	tail -c 100 globals.lua
 	xxd -i globals.lua > lib/lua_globals.h
 	rm globals.lua
 
