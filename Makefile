@@ -6,23 +6,21 @@ GOVERSION = go1.21.11
 GOBIN = $(HOME)/go/bin
 GOINSTALLPATH = $(GOBIN)/$(GOVERSION)
 
-yoctocore-debug: luascripts pico-extras build
+yoctocore-debug: lib/lua_globals.h pico-extras build
 	make -C build -j$(NPROCS)
 	echo "build success"
 	cp build/*.uf2 yoctocore.uf2
 
-yoctocore-release: luascripts pico-extras release
+yoctocore-release: lib/lua_globals.h pico-extras release
 	make -C build -j$(NPROCS)
 	echo "build success"
 	cp build/*.uf2 yoctocore.uf2
 
-luascripts:
+lib/lua_globals.h:	
 	npm install -g luamin || true
 	luamin --version || true
 	xxd --version || true
-	tail -n 10 web/static/globals.lua 
 	luamin -f web/static/globals.lua > globals.lua 
-	tail -c 100 globals.lua
 	xxd -i globals.lua > lib/lua_globals.h
 	rm globals.lua
 
