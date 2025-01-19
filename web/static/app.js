@@ -375,6 +375,7 @@ function setupMidi() {
             let new_inputs = [];
             for (let input of inputs) {
                 new_inputs.push(input.name);
+                console.log(`[input] ${input.name}`);
                 if (input.name.includes("yoctocore") || input.name.includes("zeptocore") || input.name.includes("ectocore")) {
                     window.inputMidiDevice = input;
                     setupMidiInputListener();
@@ -509,8 +510,10 @@ function send_sysex(str) {
 document.addEventListener('DOMContentLoaded', () => {
     // if chrome and on desktop
     if (window.chrome && window.chrome.app) {
-        setupMidi();
-
+        window.setupMidi = setupMidi;
+        setTimeout(() => {
+            setupMidi();
+        }, 1000);
         // // ask for sparkline data (doubles as check if connected)
         const sparkline_update_time_ms = 50;
         setTimeout(() => {
