@@ -45,6 +45,8 @@ jobs:
         run: echo "PICO_SDK_PATH=$GITHUB_WORKSPACE/pico-sdk" >> $GITHUB_ENV
       - name: Build yoctocore
         run: |
+          make yoctocore-debug
+          zip -r yococore_debug_${{ github.event.release.name }}.zip build/
           make yoctocore-release
           cp yoctocore.uf2 yoctocore_${{ github.event.release.name }}.uf2
       - name: Release
@@ -52,3 +54,4 @@ jobs:
         with:
           files: |
             yoctocore_${{ github.event.release.name }}.uf2
+            yoctocore_debug_${{ github.event.release.name }}.zip
