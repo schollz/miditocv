@@ -68,11 +68,13 @@ You can also return values from the functions, which is useful in debugging as i
 
 ### `out[i].volts`
 
-The `out[i].volts` is a table that can be used to set the voltage for a specific output. The `i` is the output number (1-8). The voltage is a number between -5 and 10.
+The `out[i].volts` is a table that can be used to set the voltage for a specific output. The `i` is the output number (1-8). The voltage is a number between -5 and 10. For example, if you are writing code for output 1, but want to change the voltage on output 8 you can write:
 
 ```lua
-out[1].volts = 5
+out[8].volts = 5
 ```
+
+which will set the voltage on output 8 to 5V.
 
 The code from any output can change the voltage for any other output. When this voltage *changes* it will *override* any other voltage on any other output.
 
