@@ -31,6 +31,7 @@ function update_env(i, code)
 end
 **/
 int luaUpdateEnvironment(int index, const char *code) {
+  printf("[luaUpdateEnvironment] index: %d, code: %s\n", index, code);
   if (L == NULL) {
     printf("[luaUpdateEnvironment] Lua VM not initialized.\n");
     return 1;
@@ -78,7 +79,7 @@ int luaInit() {
   }
 
   // create 8 environments
-  for (int i = 0; i < 8; i++) {
+  for (int i = 1; i <= 8; i++) {
     luaUpdateEnvironment(i, "");
   }
 
@@ -102,24 +103,25 @@ bool withLuaEnv(int index) {
   return true;
 }
 
-bool loadVoltsTrigger(float *volts, bool *trigger) {
-  // get volts
-  lua_getfield(L, -1, "volts");
-  if (!lua_isnumber(L, -1)) {
-    lua_pop(L, 1);  // Pop volts
+bool luaGetVoltsAndTrigger(int index, float *volts, bool *volt_set,
+                           bool *trigger) {
+  lua_getglobal(L, "volts_and_trigger");
+  if (!lua_isfunction(L, -1)) {
+    lua_pop(L, 1);  // Pop volts_and_trigger
     return false;
   }
-  *volts = lua_tonumber(L, -1);
-  lua_pop(L, 1);  // Pop volts
 
-  // get trigger
-  lua_getfield(L, -1, "trigger");
-  if (!lua_isboolean(L, -1)) {
-    lua_pop(L, 1);  // Pop trigger
+  lua_pushinteger(L, index);
+  if (lua_pcall(L, 1, 3, 0) != LUA_OK) {
+    printf("[luaGetVoltsAndTrigger] error: %s\n", lua_tostring(L, -1));
+    lua_pop(L, 1);  // Pop error message
     return false;
   }
+
+  *volts = lua_tonumber(L, -3);
+  *volt_set = lua_toboolean(L, -2);
   *trigger = lua_toboolean(L, -1);
-  lua_pop(L, 1);  // Pop trigger
+  lua_pop(L, 3);  // Pop v, new_volts, and do_trigger
 
   return true;
 }
@@ -138,7 +140,8 @@ float luaGetBPM(int index) {
   return bpm;
 }
 
-bool luaRunOnBeat(int index, bool on, float *volts, bool *trigger) {
+bool luaRunOnBeat(int index, bool on, float *volts, bool *volts_new,
+                  bool *trigger) {
   if (!withLuaEnv(index)) return false;
 
   lua_getfield(L, -1, "on_beat");  // Push envs[index].on_beat onto the stack
@@ -160,24 +163,21 @@ bool luaRunOnBeat(int index, bool on, float *volts, bool *trigger) {
   // Process the results if needed
   if (num_results > 0) {
     // uncomment to print result
-    // if (lua_isstring(L, -1)) {
-    //   const char *result = lua_tostring(L, -1);
-    //   printf("Result: %s\n", result);
-    // }
+    if (lua_isstring(L, -1)) {
+      const char *result = lua_tostring(L, -1);
+      // printf("Result: %s\n", result);
+    }
     // Pop all results to clean up the stack
     lua_pop(L, num_results);
   }
 
-  if (!loadVoltsTrigger(volts, trigger)) {
-    lua_pop(L, 2);  // Pop envs[index]
-    return false;
-  }
   lua_pop(L, 2);  // Pop envs[index]
+  luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
   return true;
 }
 
 bool luaRunOnKnob(int index, float val, bool shift, float *volts,
-                  bool *trigger) {
+                  bool *volts_new, bool *trigger) {
   if (!withLuaEnv(index)) return false;
 
   lua_getfield(L, -1, "on_knob");  // Push envs[index].on_knob onto the stack
@@ -209,16 +209,13 @@ bool luaRunOnKnob(int index, float val, bool shift, float *volts,
     lua_pop(L, num_results);
   }
 
-  if (!loadVoltsTrigger(volts, trigger)) {
-    lua_pop(L, 2);  // Pop envs[index]
-    return false;
-  }
   lua_pop(L, 2);  // Pop envs[index]
+  luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
   return true;
 }
 
 bool luaRunOnButton(int index, bool val, bool shift, float *volts,
-                    bool *trigger) {
+                    bool *volts_new, bool *trigger) {
   if (!withLuaEnv(index)) return false;
 
   lua_getfield(L, -1,
@@ -251,16 +248,14 @@ bool luaRunOnButton(int index, bool val, bool shift, float *volts,
     lua_pop(L, num_results);
   }
 
-  if (!loadVoltsTrigger(volts, trigger)) {
-    lua_pop(L, 2);  // Pop envs[index]
-    return false;
-  }
   lua_pop(L, 2);  // Pop envs[index]
+
+  luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
   return true;
 }
 
 bool luaRunOnNoteOn(int index, int channel, int note, int velocity,
-                    float *volts, bool *trigger) {
+                    float *volts, bool *volts_new, bool *trigger) {
   if (!withLuaEnv(index)) return false;
 
   lua_getfield(L, -1,
@@ -294,16 +289,13 @@ bool luaRunOnNoteOn(int index, int channel, int note, int velocity,
     lua_pop(L, num_results);
   }
 
-  if (!loadVoltsTrigger(volts, trigger)) {
-    lua_pop(L, 2);  // Pop envs[index]
-    return false;
-  }
   lua_pop(L, 2);  // Pop envs[index]
+  luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
   return true;
 }
 
 bool luaRunOnNoteOff(int index, int channel, int note, float *volts,
-                     bool *trigger) {
+                     bool *volts_new, bool *trigger) {
   if (!withLuaEnv(index)) return false;
 
   lua_getfield(L, -1,
@@ -336,15 +328,13 @@ bool luaRunOnNoteOff(int index, int channel, int note, float *volts,
     lua_pop(L, num_results);
   }
 
-  if (!loadVoltsTrigger(volts, trigger)) {
-    lua_pop(L, 2);  // Pop envs[index]
-    return false;
-  }
   lua_pop(L, 2);  // Pop envs[index]
+  luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
   return true;
 }
 
-bool luaRunOnCc(int index, int cc, int value, float *volts, bool *trigger) {
+bool luaRunOnCc(int index, int cc, int value, float *volts, bool *volts_new,
+                bool *trigger) {
   if (!withLuaEnv(index)) return false;
 
   lua_getfield(L, -1, "on_cc");  // Push envs[index].on_button onto the stack
@@ -376,11 +366,9 @@ bool luaRunOnCc(int index, int cc, int value, float *volts, bool *trigger) {
     lua_pop(L, num_results);
   }
 
-  if (!loadVoltsTrigger(volts, trigger)) {
-    lua_pop(L, 2);  // Pop envs[index]
-    return false;
-  }
   lua_pop(L, 2);  // Pop envs[index]
+
+  luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
   return true;
 }
 
@@ -395,25 +383,35 @@ int luaTest() {
       "function on_beat(on)\n"
       "  b = a()\n"
       " volts = to_cv(b)\n"
+      "if volts > 0.5 then \n"
+      " out[2].volts = 5.2\n end \n"
       " trigger = on\n"
       "return b\n"
       "end\n";
-  luaUpdateEnvironment(0, code0);
+  luaUpdateEnvironment(1, code0);
   const char *code1 = "volts=10;";
-  luaUpdateEnvironment(1, code1);
+  luaUpdateEnvironment(2, code1);
   // get bpm from env 0
   printf("bpm0: %f\n", luaGetBPM(0));
   printf("bpm1: %f\n", luaGetBPM(1));
   for (uint8_t beat = 0; beat < 16; beat++) {
-    for (uint8_t channel = 0; channel < 2; channel++) {
+    for (uint8_t channel = 1; channel <= 2; channel++) {
       float volts;
+      bool volts_set;
       bool trigger;
-      if (luaRunOnBeat(channel, beat % 2 == 0, &volts, &trigger)) {
-        printf("volts0: %f, %d\n", volts, trigger);
+      if (luaRunOnBeat(channel, beat % 2 == 0, &volts, &volts_set, &trigger)) {
+        printf("luaRunOnBeat out[%d].volts: %f, %d, %d\n", channel, volts,
+               volts_set, trigger);
+      }
+      if (luaGetVoltsAndTrigger(channel, &volts, &volts_set, &trigger)) {
+        printf("out[%d].volts: %f, %d, %d\n", channel, volts, volts_set,
+               trigger);
       }
     }
   }
 
+  // garbage collect
+  luaGarbageCollect();
   lua_close(L);
 
   return 0;
