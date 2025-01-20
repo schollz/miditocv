@@ -414,6 +414,14 @@ function to_cv(val)
     return -15
 end
 
+out = {}
+for i = 1, 8 do
+    table.insert(out, {
+        volts = -10,
+        trigger = false
+    })
+end
+
 -- print(to_cv(62))
 -- print(to_cv("c5"))
 -- print(to_cv(1.2))
@@ -442,17 +450,18 @@ function new_env(code)
     return env
 end
 
-envs = {}
-for i = 1, 8 do
-    table.insert(envs, new_env(""))
-end
-
 local baseline_code = [[
-volts = 0
+volts = -10
 trigger = false
 iteration_num = 0
 bpm = 0
 ]]
+
+envs = {}
+for i = 0, 7 do
+    envs[i] = new_env(baseline_code)
+end
+
 function update_env(i, code)
     print("[globals.lua] updating " .. i)
     local new_env_made = new_env(baseline_code .. code)
@@ -475,18 +484,59 @@ end
 
 math.randomseed(os.time())
 
+fn_new_volts = false
+fn_v = 0
+fn_do_trigger = false
+function volts_and_trigger(i)
+    fn_new_volts = false
+    fn_v = 0
+    fn_do_trigger = false
+    -- i is expected to be 0-indexed
+    if envs[i] and envs[i].volts ~= -10 then
+        fn_new_volts = true
+        fn_v = envs[i].volts
+        envs[i].volts = -10
+    end
+    -- overwrite if the global out volts is set
+    -- i is expected to be 1-indexed for out 
+    if out[i + 1] and out[i + 1].volts ~= -10 then
+        fn_v = out[i + 1].volts
+        out[i + 1].volts = -10
+        fn_new_volts = true
+    end
+
+    if envs[i] and ((type(envs[i].trigger) == "number" and envs[i].trigger > 0) or
+        (type(envs[i].trigger) == "boolean" and envs[i].trigger == true)) then
+        fn_do_trigger = true
+        envs[i].trigger = false
+    end
+    return fn_v, fn_new_volts, fn_do_trigger
+end
+
+print(volts_and_trigger(0))
+out[1].volts = 1
+print(volts_and_trigger(0))
+print(volts_and_trigger(0))
+
 -- -- testing
 -- update_env(1, [[
 -- a = S{60,62,S{70,75},67}
 -- b = S{1,1,1,0}
 -- c = S{10,13,15,S{17,20}}
+-- count = 0
 -- function on_beat(beat)
 --     local v = a() + b() + c()
 --     volts = to_cv(v)
 --     trigger = b()>0
+--     out[1].volts = volts + 1
+--     if beat then 
+--         count = count + 1
+--     end
+--     if count > 5 and count < 8 then 
+--         out[1].volts = 10
+--     end
 --     return v
 -- end
-
 -- local notes = S{"c4", "d4", "e4", "f4", "g4", "a4", "b4", "c5"}
 -- function on_button(value, shift)
 --     if value then 
@@ -498,15 +548,8 @@ math.randomseed(os.time())
 -- ]])
 
 -- for i = 1, 10 do
---     print(test_on_beat(1))
--- end
--- for i = 1, 10 do
---     print(envs[1].on_button(1, 0), envs[1].volts)
--- end
-
--- a = er(3, 8)
--- local bb = a:bake(16)
--- for i = 1, 10 do
---     print(a())
---     print(bb[i])
+--     envs[1].on_beat(true)
+--     print(volts_and_trigger(1))
+--     envs[1].on_beat(false)
+--     print(volts_and_trigger(1))
 -- end
