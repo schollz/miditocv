@@ -881,7 +881,7 @@ int main() {
     char c;
     if (tud_cdc_connected() && tud_cdc_available()) {
       while((c0=tud_cdc_read_char())!=-1){
-        c = (char)c;
+        c = (char)c0;
 
         if (c == '\b') {
           serialInputLineBufferPos--;
