@@ -160,10 +160,9 @@ void timer_callback_sample_knob(bool on, int user_data) {
         float volts;
         bool volts_new;
         bool trigger;
-        bool shift = button_values[8];
         float val = val_changed / 1023.0f;
         printf("Lua on_knob #%d - val=%f\n", i, val);
-        if (luaRunOnKnob(i, val, shift, &volts, &volts_new, &trigger)) {
+        if (luaRunOnKnob(i, val, &volts, &volts_new, &trigger)) {
           on_successful_lua_callback(i, volts, volts_new, trigger);
         }
       }
@@ -914,6 +913,7 @@ int main() {
         printf("Button %d: %d (%d)\n", i, val, unique_id);
         button_values[i] = val;
         if (i < 8) {
+          luaSetButton(i, val);
           // process button press
           Out *out = &yocto.out[i];
           Config *config = &yocto.config[yocto.i][i];
@@ -960,9 +960,8 @@ int main() {
               float volts;
               bool volts_new;
               bool trigger;
-              bool shift = button_values[8];
               printf("Lua on_button #%d - val=%d\n", i, val);
-              if (luaRunOnButton(i, val, shift, &volts, &volts_new, &trigger)) {
+              if (luaRunOnButton(i, val, &volts, &volts_new, &trigger)) {
                 on_successful_lua_callback(i, volts, volts_new, trigger);
               }
               break;
@@ -971,6 +970,7 @@ int main() {
           }
         } else {
           button_shift = val;
+          luaSetShift(button_shift);
         }
       }
     }

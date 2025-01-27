@@ -103,6 +103,23 @@ bool withLuaEnv(int index) {
   return true;
 }
 
+void luaSetShift(bool shift) {
+  lua_pushboolean(L, shift);
+  lua_setglobal(L, "shift");
+}
+
+void luaSetButton(int n, int value) {
+  lua_getglobal(L, "button");
+  if (lua_istable(L, -1)) {
+    lua_pushinteger(L, n+1);
+    lua_pushboolean(L, value);
+    lua_settable(L, -3);
+  } else {
+    printf("Error: 'button' is not a table\n");
+  }
+  lua_pop(L, 1);
+}
+
 bool luaGetVoltsAndTrigger(int index, float *volts, bool *volt_set,
                            bool *trigger) {
   lua_getglobal(L, "volts_and_trigger");
@@ -176,7 +193,7 @@ bool luaRunOnBeat(int index, bool on, float *volts, bool *volts_new,
   return true;
 }
 
-bool luaRunOnKnob(int index, float val, bool shift, float *volts,
+bool luaRunOnKnob(int index, float val, float *volts,
                   bool *volts_new, bool *trigger) {
   if (!withLuaEnv(index)) return false;
 
@@ -188,8 +205,7 @@ bool luaRunOnKnob(int index, float val, bool shift, float *volts,
 
   // Push the arguments
   lua_pushnumber(L, val);
-  lua_pushboolean(L, shift);
-  if (lua_pcall(L, 2, LUA_MULTRET, 0) !=
+  if (lua_pcall(L, 1, LUA_MULTRET, 0) !=
       LUA_OK) {  // Call on_beat with 2 argument, expecting 1 return
     printf("[luaRunOnKnob] error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
@@ -214,7 +230,7 @@ bool luaRunOnKnob(int index, float val, bool shift, float *volts,
   return true;
 }
 
-bool luaRunOnButton(int index, bool val, bool shift, float *volts,
+bool luaRunOnButton(int index, bool val, float *volts,
                     bool *volts_new, bool *trigger) {
   if (!withLuaEnv(index)) return false;
 
@@ -227,8 +243,7 @@ bool luaRunOnButton(int index, bool val, bool shift, float *volts,
 
   // Push the arguments
   lua_pushboolean(L, val);
-  lua_pushboolean(L, shift);
-  if (lua_pcall(L, 2, LUA_MULTRET, 0) !=
+  if (lua_pcall(L, 1, LUA_MULTRET, 0) !=
       LUA_OK) {  // Call on_beat with 2 argument, expecting 1 return
     printf("[luaRunOnButton] error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
