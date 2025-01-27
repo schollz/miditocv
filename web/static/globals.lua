@@ -441,7 +441,7 @@ function new_env(code)
     local env = {}
     setmetatable(env, {
         __index = function(_, key)
-            return _G[key] or 0
+            return _G[key]
         end,
         __newindex = function(_, key, value)
             rawset(env, key, value)
