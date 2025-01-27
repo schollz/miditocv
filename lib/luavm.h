@@ -108,11 +108,11 @@ void luaSetShift(bool shift) {
   lua_setglobal(L, "shift");
 }
 
-void luaSetButton(int n, int value) {
+void luaSetButton(int n, bool val) {
   lua_getglobal(L, "button");
   if (lua_istable(L, -1)) {
     lua_pushinteger(L, n+1);
-    lua_pushboolean(L, value);
+    lua_pushboolean(L, val);
     lua_settable(L, -3);
   } else {
     printf("Error: 'button' is not a table\n");
