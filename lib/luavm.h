@@ -86,6 +86,22 @@ int luaInit() {
   return 0;
 }
 
+bool Lua_eval_simple(const char*   script
+                     , size_t      script_len
+                     , const char* chunkname) {
+  if(luaL_loadbuffer(L, script, script_len, chunkname) != LUA_OK) {
+    printf("Error loading Lua repl eval: %s\n", lua_tostring(L, -1));
+    return false;
+  }
+
+  if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
+    printf("Error executing Lua repl eval: %s\n", lua_tostring(L, -1));
+    return false;
+  }
+
+  return true;
+}
+
 bool withLuaEnv(int index) {
   lua_getglobal(L, "envs");   // Push envs onto the stack
   if (!lua_istable(L, -1)) {  // Check if envs is a table

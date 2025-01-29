@@ -93,6 +93,13 @@ uint32_t time_per_iteration = 0;
 uint32_t timer_per[32];
 uint32_t lfo_ct_last[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 float lfo_index_acc[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+#if CFG_TUD_CDC
+char cdc_rx_buffer[CFG_TUD_CDC_RX_BUFSIZE];
+char serialInputLineBuffer[1024];
+int serialInputLineBufferPos;
+#endif
+
 // const clockDivisions = [
 //   "/512", "/256", "/128", "/64", "/32", "/16", "/8", "/4", "/2", "x1", "x2",
 //   "x3", "x4", "x6", "x8", "x12", "x16", "x24", "x48"
@@ -867,6 +874,38 @@ int main() {
       midi_receive_byte(ch);
     }
     timer_per[1] = time_us_32() - us;
+
+#if CFG_TUD_CDC
+    // process serial input
+    int32_t c0;
+    char c;
+    if (tud_cdc_connected() && tud_cdc_available()) {
+      while((c0=tud_cdc_read_char())!=-1){
+        c = (char)c0;
+
+        if (c == '\b') {
+          serialInputLineBufferPos--;
+        } else {
+          serialInputLineBuffer[serialInputLineBufferPos] = c;
+          serialInputLineBufferPos++;
+        }
+
+        if (c == '\n' || c == '\r') {
+          // mark as end of line/string
+          serialInputLineBuffer[serialInputLineBufferPos] = '\n';
+          serialInputLineBufferPos++;
+          serialInputLineBuffer[serialInputLineBufferPos] = '\0';
+          serialInputLineBufferPos++;
+
+          if(Lua_eval_simple((const char*)serialInputLineBuffer, serialInputLineBufferPos-2, "=repl")) {
+            // REVIEW: maybe update outs if changed by the REPL
+          }
+
+          serialInputLineBufferPos = 0;
+        }
+      }
+    }
+#endif
 
     // process any mode change
     for (uint8_t i = 0; i < 8; i++) {
