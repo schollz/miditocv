@@ -9,31 +9,32 @@ each scene has eight outputs. each output can be configured to a different mode.
 
 The **bold** things are implemented.
 
-| Category         | Button         | Knob          | Shift + Button  | Shift + Knob      | Button + Knob |
-| ---------------- | -------------- | ------------- | --------------- | ----------------- | ------------- |
-| Note             | **listen**     |               | **tuning note** | **change tuning** | **voltage**   |
-| Envelope         | **trigger**    | **attack**    |                 | **sustain**       | **release**   |
-| Gate             | **trigger**    |               |                 | **probability**   |               |
-| CC               | **listen**     |               |                 |                   |               |
-| Program change   | **listen**     |               |                 |                   |               |
-| Key Pressure     | **listen**     |               |                 |                   |               |
-| Channel Pressure | **listen**     |               |                 |                   |               |
-| Pitch bend       | **listen**     |               |                 |                   |               |
-| Clock            | **start/stop** |               | **tap tempo**   | **division**      | **tempo**     |
-| LFO              |                | **period**    | **pause**       | **max voltage**   | **shape**     |
-| Code             | key(on,shift)  | knob(x,shift) | key(on,shift)   | knob(x,shift)     |               |
+| Category         | Button         | Knob       | Shift + Button  | Shift + Knob      | Button + Knob |
+|------------------|----------------|------------|-----------------|-------------------|---------------|
+| Note             | **listen**     |            | **tuning note** | **change tuning** | **voltage**   |
+| Envelope         | **trigger**    | **attack** |                 | **sustain**       | **release**   |
+| Gate             | **trigger**    |            |                 | **probability**   |               |
+| CC               | **listen**     |            |                 |                   |               |
+| Program change   | **listen**     |            |                 |                   |               |
+| Key Pressure     | **listen**     |            |                 |                   |               |
+| Channel Pressure | **listen**     |            |                 |                   |               |
+| Pitch bend       | **listen**     |            |                 |                   |               |
+| Clock            | **start/stop** |            | **tap tempo**   | **division**      | **tempo**     |
+| LFO              |                | **period** | **pause**       | **max voltage**   | **shape**     |
+| Code             | on_key(on)     | on_knob(x) | on_key(on)      | on_knob(x)        |               |
 
 ## Code
 
-The yoctocore is programmable with the [Lua language](https://www.lua.org/manual/5.4/manual.html), a powerful, efficient, lightweight, embeddable scripting language. 
+The yoctocore is programmable with the [Lua language](https://www.lua.org/manual/5.4/manual.html), a powerful, efficient, lightweight, embeddable scripting language.
 
 It is currently under development. Here is the implementation status:
 
 - [x] [`volts` and `trigger`](#volts-and-trigger)
 - [x] [`out[i].volts`](#outivolts)
+- [x] [`shift` and `button[i]`](#shift-and-buttoni)
 - [x] [`on_beat(on)`](#on_beaton)
-- [x] [`on_knob(value,shift)`](#on_knobvalueshift)
-- [x] [`on_button(value,shift)`](#on_buttonvalueshift)
+- [x] [`on_knob(value)`](#on_knobvalue)
+- [x] [`on_button(value)`](#on_buttonvalue)
 - [ ] [`on_note_on(channel,note,velocity)`](#on_note_onchannelnotevelocity)
 - [ ] [`on_note_off(channel,note)`](#on_note_offchannelnote)
 - [ ] [`on_cc(channel,cc,value)`](#on_ccchannelccvalue)
@@ -78,6 +79,15 @@ which will set the voltage on output 8 to 5V.
 
 The code from any output can change the voltage for any other output. When this voltage *changes* it will *override* any other voltage on any other output.
 
+### `shift` and `button[i]`
+
+The state of buttons is accessible at any time in lua code using the `shift` and `button[i]` global state variables. They are boolean values.
+
+```lua
+if shift then print("shift on") else print("shift off") end
+if button[1] then print("button 1 on") else print("button 1 off") end
+```
+
 ### `on_beat(on)`
 
 This function is called every time a beat is detected. The `on` is a boolean for whether it is on the top of the beat or the bottom.
@@ -97,12 +107,12 @@ end
 
 This function is special, in that it *can be linked to a clock output*, but if it is not linked to a clock output it will run at the tempo defined by the `bpm` variable.
 
-### `on_knob(value,shift)`
+### `on_knob(value)`
 
 This function exposes the knob events. The `value` is the knob value (0.0-1.0), the `shift` is a boolean of whether the shift button is pressed.
 
 ```lua
-function on_knob(value,shift)
+function on_knob(value)
     if shift then
         volts = value
     else
@@ -111,13 +121,13 @@ function on_knob(value,shift)
 end
 ```
 
-### `on_button(value,shift)`
+### `on_button(value)`
 
 This function exposes the button event. The `value` is `true` if the button is pressed, else `false`, and the `shift` is a boolean of whether the shift button is pressed.
 
 ```lua
-function on_button(value,shift)
-    if shift then 
+function on_button(value)
+    if shift then
         trigger = value
     else
         volts = value and 5 or 0
@@ -166,7 +176,7 @@ This function exposes the MIDI channel pressure events. The `channel` is the MID
 
 ```lua
 function on_channel_pressure(channel,pressure)
-    if (channel == 1) then 
+    if (channel == 1) then
         volts = pressure/127.0
     end
 end
@@ -191,7 +201,7 @@ This function generates a sequins sequence for euclidean rhythms. The `k` is the
 ```lua
 riddim = er(3,8,0) -- generates a euclidean rhythm with 3 hits in 8 steps
 function on_beat(on)
-    if on then 
+    if on then
         trigger = riddim()
     end
 end
@@ -199,7 +209,7 @@ end
 
 ### `to_cv(value)`
 
-This function is called every time a value is sent to the CV output. The `value` is the voltage that is being sent to the CV output. The value can be a MIDI note (values between 10 and 127) or it can be a voltage (values between -5 and 10) or it can be a note name (e.g. "c4"). 
+This function is called every time a value is sent to the CV output. The `value` is the voltage that is being sent to the CV output. The value can be a MIDI note (values between 10 and 127) or it can be a voltage (values between -5 and 10) or it can be a note name (e.g. "c4").
 
 ```lua
 volts = to_cv(60) -- sets the voltage to 0V
@@ -326,5 +336,5 @@ backtrace
 quit with `Ctrl-A` and then `Q`
 
 ```bash
-minicom -b 115200 -o -D /dev/ttyACM1 
+minicom -b 115200 -o -D /dev/ttyACM1
 ```
