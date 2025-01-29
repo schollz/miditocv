@@ -143,7 +143,6 @@ void update_linked_outs(bool triggering_outs[], bool trigger, uint32_t ct) {
 void on_successful_lua_callback(int i, float volts, bool volts_new,
                                 bool trigger) {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
-  bool shift = button_values[8];
   Out *out = &yocto.out[i];
   bool triggering_outs[8] = {false};
 
@@ -167,10 +166,9 @@ void timer_callback_sample_knob(bool on, int user_data) {
         float volts;
         bool volts_new;
         bool trigger;
-        bool shift = button_values[8];
         float val = val_changed / 1023.0f;
         printf("Lua on_knob #%d - val=%f\n", i, val);
-        if (luaRunOnKnob(i, val, shift, &volts, &volts_new, &trigger)) {
+        if (luaRunOnKnob(i, val, &volts, &volts_new, &trigger)) {
           on_successful_lua_callback(i, volts, volts_new, trigger);
         }
       }
@@ -336,7 +334,6 @@ void midi_note_off(int channel, int note) {
       float volts;
       bool volts_new;
       bool trigger;
-      bool shift = button_values[8];
       printf("Lua on_note_off #%d - ch=%d, note=%d\n", i, channel, note);
       if (luaRunOnNoteOff(i, channel, note, &volts, &volts_new, &trigger)) {
         // on_successful_lua_callback(i, volts, trigger);
@@ -413,7 +410,6 @@ void midi_note_on(int channel, int note, int velocity) {
       float volts;
       bool volts_new;
       bool trigger;
-      bool shift = button_values[8];
       printf("Lua on_note_on #%d - ch=%d, note=%d, vel=%d\n", i, channel, note,
              velocity);
       if (luaRunOnNoteOn(i, channel, note, velocity, &volts, &volts_new,
@@ -451,7 +447,6 @@ void midi_cc(int channel, int cc, int value) {
       float volts;
       bool volts_new;
       bool trigger;
-      bool shift = button_values[8];
       printf("Lua on_cc #%d - cc=%d, cal=%d\n", i, cc, value);
       if (luaRunOnCc(i, cc, value, &volts, &volts_new, &trigger)) {
         on_successful_lua_callback(i, volts, volts_new, trigger);
@@ -953,6 +948,7 @@ int main() {
         printf("Button %d: %d (%d)\n", i, val, unique_id);
         button_values[i] = val;
         if (i < 8) {
+          luaSetButton(i, val);
           // process button press
           Out *out = &yocto.out[i];
           Config *config = &yocto.config[yocto.i][i];
@@ -999,9 +995,8 @@ int main() {
               float volts;
               bool volts_new;
               bool trigger;
-              bool shift = button_values[8];
               printf("Lua on_button #%d - val=%d\n", i, val);
-              if (luaRunOnButton(i, val, shift, &volts, &volts_new, &trigger)) {
+              if (luaRunOnButton(i, val, &volts, &volts_new, &trigger)) {
                 on_successful_lua_callback(i, volts, volts_new, trigger);
               }
               break;
@@ -1010,6 +1005,7 @@ int main() {
           }
         } else {
           button_shift = val;
+          luaSetShift(button_shift);
         }
       }
     }

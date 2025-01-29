@@ -414,17 +414,25 @@ function to_cv(val)
     return -15
 end
 
+-- print(to_cv(62))
+-- print(to_cv("c5"))
+-- print(to_cv(1.2))
+
+------------------------
+-- global state --
+------------------------
+
 out = {}
+button = {}
 for i = 1, 8 do
     table.insert(out, {
         volts = -10,
         trigger = false
     })
+    table.insert(button, false)
 end
 
--- print(to_cv(62))
--- print(to_cv("c5"))
--- print(to_cv(1.2))
+shift = false
 
 ------------------------
 -- environment blocks --
@@ -433,7 +441,7 @@ function new_env(code)
     local env = {}
     setmetatable(env, {
         __index = function(_, key)
-            return _G[key] or 0
+            return _G[key]
         end,
         __newindex = function(_, key, value)
             rawset(env, key, value)
@@ -498,7 +506,7 @@ function volts_and_trigger(i)
         envs[i].volts = -10
     end
     -- overwrite if the global out volts is set
-    -- i is expected to be 1-indexed for out 
+    -- i is expected to be 1-indexed for out
     if out[i + 1] and out[i + 1].volts ~= -10 then
         fn_v = out[i + 1].volts
         out[i + 1].volts = -10
@@ -529,17 +537,17 @@ print(volts_and_trigger(0))
 --     volts = to_cv(v)
 --     trigger = b()>0
 --     out[1].volts = volts + 1
---     if beat then 
+--     if beat then
 --         count = count + 1
 --     end
---     if count > 5 and count < 8 then 
+--     if count > 5 and count < 8 then
 --         out[1].volts = 10
 --     end
 --     return v
 -- end
 -- local notes = S{"c4", "d4", "e4", "f4", "g4", "a4", "b4", "c5"}
 -- function on_button(value, shift)
---     if value then 
+--     if value then
 --         local note = notes()
 --         volts = to_cv(note)
 --         return note
