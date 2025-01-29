@@ -21,7 +21,7 @@ The **bold** things are implemented.
 | Pitch bend       | **listen**     |            |                 |                   |               |
 | Clock            | **start/stop** |            | **tap tempo**   | **division**      | **tempo**     |
 | LFO              |                | **period** | **pause**       | **max voltage**   | **shape**     |
-| Code             | on_key(on)     | on_knob(x) | on_key(on)      | on_knob(x)        |               |
+| Code             | on_button(on)  | on_knob(x) | on_button(on)   | on_knob(x)        |               |
 
 ## Code
 
