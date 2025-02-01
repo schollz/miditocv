@@ -1093,6 +1093,11 @@ int main() {
           uint32_t elapsed_ms = ct - lfo_ct_last[i];
           lfo_ct_last[i] = ct;
           float step = elapsed_ms / (old_period * 1000.f);
+
+          if (out->lfo_disabled) {
+            break;
+          }
+
           lfo_index_acc[i] = fmod(lfo_index_acc[i] + step, 1.f);
 
           // if (button_val) {
@@ -1103,10 +1108,6 @@ int main() {
               get_lfo_value(config->lfo_waveform, lfo_index_acc[i] * 1000,
                             1 * 1000, config->min_voltage, config->max_voltage,
                             0, &out->noise, &out->slew_lfo);
-
-          if (out->lfo_disabled) {
-            break;
-          }
 
           out->voltage_set = voltage;
 
