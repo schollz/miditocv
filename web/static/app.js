@@ -285,7 +285,7 @@ function setupMidiInputListener() {
                     sysex += String.fromCharCode(midiMessage.data[i]);
                 }
                 console.log(`[recv] ${sysex}`);
-		console.log(sysex);
+                console.log(sysex);
                 let fields = sysex.split(" ");
                 let fields_ = sysex.split("_");
                 // see if it starts with version=
@@ -894,7 +894,7 @@ end`,
                 // send sysex to update the scene
                 updateLocalScene(newScene);
                 // update the scene on the device
-                sysex_string = `0_0_${hash_djb("scene")}_${newScene}`;
+                const sysex_string = `0_0_${hash_djb("scene")}_${newScene}`;
                 // console.log(`[sending_sysex] ${sysex_string}`);
                 send_sysex(sysex_string);
             }
@@ -1004,7 +1004,7 @@ end`,
                             return;
                         }
                         val = Number(val);
-                        sysex_string = `${sceneIdx}_${outputIdx}_${hash_djb(prop)}_${val.toPrecision(4)}`;
+                        const sysex_string = `${sceneIdx}_${outputIdx}_${hash_djb(prop)}_${val.toPrecision(4)}`;
                         console.log(`[sending_sysex] ${prop} ${sysex_string}`);
                         send_sysex(sysex_string);
                     }, 300)
