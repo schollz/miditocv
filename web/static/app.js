@@ -108,7 +108,7 @@ function hash_djb(str) {
     let i = 0; // Iterator for the string
 
     while (i < str.length) {
-        let c = str.charCodeAt(i++); // Get ASCII value of character and increment iterator
+        const c = str.charCodeAt(i++); // Get ASCII value of character and increment iterator
         hash = ((hash << 5) + hash) + c; // hash * 33 + c
     }
     hash = hash >>> 0;
@@ -236,9 +236,9 @@ async function updateLocalScene(scene_num) {
     disableWatchers = true;
     // get all parameters
 
-    let time_per_event = []
-    for (let output_num = 0; output_num < 8; output_num++) {
-        for (let param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
+    let time_per_event = [];
+    for (const output_num = 0; output_num < 8; output_num++) {
+        for (const param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
             const sysex_string = `${scene_num}_${output_num}_${hash_djb(param)}`;
             // skip code and code_len
             if (param == "code_len" || param == "code") {
@@ -286,15 +286,15 @@ function setupMidiInputListener() {
                 }
                 console.log(`[recv] ${sysex}`);
                 console.log(sysex);
-                let fields = sysex.split(" ");
-                let fields_ = sysex.split("_");
+                const fields = sysex.split(" ");
+                const fields_ = sysex.split("_");
                 // see if it starts with version=
                 if (sysex.startsWith("LS") || sysex.startsWith("LN") || sysex.startsWith("LE")) {
                     // code starting, continuing, and ending needs to appended to codeTexts
                     // get the scene number from the third character
-                    let scene_num = Number(sysex[2]);
-                    let output_num = Number(sysex[3]);
-                    let code = sysex.slice(4);
+                    const scene_num = Number(sysex[2]);
+                    const output_num = Number(sysex[3]);
+                    const code = sysex.slice(4);
                     if (sysex[1] == "S") {
                         // starting a new code
                         codeTexts[scene_num][output_num] = code;
@@ -304,14 +304,14 @@ function setupMidiInputListener() {
                     } else if (sysex[1] == "E") {
                         // ending the code
                         codeTexts[scene_num][output_num] += code;
-                        let code_new = codeTexts[scene_num][output_num];
+                        const code_new = codeTexts[scene_num][output_num];
                         console.log(`[code_received] ${scene_num} ${output_num} ${code_new}`);
                         // update the code in the vm
                         vm.scenes[scene_num].outputs[output_num].code = code_new;
                         // update the code mirror if it is visible
                         if (vm.current_scene == scene_num && vm.current_output == output_num) {
                             Vue.nextTick(() => {
-                                let beautify_code = luaBeautifier.beautify(code_new).trim();
+                                const beautify_code = luaBeautifier.beautify(code_new).trim();
                                 myCodeMirror.setValue(beautify_code);
                                 outputCodeMirror.setValue("");
 
@@ -331,24 +331,24 @@ function setupMidiInputListener() {
                     // last field is the current BPM value
                     vm.current_bpm = parseFloat(fields_[8]);
                     // is connected
-                    vm.device_connected = true
+                    vm.device_connected = true;
                 } else if (fields.length == 4) {
                     // check if field [3] is a parameter
                     externalTrigger();
                     console.log(`[sysex_receieved] ${fields[0]} ${fields[1]} ${fields[2]} ${fields[3]}`);
-                    let param_hash = Number(fields[2]);
+                    const param_hash = Number(fields[2]);
                     if (param_hash == hash_djb("scene")) {
                         let scene_num = Number(fields[3]);
                         console.log(`[scene_change] ${scene_num}`);
                         vm.current_scene = scene_num;
                         updateLocalScene(scene_num);
                     } else {
-                        let scene_num = Number(fields[0]);
-                        let output_num = Number(fields[1]);
+                        const scene_num = Number(fields[0]);
+                        const output_num = Number(fields[1]);
                         if (vm.scenes[scene_num] && vm.scenes[scene_num].outputs[output_num]) {
-                            let output = vm.scenes[scene_num].outputs[output_num];
-                            let param = Object.keys(output).find(key => hash_djb(key) == param_hash);
-                            let value = Number(fields[3]);
+                            const output = vm.scenes[scene_num].outputs[output_num];
+                            const param = Object.keys(output).find(key => hash_djb(key) == param_hash);
+                            const value = Number(fields[3]);
                             if (output[param] != value) {
                                 updateWithoutWatcher(scene_num, output_num, param, value);
                             }
@@ -374,7 +374,7 @@ function setupMidi() {
             // current inputs
             let current_inputs = Object.keys(midiInputs);
             let new_inputs = [];
-            for (let input of inputs) {
+            for (const input of inputs) {
                 new_inputs.push(input.name);
                 console.log(`[input] ${input.name}`);
                 if (input.name.includes("yoctocore") || input.name.includes("zeptocore") || input.name.includes("ectocore")) {
@@ -444,7 +444,7 @@ function setupMidi() {
 
             // Output setup
             const outputs = midiAccess.outputs.values();
-            for (let output of outputs) {
+            for (const output of outputs) {
                 // console.log(`[output] ${output.name}`);
                 if (output.name.includes("yoctocore")) {
                     window.yoctocoreDevice = output;
@@ -619,7 +619,7 @@ end`,
             "MODE_CLOCK": 8,
             "MODE_LFO": 9,
             "MODE_CODE": 10,
-        })
+        });
         clockTempos.value.push("Global");
         for (let i = 30; i < 300; i++) {
             clockTempos.value.push(i);
@@ -668,8 +668,8 @@ end`,
             outputCodeMirror.setValue(''); // Clear the CodeMirror output
             document.getElementById('output').textContent = ''; // Clear the text content for the buffer
             // beautify the current code
-            let code = scenes.value[current_scene.value].outputs[current_output.value].code;
-            let beautify_code = luaBeautifier.beautify(code).trim();
+            const code = scenes.value[current_scene.value].outputs[current_output.value].code;
+            const beautify_code = luaBeautifier.beautify(code).trim();
             myCodeMirror.setValue(beautify_code);
             setTimeout(() => {
                 myCodeMirror.refresh();
@@ -679,8 +679,7 @@ end`,
         async function executeLua(function_name) {
             console.log(`[executeLua]: ${function_name}`);
             // using https://github.com/Doridian/LuaJS
-            let outputElement = document.getElementById('output');
-            let code = myCodeMirror.getValue();
+            const code = myCodeMirror.getValue();
 
             let new_code = code;
             let beautify_code = code;
@@ -691,7 +690,7 @@ end`,
                 outputCodeMirror.setValue(`${error}`);
                 return;
             }
-            let output_num = current_output.value + 1;
+            const output_num = current_output.value + 1;
             if (new_code != code_last) {
                 console.log(`[executeLua]: new state`);
 
@@ -724,9 +723,9 @@ end`,
                     value = Math.round(value * 100) / 100;
                 }
                 // get the `volts` variable in the current environment
-                let volts = await L.run(`return envs[${output_num}].volts`);
+                const volts = await L.run(`return envs[${output_num}].volts`);
                 // get the 'trigger' boolean 
-                let trigger = await L.run(`return envs[${output_num}].trigger`);
+                const trigger = await L.run(`return envs[${output_num}].trigger`);
                 // append to output
                 outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n  ${(Math.round(volts * 1000) / 1000).toFixed(3).padStart(6, ' ')}    ${trigger}\t\t  ${value}`);
             });
@@ -741,7 +740,7 @@ end`,
         async function uploadLua() {
 
             try {
-                let code = myCodeMirror.getValue();
+                const code = myCodeMirror.getValue();
                 let new_code = "";
                 try {
                     new_code = luamin.minify(code);
@@ -761,8 +760,8 @@ end`,
                     console.log(`[executeLua]: uploading code`);
                     // upload the code to the device.
                     // split new_code into 32 byte chunks
-                    let chunk_size = 32;
-                    let num_chunks = Math.ceil(new_code.length / chunk_size);
+                    const chunk_size = 32;
+                    const num_chunks = Math.ceil(new_code.length / chunk_size);
                     for (let i = 0; i < num_chunks; i++) {
                         let chunk = new_code.slice(i * chunk_size, (i + 1) * chunk_size);
                         if (i == 0) {
@@ -879,7 +878,7 @@ end`,
                 // check if Ctrl is held
                 console.log(`[output_change] ${current_scene.value} ${current_output.value}`);
                 Vue.nextTick(() => {
-                    let beautify_code = luaBeautifier.beautify(newOutput.code).trim();
+                    const beautify_code = luaBeautifier.beautify(newOutput.code).trim();
                     myCodeMirror.setValue(beautify_code);
                     clearLua();
                     console.log("loaded code");
@@ -918,7 +917,7 @@ end`,
                     selected_output.value.min_voltage = -5;
                 }
             }
-        )
+        );
 
         // Watcher for mode changes to update default values
         watch(
