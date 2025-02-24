@@ -116,7 +116,7 @@ typedef struct Yoctocore {
   // debounces
   uint32_t debounce_save;
   float global_tempo;
-  uint32_t yoctocore_getting;
+  uint32_t miditocv_getting;
 } Yoctocore;
 
 void Yoctocore_init(Yoctocore *self) {
@@ -687,7 +687,7 @@ void Yoctocore_process_sysex(Yoctocore *self, uint8_t *buffer) {
     if (param_hash == PARAM_CODE) {
       Yoctocore_print_code(self, scene, output);
     } else {
-      self->yoctocore_getting = to_ms_since_boot(get_absolute_time());
+      self->miditocv_getting = to_ms_since_boot(get_absolute_time());
       printf_sysex("%d %d %" PRIu32 " %2.2f\n", scene, output, param_hash,
                    Yoctocore_get(self, scene, output, param_hash));
     }

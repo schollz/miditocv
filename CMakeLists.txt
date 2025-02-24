@@ -12,7 +12,7 @@ include(pico_extras_import.cmake)
 
 
 # Set name of project (as PROJECT_NAME) and C/C++ standards
-project(yoctocore C CXX ASM)
+project(miditocv C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
@@ -37,9 +37,9 @@ add_subdirectory(lib/sdio build)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/lua-5.4.6/src)
 
 # generate pio
-pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/WS2812.pio)
-pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/uart_rx.pio)
-# pico_generate_pio_header(yoctocore ${CMAKE_CURRENT_LIST_DIR}/lib/buttonmatrix3.pio)
+pico_generate_pio_header(miditocv ${CMAKE_CURRENT_LIST_DIR}/lib/WS2812.pio)
+pico_generate_pio_header(miditocv ${CMAKE_CURRENT_LIST_DIR}/lib/uart_rx.pio)
+# pico_generate_pio_header(miditocv ${CMAKE_CURRENT_LIST_DIR}/lib/buttonmatrix3.pio)
 
 # Create map/bin/hex/uf2 files
 pico_add_extra_outputs(${PROJECT_NAME})

@@ -58,7 +58,7 @@ def set_voltages(voltages):
                 )
                 if not is_output:
                     continue
-                if "yoctocore" in name.decode("utf-8"):
+                if "miditocv" in name.decode("utf-8"):
                     output = pygame.midi.Output(device_id)
                     break
             for channel, voltage in enumerate(voltages):
@@ -83,7 +83,7 @@ def set_voltage(i, voltage):
                 )
                 if not is_output:
                     continue
-                if "yoctocore" in name.decode("utf-8"):
+                if "miditocv" in name.decode("utf-8"):
                     output = pygame.midi.Output(device_id)
                     break
             send_voltage(output, i, voltage)
@@ -107,7 +107,7 @@ def send_calibration(channel, slope, intercept):
                 )
                 if not is_output:
                     continue
-                if "yoctocore" in name.decode("utf-8"):
+                if "miditocv" in name.decode("utf-8"):
                     output = pygame.midi.Output(device_id)
                     break
             sysex_string = f"cali_{channel:d}_{slope:.5f}_{intercept:.5f}"
@@ -133,7 +133,7 @@ def send_use_raw(use_raw=False):
                 )
                 if not is_output:
                     continue
-                if "yoctocore" in name.decode("utf-8"):
+                if "miditocv" in name.decode("utf-8"):
                     output = pygame.midi.Output(device_id)
                     break
             sysex_string = f"useraw 1"

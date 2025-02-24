@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/schollz/yoctocore/dev/yoctocore-fs/luaformatter"
+	"github.com/schollz/miditocv/dev/miditocv-fs/luaformatter"
 )
 
 func TestMIDI(t *testing.T) {
@@ -20,7 +20,7 @@ func TestMIDI(t *testing.T) {
 		}
 		fmt.Printf("beautified: \n%s\n", beautified)
 	}()
-	err := Listen("yoctocore", true)
+	err := Listen("miditocv", true)
 	if err != nil {
 		t.Error(err)
 	}

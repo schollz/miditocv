@@ -75,7 +75,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/simpletimer.h"
 #include "lib/spectra.h"
 #include "lib/spiral.h"
-#include "lib/yoctocore.h"
+#include "lib/miditocv.h"
 #include "uart_rx.pio.h"
 //
 
@@ -759,7 +759,7 @@ int main() {
   // sleep_ms(1000);
   // print_memory_usage();
 
-  // initialize the yoctocore
+  // initialize the miditocv
   Yoctocore_init(&yocto);
 
   uint64_t start_time;
@@ -1018,11 +1018,11 @@ int main() {
     ct_last = ct;
 
     // if getting data, skip this for now
-    if (ct - yocto.yoctocore_getting < 10) {
+    if (ct - yocto.miditocv_getting < 10) {
       continue;
     }
 
-    // yoctocore save (if debounced)
+    // miditocv save (if debounced)
     start_time = time_us_64();
     if (Yoctocore_save(&yocto, ct)) {
       printf("saved data in %lld us\n", time_us_64() - start_time);

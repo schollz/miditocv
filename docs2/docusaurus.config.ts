@@ -15,7 +15,7 @@ require('prismjs/components/prism-lua');
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: "yoctocore docs",
+  title: "miditocv docs",
   tagline: "programmmable midi to cv",
   favicon: "img/favicon.ico",
 
@@ -28,7 +28,7 @@ const config: Config = {
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "schollz", // Usually your GitHub org/user name.
-  projectName: "yoctocore", // Usually your repo name.
+  projectName: "miditocv", // Usually your repo name.
 
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
@@ -50,7 +50,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            "https://github.com/schollz/yoctocore/tree/main/packages/create-docusaurus/templates/shared/",
+            "https://github.com/schollz/miditocv/tree/main/packages/create-docusaurus/templates/shared/",
         },
         theme: {
           customCss: "./src/css/custom.css",
@@ -81,7 +81,7 @@ const config: Config = {
     // Replace with your project's social card
     image: "img/docusaurus-social-card.jpg",
     navbar: {
-      title: "yoctocore docs",
+      title: "miditocv docs",
       logo: {
         alt: "My Site Logo",
         src: "img/logo.svg",
@@ -94,7 +94,7 @@ const config: Config = {
           label: "Tutorial",
         },
         {
-          href: "https://github.com/schollz/yoctocore",
+          href: "https://github.com/schollz/miditocv",
           label: "GitHub",
           position: "right",
         },
@@ -126,7 +126,7 @@ const config: Config = {
           items: [
             {
               label: "GitHub",
-              href: "https://github.com/schollz/yoctocore",
+              href: "https://github.com/schollz/miditocv",
             },
           ],
         },

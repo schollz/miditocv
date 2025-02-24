@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>yoctocore</title>
+    <title>miditocv</title>
     <script src="/static/vue.global.js"></script>
     <link rel="stylesheet" href="/static/docs.css">
     <script src="/static/codemirror.js"></script>
@@ -19,7 +19,7 @@
     <div id="app1">
         <div class="container">
             <div class="row">
-                <h1>yoctocore</h1>
+                <h1>miditocv</h1>
             </div>
             <div class="row">
                 <img src="/static/yocto1.jpg">
@@ -27,7 +27,7 @@
 
             <div class="row">
                 <div class="box alert alert-info">
-                    yoctocore is a simple web-based Lua interpreter. It uses LuaJS, a Lua interpreter written in
+                    miditocv is a simple web-based Lua interpreter. It uses LuaJS, a Lua interpreter written in
                     WebAssembly, to run Lua code in the browser. The code is executed in a sandboxed
                     environment, so
                     it is safe to run untrusted code.
@@ -51,7 +51,7 @@
 
         </div>
         <div class="row">
-            SuperCollider interfaces easily with the yoctocore.
+            SuperCollider interfaces easily with the miditocv.
         </div>
         <div class="row" style="padding-top:10px;">
             <div class="editor-container" id="supercollider-editor"></div>
@@ -66,7 +66,7 @@
             </div>
             <div class="row">
                 <div class="col-6">
-                    yoctocore is a simple web-based Lua interpreter. It uses LuaJS, a Lua interpreter written in
+                    miditocv is a simple web-based Lua interpreter. It uses LuaJS, a Lua interpreter written in
                     WebAssembly, to run Lua code in the browser. The code is executed in a sandboxed
                     environment, so
                     it is safe to run untrusted code.
@@ -103,8 +103,8 @@
 s.waitForBoot({
     MIDIClient.init;
     MIDIClient.destinations.do{ |dest , i|
-        if (dest.name.contains("yoctocore")) {
-            ~yoctocore_midi = MIDIOut.newByName(dest.device, dest.name);
+        if (dest.name.contains("miditocv")) {
+            ~miditocv_midi = MIDIOut.newByName(dest.device, dest.name);
         };
     };
 
@@ -115,17 +115,17 @@ s.waitForBoot({
         arg channel,voltage;
         var sysExString = "setvolt_" ++ channel.asString ++ "_" ++ voltage.asString;
         var sysExMessage = [240] ++ sysExString.ascii ++ [247];
-        if (~yoctocore_midi.notNil) {
-            ~yoctocore_midi.sysex(Int8Array.newFrom(sysExMessage));
+        if (~miditocv_midi.notNil) {
+            ~miditocv_midi.sysex(Int8Array.newFrom(sysExMessage));
         };
     };
 
-    // ~yoctocore_set_note
-    ~yoctocore_set_note = {
+    // ~miditocv_set_note
+    ~miditocv_set_note = {
         arg channel, note, velocity;
         MIDIClient.destinations.do { |dest, i|
-            if (~yoctocore_midi.notNil){
-                ~yoctocore_midi.noteOn(channel, note, velocity);
+            if (~miditocv_midi.notNil){
+                ~miditocv_midi.noteOn(channel, note, velocity);
             };
         };
     };
@@ -133,8 +133,8 @@ s.waitForBoot({
 )
 
 // set channel, volts
-~yoctocore_set_volts.(1,-10.0);
-~yoctocore_set_note.(1,60,120);
+~miditocv_set_volts.(1,-10.0);
+~miditocv_set_note.(1,60,120);
 `,
                 theme: "default",
                 lineNumbers: true,

@@ -43,15 +43,15 @@ jobs:
           cat $GITHUB_WORKSPACE/pico-sdk/lib/tinyusb/src/tusb.c | grep osal_mutex
       - name: Set PICO_SDK_PATH
         run: echo "PICO_SDK_PATH=$GITHUB_WORKSPACE/pico-sdk" >> $GITHUB_ENV
-      - name: Build yoctocore
+      - name: Build miditocv
         run: |
-          make yoctocore-debug
-          zip -r yoctocore_debug_${{ github.event.release.name }}.zip build/
-          make yoctocore-release
-          cp yoctocore.uf2 yoctocore_${{ github.event.release.name }}.uf2
+          make miditocv-debug
+          zip -r miditocv_debug_${{ github.event.release.name }}.zip build/
+          make miditocv-release
+          cp miditocv.uf2 miditocv_${{ github.event.release.name }}.uf2
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            yoctocore_${{ github.event.release.name }}.uf2
-            yoctocore_debug_${{ github.event.release.name }}.zip
+            miditocv_${{ github.event.release.name }}.uf2
+            miditocv_debug_${{ github.event.release.name }}.zip

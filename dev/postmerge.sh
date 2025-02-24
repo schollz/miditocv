@@ -1,3 +1,3 @@
 #!/bin/sh
-cd /www/yoctocore && /usr/bin/make publish
+cd /www/miditocv && /usr/bin/make publish
 

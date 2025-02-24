@@ -84,7 +84,7 @@ func doConnection(filterMidiName string) (stop func(), err error) {
 
 func GetFile(scene int, output int) (contents string, err error) {
 	fileContentsAsk = true
-	err = SendText("yoctocore", fmt.Sprintf("%d_%d_24", scene, output))
+	err = SendText("miditocv", fmt.Sprintf("%d_%d_24", scene, output))
 	if err != nil {
 		return
 	}

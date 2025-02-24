@@ -1,7 +1,7 @@
 # Prerequisites
 web/output/*
 web/dist/*
-yoctocore.uf2
+miditocv.uf2
 web/*pem
 *pdf
 *.npy

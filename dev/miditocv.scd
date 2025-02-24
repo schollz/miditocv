@@ -2,8 +2,8 @@
 s.waitForBoot({
 	MIDIClient.init;
 	MIDIClient.destinations.do{ |dest , i|
-		if (dest.name.contains("yoctocore")) {
-			~yoctocore_midi = MIDIOut.newByName(dest.device, dest.name);
+		if (dest.name.contains("miditocv")) {
+			~miditocv_midi = MIDIOut.newByName(dest.device, dest.name);
 		};
 	};
 
@@ -14,29 +14,29 @@ s.waitForBoot({
 		arg channel,voltage;
 		var sysExString = "setvolt_" ++ channel.asString ++ "_" ++ voltage.asString;
 		var sysExMessage = [240] ++ sysExString.ascii ++ [247];
-		if (~yoctocore_midi.notNil) {
-			["yoctocore_set_volts",channel,voltage].postln;
-			~yoctocore_midi.sysex(Int8Array.newFrom(sysExMessage));
+		if (~miditocv_midi.notNil) {
+			["miditocv_set_volts",channel,voltage].postln;
+			~miditocv_midi.sysex(Int8Array.newFrom(sysExMessage));
 		};
 	};
 
 	// ~yotcocore_set_note_on(channel, voltage);
 	// channels are 1-based (1 to 8)
-	~yoctocore_set_note_on = {
+	~miditocv_set_note_on = {
 		arg channel, note, velocity;
-		if (~yoctocore_midi.notNil){
-			["yoctocore_note_on",channel,note,velocity].postln;
-			~yoctocore_midi.noteOn(channel-1, note, velocity);
+		if (~miditocv_midi.notNil){
+			["miditocv_note_on",channel,note,velocity].postln;
+			~miditocv_midi.noteOn(channel-1, note, velocity);
 		};
 	};
 
 	// ~yotcocore_set_note_off(channel, voltage);
 	// channels are 1-based (1 to 8)
-	~yoctocore_set_note_off = {
+	~miditocv_set_note_off = {
 		arg channel, note;
-		if (~yoctocore_midi.notNil){
-			["yoctocore_note_on",channel,note].postln;
-			~yoctocore_midi.noteOff(channel-1, note);
+		if (~miditocv_midi.notNil){
+			["miditocv_note_on",channel,note].postln;
+			~miditocv_midi.noteOff(channel-1, note);
 		};
 	};
 });
@@ -45,5 +45,5 @@ s.waitForBoot({
 // set channel, volts
 ~yotcocore_set_volts.(1,-10.0);
 // note on and note offs
-~yoctocore_set_note_on.(1,60,30);
-~yoctocore_set_note_off.(1,60,30);
+~miditocv_set_note_on.(1,60,30);
+~miditocv_set_note_off.(1,60,30);

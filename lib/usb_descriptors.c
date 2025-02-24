@@ -171,7 +171,7 @@ char const* string_desc_arr[] = {
   "ectocore",  // 2: Product
 #endif
 #ifdef INCLUDE_YOCTOCORE
-  "yoctocore",  // 2: Product
+  "miditocv",  // 2: Product
 #endif
   "123456",  // 3: Serials, should use chip ID
 

@@ -377,7 +377,7 @@ function setupMidi() {
             for (const input of inputs) {
                 new_inputs.push(input.name);
                 console.log(`[input] ${input.name}`);
-                if (input.name.includes("yoctocore") || input.name.includes("zeptocore") || input.name.includes("ectocore")) {
+                if (input.name.includes("miditocv") || input.name.includes("zeptocore") || input.name.includes("ectocore")) {
                     window.inputMidiDevice = input;
                     setupMidiInputListener();
                     console.log("input device connected");
@@ -423,9 +423,9 @@ function setupMidi() {
                                 hexString += midiMessage.data[i].toString(16).padStart(2, '0');
                             }
                             vm.midi_input_last_message[input.name] = hexString;
-                            // pass through to yoctocore if it is setup
-                            if (window.yoctocoreDevice && vm.midi_input_active[input.name]) {
-                                window.yoctocoreDevice.send(midiMessage.data);
+                            // pass through to miditocv if it is setup
+                            if (window.miditocvDevice && vm.midi_input_active[input.name]) {
+                                window.miditocvDevice.send(midiMessage.data);
                             }
                         };
                     }
@@ -446,8 +446,8 @@ function setupMidi() {
             const outputs = midiAccess.outputs.values();
             for (const output of outputs) {
                 // console.log(`[output] ${output.name}`);
-                if (output.name.includes("yoctocore")) {
-                    window.yoctocoreDevice = output;
+                if (output.name.includes("miditocv")) {
+                    window.miditocvDevice = output;
                     console.log("output device connected");
                     const sysex_string = `0_0_${hash_djb("scene")}`;
                     console.log(`[sending_sysex] ${sysex_string}`);
@@ -465,21 +465,21 @@ function setupMidi() {
 }
 
 function send_voltage(channel, voltage) {
-    if (window.yoctocoreDevice) {
+    if (window.miditocvDevice) {
         // override with voltage, using calibration
         send_sysex(`setvolt_${channel}_${voltage}`);
     }
 }
 
 function send_raw_voltage(channel, voltage) {
-    if (window.yoctocoreDevice) {
+    if (window.miditocvDevice) {
         // override with voltage, don't use the calibration
         send_sysex(`setraw_${channel}_${voltage}`);
     }
 }
 
 function send_sysex(str) {
-    if (window.yoctocoreDevice) {
+    if (window.miditocvDevice) {
         // Create a Uint8Array with start (0xF0) and end (0xF7) bytes
         const sysex = new Uint8Array(str.length + 2);
         sysex[0] = 0xF0;
@@ -498,7 +498,7 @@ function send_sysex(str) {
         // Send the SysEx message
         try {
             console.log(`[.send] ${str}`);
-            window.yoctocoreDevice.send(sysex);
+            window.miditocvDevice.send(sysex);
             // console.log("SysEx message sent:", sysex);
         } catch (error) {
             console.error("Failed to send SysEx message:", error);
@@ -520,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             // setInterval(() => {
             //     if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
-            //         window.yoctocoreDevice && window.yoctocoreDevice.send([0x9F, 0x01, 0x01]);
+            //         window.miditocvDevice && window.miditocvDevice.send([0x9F, 0x01, 0x01]);
             //     }
             //     // need to fix this to prevent multiple connects
             //     // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
@@ -756,7 +756,7 @@ end`,
                 });
                 await luaState;
                 console.log(`[uploadLua]: ${new_code}`);
-                if (window.yoctocoreDevice) {
+                if (window.miditocvDevice) {
                     console.log(`[executeLua]: uploading code`);
                     // upload the code to the device.
                     // split new_code into 32 byte chunks

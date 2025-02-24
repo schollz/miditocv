@@ -1,7 +1,7 @@
-# yoctocore
+# miditocv
 
 
-[![CI/CD](https://github.com/schollz/yoctocore/actions/workflows/build.yml/badge.svg)](https://github.com/schollz/yoctocore/actions/workflows/build.yml) [![Latest](https://img.shields.io/github/v/release/schollz/yoctocore?color=brightgreen&label=Release)](https://github.com/schollz/yoctocore/releases/latest)
+[![CI/CD](https://github.com/schollz/miditocv/actions/workflows/build.yml/badge.svg)](https://github.com/schollz/miditocv/actions/workflows/build.yml) [![Latest](https://img.shields.io/github/v/release/schollz/miditocv?color=brightgreen&label=Release)](https://github.com/schollz/miditocv/releases/latest)
 
 there are eight scenes. each scene is selected by holding down `shift` and then holding one of the eight buttons for >1 second.
 
@@ -25,7 +25,7 @@ The **bold** things are implemented.
 
 ## Code
 
-The yoctocore is programmable with the [Lua language](https://www.lua.org/manual/5.4/manual.html), a powerful, efficient, lightweight, embeddable scripting language.
+The miditocv is programmable with the [Lua language](https://www.lua.org/manual/5.4/manual.html), a powerful, efficient, lightweight, embeddable scripting language.
 
 It is currently under development. Here is the implementation status:
 
@@ -45,7 +45,7 @@ It is currently under development. Here is the implementation status:
 - [x] [`to_cv(value)`](#to_cvvalue)
 - [x] [`S` - A Minimal Sequencing Library](#s---a-minimal-sequencing-library)
 
-The yoctocore has [an online editor](https://my.yoctocore.com) that you can use to test out your programs.
+The miditocv has [an online editor](https://my.miditocv.com) that you can use to test out your programs.
 
 Yoctocore programs are based around a set of [callback functions](https://en.wikipedia.org/wiki/Callback_(computer_programming)) that are run on specific routines.
 
@@ -266,7 +266,7 @@ note_vals = S{'c4', 'd4', 'e4', S{'f4', 'g4', 'a4'}:all()} -- Inner sequence pla
 
 *Note:* This works on windows only.
 
-The yoctocore core is calibrated using an NI USB-6009 device to read in the voltages while manipulating the raw values to obtain a calibration curve for adjusting the final voltage.
+The miditocv core is calibrated using an NI USB-6009 device to read in the voltages while manipulating the raw values to obtain a calibration curve for adjusting the final voltage.
 
 To get started, you will need nidaqmx + drivers:
 
@@ -311,7 +311,7 @@ sudo apt install gdb-multiarch openocd minicom
 (Make sure to make in debug mode).
 
 ```bash
-cd build && make && sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program yoctocore.elf verify reset exit"
+cd build && make && sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program miditocv.elf verify reset exit"
 ```
 
 **setup server:**
@@ -321,7 +321,7 @@ sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5
 
 **continue:**
 ```bash
-gdb-multiarch yoctocore.elf  -ex "target remote localhost:3333" -ex "monitor reset init" -ex "continue"
+gdb-multiarch miditocv.elf  -ex "target remote localhost:3333" -ex "monitor reset init" -ex "continue"
 ```
 
 ```

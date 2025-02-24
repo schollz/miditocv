@@ -1,4 +1,4 @@
-module github.com/schollz/yoctocore/dev/yoctocore-fs
+module github.com/schollz/miditocv/dev/miditocv-fs
 
 go 1.23.3
 

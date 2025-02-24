@@ -42,6 +42,6 @@ jobs:
           cat $GITHUB_WORKSPACE/pico-sdk/lib/tinyusb/src/tusb.c | grep osal_mutex
       - name: Set PICO_SDK_PATH
         run: echo "PICO_SDK_PATH=$GITHUB_WORKSPACE/pico-sdk" >> $GITHUB_ENV
-      - name: Build yoctocore
+      - name: Build miditocv
         run: |
-          make yoctocore-release
+          make miditocv-release
