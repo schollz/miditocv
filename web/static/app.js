@@ -237,9 +237,9 @@ async function updateLocalScene(scene_num) {
     // get all parameters
 
     let time_per_event = [];
-    for (const output_num = 0; output_num < 8; output_num++) {
-        for (const param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
-            const sysex_string = `${scene_num}_${output_num}_${hash_djb(param)}`;
+    for (let output_num = 0; output_num < 8; output_num++) {
+        for (let param of Object.keys(vm.scenes[scene_num].outputs[output_num])) {
+            let sysex_string = `${scene_num}_${output_num}_${hash_djb(param)}`;
             // skip code and code_len
             if (param == "code_len" || param == "code") {
                 continue;
