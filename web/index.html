@@ -512,11 +512,135 @@
   </div>
   <div class="appbox markydown">
     <pre>
-## Documentation
+## General 
+
+### Web tool 
 
 **Copying an output:** Ctrl+Click on an output to paste the current selected output's settings to the clicked output.
-  
 
+### miditocv 
+
+Hold any of the buttons for > 2 seconds and then let go of the button to switch to that scene.
+
+</pre>
+
+
+  </div>
+
+  <div class="appbox markydown">
+    <pre>
+## Note
+
+**Button**: listens and adjusts MIDI channel to incoming signals.
+
+**Shift + Button**: toggles a tuning note used for quick tuning. 
+
+**Shift + Knob**: change tuning - Modifies the current tuning configuration or scale.
+
+**Button + Knob**: voltage - Controls the output voltage level for the note.
+</pre>
+  </div>
+  <div class="appbox markydown">
+    <pre>
+
+## Envelope
+
+**Button**: trigger - Initiates the envelope cycle.
+
+**Knob**: attack - Adjusts the attack time of the envelope.
+
+**Shift + Knob**: sustain - Controls the sustain level of the envelope.
+
+**Button + Knob**: release - Adjusts the release time of the envelope.
+
+</pre>
+  </div>
+
+  <div class="appbox markydown">
+    <pre>
+
+## Gate
+
+**Button**: trigger - Activates or deactivates the gate signal.
+
+**Shift + Knob**: probability - Sets the probability of the gate triggering.
+</pre>
+  </div>
+
+  <div class="appbox markydown">
+    <pre>
+## CC
+**Button**:  listens and adjusts MIDI channel to incoming signals.
+</pre>
+  </div>
+
+  <div class="appbox markydown">
+    <pre>
+## Program Change
+**Button**:  listens and adjusts MIDI channel to incoming signals.
+</pre>
+  </div>
+
+  <div class="appbox markydown">
+    <pre>
+## Key Pressure
+**Button**:  listens and adjusts MIDI channel to incoming signals.
+</pre>
+  </div>
+
+  <div class="appbox markydown">
+    <pre>
+## Channel Pressure
+**Button**:  listens and adjusts MIDI channel to incoming signals.
+</pre>
+  </div>
+
+  <div class="appbox markydown">
+    <pre>
+## Pitch Bend
+**Button**:  listens and adjusts MIDI channel to incoming signals.
+</pre>
+  </div>
+
+  <div class="appbox markydown">
+    <pre>
+## Clock
+
+**Button**: start/stop - Toggles the clock between running and stopped states.
+
+**Shift + Button**: tap tempo - Allows manual tempo setting through tapping.
+
+**Shift + Knob**: division - Sets the clock division or multiplication factor.
+
+**Button + Knob**: tempo - Directly adjusts the clock tempo value.
+</pre>
+  </div>
+
+  <div class="appbox markydown">
+    <pre>
+## LFO
+
+**Knob**: period - Controls the duration of the LFO cycle.
+
+**Shift + Button**: pause - Temporarily halts the LFO cycle.
+
+**Shift + Knob**: max voltage - Sets the maximum voltage level for the LFO.
+
+**Button + Knob**: shape - Selects or modifies the LFO waveform shape.
+</pre>
+  </div>
+
+  <div class="appbox markydown">
+    <pre>
+## Code (experimental)
+
+**Button**: on_button(on) - Function that handles button press events.
+
+**Knob**: on_knob(x) - Function that processes knob rotation with value x.
+
+**Shift + Button**: on_button(on) - Same function as regular button but in shift context.
+
+**Shift + Knob**: on_knob(x) - Same function as regular knob but in shift context.
 </pre>
 
   </div>

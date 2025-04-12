@@ -68,6 +68,7 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/luavm.h"
 #include "lib/mcp3208.h"
 #include "lib/memusage.h"
+#include "lib/miditocv.h"
 #include "lib/pcg_basic.h"
 #include "lib/random.h"
 #include "lib/scales.h"
@@ -75,7 +76,6 @@ static const uint32_t PIN_DCDC_PSM_CTRL = 23;
 #include "lib/simpletimer.h"
 #include "lib/spectra.h"
 #include "lib/spiral.h"
-#include "lib/miditocv.h"
 #include "uart_rx.pio.h"
 //
 
@@ -89,6 +89,7 @@ bool blink_on = false;
 const uint8_t button_num = 9;
 const uint8_t button_pins[9] = {1, 8, 20, 21, 22, 26, 27, 28, 29};
 uint8_t button_values[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint32_t button_time_on[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 uint32_t time_per_iteration = 0;
 uint32_t timer_per[32];
 uint32_t lfo_ct_last[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -875,7 +876,7 @@ int main() {
     int32_t c0;
     char c;
     if (tud_cdc_connected() && tud_cdc_available()) {
-      while((c0=tud_cdc_read_char())!=-1){
+      while ((c0 = tud_cdc_read_char()) != -1) {
         c = (char)c0;
 
         if (c == '\b') {
@@ -892,7 +893,8 @@ int main() {
           serialInputLineBuffer[serialInputLineBufferPos] = '\0';
           serialInputLineBufferPos++;
 
-          if(Lua_eval_simple((const char*)serialInputLineBuffer, serialInputLineBufferPos-2, "=repl")) {
+          if (Lua_eval_simple((const char *)serialInputLineBuffer,
+                              serialInputLineBufferPos - 2, "=repl")) {
             // REVIEW: maybe update outs if changed by the REPL
           }
 
@@ -945,8 +947,24 @@ int main() {
       if (val != button_values[i]) {
         uint8_t unique_id;
         flash_get_unique_id(&unique_id);
-        printf("Button %d: %d (%d)\n", i, val, unique_id);
         button_values[i] = val;
+        if (val) {
+          printf("button_on  %d: %d (%d)\n", i, val, unique_id);
+          button_time_on[i] = ct;
+        } else {
+          uint32_t time_button_was_on = ct - button_time_on[i];
+          printf("button_off  %d: %d (%d) %d\n", i, val, unique_id,
+                 time_button_was_on);
+          if (time_button_was_on > 1500) {
+            // switch scene
+            if (i < 8) {
+              yocto.i = i;
+              printf("switch scene %d\n", yocto.i);
+              // save the config
+              Yoctocore_schedule_save(&yocto);
+            }
+          }
+        }
         if (i < 8) {
           luaSetButton(i, val);
           // process button press

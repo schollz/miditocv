@@ -482,7 +482,7 @@ body {
     box-shadow: 8px 8px 0px var(--shadow-color);
     width: 100%;
     max-width: 800px;
-    margin: 4em;
+    margin: 1em;
 }
 
 input:disabled,
