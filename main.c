@@ -383,13 +383,15 @@ void midi_note_on(int channel, int note, int velocity) {
     Config *config = &yocto.config[yocto.i][i];
     Out *out = &yocto.out[i];
     if (config->mode == MODE_NOTE) {
-      // check if button is pressed
-      if (button_values[i]) {
-        // learn the channel
-        yocto.config[yocto.i][i].midi_channel = channel;
-        // save the config
-        Yoctocore_schedule_save(&yocto);
-      }
+      // Removing this for now, because it causes problems if accidentally
+      // pressed
+      // // check if button is pressed
+      // if (button_values[i]) {
+      //   // learn the channel
+      //   yocto.config[yocto.i][i].midi_channel = channel;
+      //   // save the config
+      //   Yoctocore_schedule_save(&yocto);
+      // }
       if ((config->midi_channel == channel || config->midi_channel == 0) &&
           (out->note_on.time_on == 0 ||
            (ct - out->note_on.time_on) > MAX_NOTE_HOLD_TIME_MS) &&
@@ -956,13 +958,13 @@ int main() {
           printf("button_off  %d: %d (%d) %d\n", i, val, unique_id,
                  time_button_was_on);
           if (time_button_was_on > 1500) {
-            // switch scene
-            if (i < 8) {
-              yocto.i = i;
-              printf("switch scene %d\n", yocto.i);
-              // save the config
-              Yoctocore_schedule_save(&yocto);
-            }
+            // // switch scene
+            // if (i < 8) {
+            //   yocto.i = i;
+            //   printf("switch scene %d\n", yocto.i);
+            //   // save the config
+            //   Yoctocore_schedule_save(&yocto);
+            // }
           }
         }
         if (i < 8) {

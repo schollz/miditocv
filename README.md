@@ -3,7 +3,7 @@
 
 [![CI/CD](https://github.com/schollz/miditocv/actions/workflows/build.yml/badge.svg)](https://github.com/schollz/miditocv/actions/workflows/build.yml) [![Latest](https://img.shields.io/github/v/release/schollz/miditocv?color=brightgreen&label=Release)](https://github.com/schollz/miditocv/releases/latest)
 
-there are eight scenes. each scene is selected by holding down any of the eight buttons for >2 second.
+there are eight scenes. each scene is selected by TBD.
 
 each scene has eight outputs. each output can be configured to a different mode. modes are selected holding `shift` and pressing one of the eight buttons.
 
@@ -11,7 +11,7 @@ The **bold** things are implemented.
 
 | Category         | Button         | Knob       | Shift + Button  | Shift + Knob      | Button + Knob |
 | ---------------- | -------------- | ---------- | --------------- | ----------------- | ------------- |
-| Note             | **listen**     |            | **tuning note** | **change tuning** | **voltage**   |
+| Note             |                |            | **tuning note** | **change tuning** | **voltage**   |
 | Envelope         | **trigger**    | **attack** |                 | **sustain**       | **release**   |
 | Gate             | **trigger**    |            |                 | **probability**   |               |
 | CC               | **listen**     |            |                 |                   |               |
