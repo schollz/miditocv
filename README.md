@@ -217,6 +217,14 @@ volts = to_cv("a5") -- sets the voltage to 1.75V
 volts = to_cv(0) -- sets the voltage to 0V
 ```
 
+### `linlin(x, in_min, in_max, out_min, out_max)`
+
+This function performs linear interpolation from one range to another. It takes an input value `x` and maps it from the range `[in_min, in_max]` to the range `[out_min, out_max]`.
+
+```lua
+linlin_value = linlin(5, 0, 10, -5, 5) -- maps 5 from range [0, 10] to range [-5, 5]
+``` 
+
 ### S - A Minimal Sequencing Library
 
 `S` is a library designed to build sequencers and arpeggiators with minimal scaffolding using Lua tables. Originally designed by [Trent Gill](https://monome.org/docs/norns/reference/lib/sequins), it provides a simple, extensible interface for creating complex patterns with ease.
