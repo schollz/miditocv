@@ -86,10 +86,9 @@ int luaInit() {
   return 0;
 }
 
-bool Lua_eval_simple(const char*   script
-                     , size_t      script_len
-                     , const char* chunkname) {
-  if(luaL_loadbuffer(L, script, script_len, chunkname) != LUA_OK) {
+bool Lua_eval_simple(const char *script, size_t script_len,
+                     const char *chunkname) {
+  if (luaL_loadbuffer(L, script, script_len, chunkname) != LUA_OK) {
     printf("Error loading Lua repl eval: %s\n", lua_tostring(L, -1));
     return false;
   }
@@ -127,7 +126,7 @@ void luaSetShift(bool shift) {
 void luaSetButton(int n, bool val) {
   lua_getglobal(L, "button");
   if (lua_istable(L, -1)) {
-    lua_pushinteger(L, n+1);
+    lua_pushinteger(L, n + 1);
     lua_pushboolean(L, val);
     lua_settable(L, -3);
   } else {
@@ -209,8 +208,8 @@ bool luaRunOnBeat(int index, bool on, float *volts, bool *volts_new,
   return true;
 }
 
-bool luaRunOnKnob(int index, float val, float *volts,
-                  bool *volts_new, bool *trigger) {
+bool luaRunOnKnob(int index, float val, float *volts, bool *volts_new,
+                  bool *trigger) {
   if (!withLuaEnv(index)) return false;
 
   lua_getfield(L, -1, "on_knob");  // Push envs[index].on_knob onto the stack
@@ -246,8 +245,8 @@ bool luaRunOnKnob(int index, float val, float *volts,
   return true;
 }
 
-bool luaRunOnButton(int index, bool val, float *volts,
-                    bool *volts_new, bool *trigger) {
+bool luaRunOnButton(int index, bool val, float *volts, bool *volts_new,
+                    bool *trigger) {
   if (!withLuaEnv(index)) return false;
 
   lua_getfield(L, -1,

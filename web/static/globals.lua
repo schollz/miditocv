@@ -414,6 +414,11 @@ function to_cv(val)
     return -15
 end
 
+function linlin(x, in_min, in_max, out_min, out_max)
+    -- linear interpolation from one range to another
+    return (x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
+end
+
 -- print(to_cv(62))
 -- print(to_cv("c5"))
 -- print(to_cv(1.2))
