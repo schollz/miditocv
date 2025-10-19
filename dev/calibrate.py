@@ -38,7 +38,7 @@ def read_voltages():
 def send_sysex(output, sysex_string):
     print(sysex_string)
     sysex_data = sysex_string.encode("utf-8")
-    sysex_data = b"\xF0" + sysex_data + b"\xF7"
+    sysex_data = b"\xf0" + sysex_data + b"\xf7"
     output.write_sys_ex(pygame.midi.time(), sysex_data)
 
 
@@ -318,11 +318,28 @@ def run_all_calibration(id, test_only=False):
 
 
 @click.command()
-@click.argument("id", required=True)
+@click.argument("id", required=False)
 @click.option("--test", is_flag=True, help="Run in test mode")
-@click.option("--print", is_flag=True, help="Print the calibration results")
-def main(id, test, print):
-    if print:
+@click.option("--print-cal", is_flag=True, help="Print the calibration results")
+@click.option(
+    "--set",
+    nargs=2,
+    type=(int, float),
+    help="Set a specific CHANNEL (1-8) to a VOLTAGE and exit. Usage: --set <channel> <voltage>",
+)
+def main(id, test, print_cal, set):
+    # If --set provided, set the single channel to the requested voltage and exit
+    if set is not None:
+        channel, voltage = set
+        # Use set_voltage which will retry until it succeeds
+        set_voltage(channel, voltage)
+        return
+
+    # For other operations, an ID is required
+    if id is None:
+        raise click.UsageError("ID argument is required unless using --set option")
+
+    if print_cal:
         create_printout(id)
     else:
         run_all_calibration(id, test)

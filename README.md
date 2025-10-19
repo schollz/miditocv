@@ -1,6 +1,5 @@
 # miditocv
 
-
 [![CI/CD](https://github.com/schollz/miditocv/actions/workflows/build.yml/badge.svg)](https://github.com/schollz/miditocv/actions/workflows/build.yml) [![Latest](https://img.shields.io/github/v/release/schollz/miditocv?color=brightgreen&label=Release)](https://github.com/schollz/miditocv/releases/latest)
 
 there are eight scenes. each scene is selected by TBD.
@@ -47,7 +46,7 @@ It is currently under development. Here is the implementation status:
 
 The miditocv has [an online editor](https://my.miditocv.com) that you can use to test out your programs.
 
-Yoctocore programs are based around a set of [callback functions](https://en.wikipedia.org/wiki/Callback_(computer_programming)) that are run on specific routines.
+Yoctocore programs are based around a set of [callback functions](<https://en.wikipedia.org/wiki/Callback_(computer_programming)>) that are run on specific routines.
 
 ### `volts` and `trigger`
 
@@ -77,7 +76,7 @@ out[8].volts = 5
 
 which will set the voltage on output 8 to 5V.
 
-The code from any output can change the voltage for any other output. When this voltage *changes* it will *override* any other voltage on any other output.
+The code from any output can change the voltage for any other output. When this voltage _changes_ it will _override_ any other voltage on any other output.
 
 ### `shift` and `button[i]`
 
@@ -105,7 +104,7 @@ function on_beat(on)
 end
 ```
 
-This function is special, in that it *can be linked to a clock output*, but if it is not linked to a clock output it will run at the tempo defined by the `bpm` variable.
+This function is special, in that it _can be linked to a clock output_, but if it is not linked to a clock output it will run at the tempo defined by the `bpm` variable.
 
 ### `on_knob(value)`
 
@@ -223,14 +222,13 @@ This function performs linear interpolation from one range to another. It takes 
 
 ```lua
 linlin_value = linlin(5, 0, 10, -5, 5) -- maps 5 from range [0, 10] to range [-5, 5]
-``` 
+```
 
 ### S - A Minimal Sequencing Library
 
 `S` is a library designed to build sequencers and arpeggiators with minimal scaffolding using Lua tables. Originally designed by [Trent Gill](https://monome.org/docs/norns/reference/lib/sequins), it provides a simple, extensible interface for creating complex patterns with ease.
 
 This document introduces the basics of `S`. For advanced techniques, see the extended reference.
-
 
 #### Syntax and Description
 
@@ -269,10 +267,17 @@ note_vals = S{'c4', 'd4', 'e4', S{'f4', 'g4', 'a4'}:times(6)} -- Inner sequence 
 note_vals = S{'c4', 'd4', 'e4', S{'f4', 'g4', 'a4'}:all()} -- Inner sequence plays all values before releasing focus
 ```
 
-
 ## Calibration
 
-*Note:* This works on windows only.
+_Note:_ This works on windows only.
+
+```bash
+cd dev
+uv venv .venv --python=python3.12
+.\.venv\Scripts\activate
+uv pip install -r requirements.txt
+.\.venv\Scripts\python.exe .\calibrate.py <ID>
+```
 
 The miditocv core is calibrated using an NI USB-6009 device to read in the voltages while manipulating the raw values to obtain a calibration curve for adjusting the final voltage.
 
@@ -323,11 +328,13 @@ cd build && make && sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg
 ```
 
 **setup server:**
+
 ```bash
 sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000"
 ```
 
 **continue:**
+
 ```bash
 gdb-multiarch miditocv.elf  -ex "target remote localhost:3333" -ex "monitor reset init" -ex "continue"
 ```
