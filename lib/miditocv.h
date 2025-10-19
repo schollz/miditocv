@@ -533,7 +533,7 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
   }
 }
 
-bool Yoctcoroe_do_save(Yoctocore *self) {
+bool Yoctocore_do_save(Yoctocore *self) {
   FRESULT fr;
   FIL file;
   UINT bw;
@@ -581,7 +581,7 @@ bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
     return false;
   }
   self->debounce_save = 0;
-  return Yoctcoroe_do_save(self);
+  return Yoctocore_do_save(self);
 }
 
 bool Yoctocore_load_code(Yoctocore *self, uint8_t scene, uint8_t output) {
