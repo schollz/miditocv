@@ -262,11 +262,24 @@ async function updateLocalScene(scene_num) {
     }
     // print average time_per_event
     console.log(`[updateLocalScene] ${time_per_event.reduce((a, b) => a + b, 0) / time_per_event.length} ms`);
+
+    // Request code for each output sequentially with proper waiting
     for (let output_num = 0; output_num < 8; output_num++) {
-        // get code
-        setTimeout(() => {
-            send_sysex(`${scene_num}_${output_num}_${hash_djb("code")}`);
-        }, output_num * 100);
+        for (let i = 0; i < 3; i++) {
+            try {
+                console.log(`[requesting code] scene=${scene_num} output=${output_num} (attempt ${i+1})`);
+                send_sysex(`${scene_num}_${output_num}_${hash_djb("code")}`);
+                await waitForTriggerOrTimeout(1000); // Wait up to 1 second for code chunks
+                console.log(`[code received] scene=${scene_num} output=${output_num}`);
+                break;
+            } catch (error) {
+                console.warn(`[code request] scene=${scene_num} output=${output_num} attempt ${i+1} failed`);
+                if (i === 2) {
+                    console.error(`[code request] scene=${scene_num} output=${output_num} failed after 3 attempts`);
+                }
+                await new Promise(r => setTimeout(r, 100)); // Brief delay before retry
+            }
+        }
     }
 
     disableWatchers = false;
@@ -332,6 +345,10 @@ function setupMidiInputListener() {
                     vm.current_bpm = parseFloat(fields_[8]);
                     // is connected
                     vm.device_connected = true;
+                } else if (sysex.startsWith("ACK_")) {
+                    // ACK for code chunk received
+                    console.log(`[ACK received] ${sysex}`);
+                    externalTrigger();
                 } else if (fields.length == 4) {
                     // check if field [3] is a parameter
                     externalTrigger();
@@ -771,11 +788,27 @@ end`,
                         } else {
                             chunk = `LA${current_scene.value}${current_output.value}${chunk}`;
                         }
-                        console.log(`[executeLua] ${chunk}`);
-                        // send chunk and wait 10 ms
-                        send_sysex(chunk);
-                        await new Promise(r => setTimeout(r, 10));
+
+                        // Retry up to 3 times with ACK waiting
+                        let success = false;
+                        for (let retry = 0; retry < 3; retry++) {
+                            try {
+                                console.log(`[uploadLua] chunk ${i+1}/${num_chunks} (attempt ${retry+1})`);
+                                send_sysex(chunk);
+                                await waitForTriggerOrTimeout(500); // Wait for ACK with 500ms timeout
+                                success = true;
+                                break; // ACK received, move to next chunk
+                            } catch (error) {
+                                console.warn(`[uploadLua] chunk ${i+1} retry ${retry+1} failed: ${error.message}`);
+                                if (retry === 2) {
+                                    throw new Error(`Failed to upload chunk ${i+1}/${num_chunks} after 3 attempts`);
+                                }
+                                await new Promise(r => setTimeout(r, 50)); // Brief delay before retry
+                            }
+                        }
                     }
+                    console.log(`[uploadLua]: upload complete!`);
+                    outputCodeMirror.setValue(`Upload successful: ${new_code.length} bytes`);
                 }
             } catch (error) {
                 // show error in output

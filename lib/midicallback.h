@@ -159,11 +159,12 @@ void midi_sysex_callback(uint8_t *sysex, int length) {
   if (sysex[0] == 'L' &&
       (sysex[1] == 'A' || sysex[1] == 'N' || sysex[1] == 'E')) {
     // 36 byte chunks are sent L[A|N]<scene><output><32bytes>
-    printf_sysex("LA%d\n", length);
     uint8_t scene = sysex[2] - '0';
     uint8_t output = sysex[3] - '0';
     Yoctocore_add_code(&yocto, scene, output, (char *)sysex + 4, length - 4,
                        (sysex[1] == 'A' || sysex[1] == 'E'), sysex[1] == 'E');
+    // Send ACK to confirm receipt
+    printf_sysex("ACK_%c%d%d", sysex[1], scene, output);
   } else if (get_sysex_param_float_value("version", sysex, length, &val)) {
     printf_sysex("v1.0.0");
   } else if (get_sysex_param_float_value("diskmode", sysex, length, &val)) {
