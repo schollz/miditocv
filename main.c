@@ -921,15 +921,16 @@ int main() {
             break;
         }
       } else {
-        // special case
-        if (config->mode == MODE_CODE) {
-          // check if the code has changed
-          if (out->code_updated) {
-            // load the new code
-            Yoctocore_load_code(&yocto, yocto.i, i);
-            // reset the flag
-            out->code_updated = false;
+        // special case - check if code was updated for any scene
+        if (out->code_updated) {
+          // Check if the scene where code was uploaded has MODE_CODE enabled
+          Config *uploaded_config = &yocto.config[out->code_updated_scene][i];
+          if (uploaded_config->mode == MODE_CODE) {
+            // load the new code from the correct scene
+            Yoctocore_load_code(&yocto, out->code_updated_scene, i);
           }
+          // reset the flag regardless
+          out->code_updated = false;
         }
       }
     }

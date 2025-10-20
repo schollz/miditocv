@@ -101,6 +101,7 @@ typedef struct Out {
   float voltage_calibration_slope;
   int8_t mode_last;
   bool code_updated;
+  uint8_t code_updated_scene;  // Track which scene the code update is for
   bool clock_disabled;
   bool lfo_disabled;
   TapTempo taptempo;
@@ -168,6 +169,7 @@ void Yoctocore_init(Yoctocore *self) {
     self->out[output].voltage_do_override = false;
     self->out[output].mode_last = -1;
     self->out[output].code_updated = false;
+    self->out[output].code_updated_scene = 0;
     self->out[output].clock_disabled = false;
     self->out[output].lfo_disabled = false;
     TapTempo_init(&self->out[output].taptempo);
@@ -255,6 +257,7 @@ void Yoctocore_add_code(Yoctocore *self, uint8_t scene, uint8_t output,
     code_added = NULL;
     // set code to be updated
     self->out[output].code_updated = true;
+    self->out[output].code_updated_scene = scene;
     printf("[%d%d] code %d bytes\n", scene, output, code_added_len);
   }
 }
@@ -327,6 +330,15 @@ void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
   char *code;
   FSIZE_t code_len;
   if (!Yoctocore_do_load_code(self, scene, output, &code, &code_len)) {
+    // No code file exists - send empty code response (single LE chunk with no data)
+    char buffer[4];
+    buffer[0] = 'L';
+    buffer[1] = 'E';
+    buffer[2] = '0' + scene;
+    buffer[3] = '0' + output;
+#ifdef INCLUDE_MIDI
+    send_buffer_as_sysex(buffer, 4);
+#endif
     return;
   }
 
@@ -337,21 +349,21 @@ void Yoctocore_print_code(Yoctocore *self, uint8_t scene, uint8_t output) {
     char buffer[CODE_CHUNK_SIZE];
     memset(buffer, 0, sizeof(buffer));
 
-    // Determine prefix: LS, LE, or LN
+    // Determine prefix: LS (start), LN (continuing), or LE (end)
     if (i == 0 && code_len - i <= (CODE_CHUNK_SIZE - 4)) {
-      // First and last chunk
+      // First and only chunk (single chunk transfer)
       buffer[0] = 'L';
       buffer[1] = 'E';
     } else if (i == 0) {
-      // First chunk
+      // First chunk (start)
       buffer[0] = 'L';
       buffer[1] = 'S';
     } else if (code_len - i <= (CODE_CHUNK_SIZE - 4)) {
-      // Last chunk
+      // Last chunk (end)
       buffer[0] = 'L';
       buffer[1] = 'E';
     } else {
-      // Intermediate chunk
+      // Middle chunk (continuing)
       buffer[0] = 'L';
       buffer[1] = 'N';
     }
@@ -533,7 +545,7 @@ float Yoctocore_get(Yoctocore *self, uint8_t scene, uint8_t output,
   }
 }
 
-bool Yoctcoroe_do_save(Yoctocore *self) {
+bool Yoctocore_do_save(Yoctocore *self) {
   FRESULT fr;
   FIL file;
   UINT bw;
@@ -581,7 +593,7 @@ bool Yoctocore_save(Yoctocore *self, uint32_t current_time) {
     return false;
   }
   self->debounce_save = 0;
-  return Yoctcoroe_do_save(self);
+  return Yoctocore_do_save(self);
 }
 
 bool Yoctocore_load_code(Yoctocore *self, uint8_t scene, uint8_t output) {
