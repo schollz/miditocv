@@ -1230,7 +1230,7 @@ int main() {
         if (config->mode == MODE_CODE) {
           // get bpm
           float code_bpm = luaGetBPM(i);
-          if (code_bpm > 30 && code_bpm < 300) {
+          if (code_bpm >= 1 && code_bpm < 300) {
             config->clock_tempo = code_bpm;
           }
         }
