@@ -163,14 +163,24 @@ void timer_callback_sample_knob(bool on, int user_data) {
     if (val_changed != -1) {
       printf("Knob %d: %d\n", i, val_changed);
       Config *config = &yocto.config[yocto.i][i];
+      Out *out = &yocto.out[i];
       if (config->mode == MODE_CODE) {
+        // Don't run if Lua code has panicked
+        if (out->lua_panic) {
+          continue;
+        }
         float volts;
         bool volts_new;
         bool trigger;
         float val = val_changed / 1023.0f;
         printf("Lua on_knob #%d - val=%f\n", i, val);
-        if (luaRunOnKnob(i, val, &volts, &volts_new, &trigger)) {
+        int result = luaRunOnKnob(i, val, &volts, &volts_new, &trigger);
+        if (result == 0) {
           on_successful_lua_callback(i, volts, volts_new, trigger);
+        } else if (result > 0) {
+          // Lua panic occurred
+          out->lua_panic = true;
+          printf("[output%d] Lua panic detected, disabling code execution\n", i);
         }
       }
     }
@@ -206,11 +216,20 @@ void timer_callback_beat(bool on, int user_data) {
       out->voltage_current = config->min_voltage;
     }
   } else if (config->mode == MODE_CODE) {
+    // Don't run if Lua code has panicked
+    if (out->lua_panic) {
+      return;
+    }
     float volts;
     bool volts_new;
     bool trigger;
-    if (luaRunOnBeat(user_data, on, &volts, &volts_new, &trigger)) {
+    int result = luaRunOnBeat(user_data, on, &volts, &volts_new, &trigger);
+    if (result == 0) {
       on_successful_lua_callback(user_data, volts, volts_new, trigger);
+    } else if (result > 0) {
+      // Lua panic occurred
+      out->lua_panic = true;
+      printf("[output%d] Lua panic detected, disabling code execution\n", user_data);
     }
   }
 }
@@ -278,6 +297,16 @@ void timer_callback_ws2812(bool on, int user_data) {
     Out *out = &yocto.out[i - 8];
     if (out->tuning && blink_on) {
       WS2812_fill(&ws2812, leds_second_8[i - 8] + 8, 0, 0, 0);
+    } else if (out->lua_panic) {
+      // Blink mode color (purple for CODE) for panicked Lua code
+      if (blink_on) {
+        WS2812_fill(&ws2812, leds_second_8[i - 8] + 8,
+                    const_colors[config->mode][0],
+                    const_colors[config->mode][1],
+                    const_colors[config->mode][2]);
+      } else {
+        WS2812_fill(&ws2812, leds_second_8[i - 8] + 8, 0, 0, 0);
+      }
     } else {
       uint8_t brightness = 80;
       WS2812_fill(&ws2812, leds_second_8[i - 8] + 8,
@@ -332,14 +361,23 @@ void midi_note_off(int channel, int note) {
       outs_with_note_change[i] = true;
       printf("[out%d] note_off %d\n", i + 1, note);
     } else if (config->mode == MODE_CODE) {
+      // Don't run if Lua code has panicked
+      if (out->lua_panic) {
+        continue;
+      }
       float volts;
       bool volts_new;
       bool trigger;
       printf("Lua on_note_off #%d - ch=%d, note=%d\n", i, channel, note);
-      if (luaRunOnNoteOff(i, channel, note, &volts, &volts_new, &trigger)) {
+      int result = luaRunOnNoteOff(i, channel, note, &volts, &volts_new, &trigger);
+      if (result == 0) {
         // on_successful_lua_callback(i, volts, trigger);
         out->voltage_set = volts;
         outs_with_note_change[i] = !trigger;
+      } else if (result > 0) {
+        // Lua panic occurred
+        out->lua_panic = true;
+        printf("[output%d] Lua panic detected, disabling code execution\n", i);
       }
     }
   }
@@ -410,16 +448,25 @@ void midi_note_on(int channel, int note, int velocity) {
         break;  // TODO make this an option
       }
     } else if (config->mode == MODE_CODE) {
+      // Don't run if Lua code has panicked
+      if (out->lua_panic) {
+        continue;
+      }
       float volts;
       bool volts_new;
       bool trigger;
       printf("Lua on_note_on #%d - ch=%d, note=%d, vel=%d\n", i, channel, note,
              velocity);
-      if (luaRunOnNoteOn(i, channel, note, velocity, &volts, &volts_new,
-                         &trigger)) {
+      int result = luaRunOnNoteOn(i, channel, note, velocity, &volts, &volts_new,
+                         &trigger);
+      if (result == 0) {
         // on_successful_lua_callback(i, volts, trigger);
         out->voltage_set = volts;
         outs_with_note_change[i] = trigger;
+      } else if (result > 0) {
+        // Lua panic occurred
+        out->lua_panic = true;
+        printf("[output%d] Lua panic detected, disabling code execution\n", i);
       }
     }
   }
@@ -447,12 +494,21 @@ void midi_cc(int channel, int cc, int value) {
         Yoctocore_schedule_save(&yocto);
       }
     } else if (config->mode == MODE_CODE) {
+      // Don't run if Lua code has panicked
+      if (out->lua_panic) {
+        continue;
+      }
       float volts;
       bool volts_new;
       bool trigger;
       printf("Lua on_cc #%d - cc=%d, cal=%d\n", i, cc, value);
-      if (luaRunOnCc(i, cc, value, &volts, &volts_new, &trigger)) {
+      int result = luaRunOnCc(i, cc, value, &volts, &volts_new, &trigger);
+      if (result == 0) {
         on_successful_lua_callback(i, volts, volts_new, trigger);
+      } else if (result > 0) {
+        // Lua panic occurred
+        out->lua_panic = true;
+        printf("[output%d] Lua panic detected, disabling code execution\n", i);
       }
     }
   }
@@ -914,10 +970,13 @@ int main() {
         out->mode_last = config->mode;
         switch (config->mode) {
           case MODE_CODE:
-            // load the new code environment
+            // load the new code environment and clear panic flag
+            out->lua_panic = false;
             Yoctocore_load_code(&yocto, yocto.i, i);
             break;
           default:
+            // Clear panic flag when switching to non-CODE mode
+            out->lua_panic = false;
             break;
         }
       } else {
@@ -926,7 +985,8 @@ int main() {
           // Check if the scene where code was uploaded has MODE_CODE enabled
           Config *uploaded_config = &yocto.config[out->code_updated_scene][i];
           if (uploaded_config->mode == MODE_CODE) {
-            // load the new code from the correct scene
+            // load the new code from the correct scene and clear panic flag
+            out->lua_panic = false;
             Yoctocore_load_code(&yocto, out->code_updated_scene, i);
           }
           // reset the flag regardless
@@ -1013,12 +1073,20 @@ int main() {
               }
               break;
             case MODE_CODE:
-              float volts;
-              bool volts_new;
-              bool trigger;
-              printf("Lua on_button #%d - val=%d\n", i, val);
-              if (luaRunOnButton(i, val, &volts, &volts_new, &trigger)) {
-                on_successful_lua_callback(i, volts, volts_new, trigger);
+              // Don't run if Lua code has panicked
+              if (!out->lua_panic) {
+                float volts;
+                bool volts_new;
+                bool trigger;
+                printf("Lua on_button #%d - val=%d\n", i, val);
+                int result = luaRunOnButton(i, val, &volts, &volts_new, &trigger);
+                if (result == 0) {
+                  on_successful_lua_callback(i, volts, volts_new, trigger);
+                } else if (result > 0) {
+                  // Lua panic occurred
+                  out->lua_panic = true;
+                  printf("[output%d] Lua panic detected, disabling code execution\n", i);
+                }
               }
               break;
             default:

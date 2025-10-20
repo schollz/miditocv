@@ -172,22 +172,22 @@ float luaGetBPM(int index) {
   return bpm;
 }
 
-bool luaRunOnBeat(int index, bool on, float *volts, bool *volts_new,
+int luaRunOnBeat(int index, bool on, float *volts, bool *volts_new,
                   bool *trigger) {
-  if (!withLuaEnv(index)) return false;
+  if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1, "on_beat");  // Push envs[index].on_beat onto the stack
   if (!lua_isfunction(L, -1)) {    // Check if on_beat is a function
     lua_pop(L, 3);                 // Pop envs, envs[index], and on_beat
-    return false;
+    return -1;
   }
 
   lua_pushboolean(L, on);  // Push the argument for on_beat
-  if (lua_pcall(L, 1, LUA_MULTRET, 0) !=
-      LUA_OK) {  // Call on_beat with 1 argument, expecting 1 return
+  int result = lua_pcall(L, 1, LUA_MULTRET, 0);
+  if (result != LUA_OK) {  // Call on_beat with 1 argument, expecting 1 return
     printf("[luaRunOnBeat] error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
-    return false;
+    return result;  // Return error code (non-zero indicates panic/error)
   }
 
   // Check how many results were returned
@@ -196,8 +196,8 @@ bool luaRunOnBeat(int index, bool on, float *volts, bool *volts_new,
   if (num_results > 0) {
     // uncomment to print result
     if (lua_isstring(L, -1)) {
-      const char *result = lua_tostring(L, -1);
-      // printf("Result: %s\n", result);
+      const char *result_str = lua_tostring(L, -1);
+      // printf("Result: %s\n", result_str);
     }
     // Pop all results to clean up the stack
     lua_pop(L, num_results);
@@ -205,26 +205,26 @@ bool luaRunOnBeat(int index, bool on, float *volts, bool *volts_new,
 
   lua_pop(L, 2);  // Pop envs[index]
   luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
-  return true;
+  return 0;  // Success
 }
 
-bool luaRunOnKnob(int index, float val, float *volts, bool *volts_new,
+int luaRunOnKnob(int index, float val, float *volts, bool *volts_new,
                   bool *trigger) {
-  if (!withLuaEnv(index)) return false;
+  if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1, "on_knob");  // Push envs[index].on_knob onto the stack
   if (!lua_isfunction(L, -1)) {    // Check if on_knob is a function
     lua_pop(L, 3);                 // Pop envs, envs[index], and on_knob
-    return false;
+    return -1;
   }
 
   // Push the arguments
   lua_pushnumber(L, val);
-  if (lua_pcall(L, 1, LUA_MULTRET, 0) !=
-      LUA_OK) {  // Call on_beat with 2 argument, expecting 1 return
+  int result = lua_pcall(L, 1, LUA_MULTRET, 0);
+  if (result != LUA_OK) {  // Call on_beat with 2 argument, expecting 1 return
     printf("[luaRunOnKnob] error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
-    return false;
+    return result;  // Return error code
   }
 
   // Check how many results were returned
@@ -233,8 +233,8 @@ bool luaRunOnKnob(int index, float val, float *volts, bool *volts_new,
   if (num_results > 0) {
     // uncomment to print result
     // if (lua_isstring(L, -1)) {
-    //   const char *result = lua_tostring(L, -1);
-    //   printf("Result: %s\n", result);
+    //   const char *result_str = lua_tostring(L, -1);
+    //   printf("Result: %s\n", result_str);
     // }
     // Pop all results to clean up the stack
     lua_pop(L, num_results);
@@ -242,27 +242,27 @@ bool luaRunOnKnob(int index, float val, float *volts, bool *volts_new,
 
   lua_pop(L, 2);  // Pop envs[index]
   luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
-  return true;
+  return 0;  // Success
 }
 
-bool luaRunOnButton(int index, bool val, float *volts, bool *volts_new,
+int luaRunOnButton(int index, bool val, float *volts, bool *volts_new,
                     bool *trigger) {
-  if (!withLuaEnv(index)) return false;
+  if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1,
                "on_button");     // Push envs[index].on_button onto the stack
   if (!lua_isfunction(L, -1)) {  // Check if on_button is a function
     lua_pop(L, 3);               // Pop envs, envs[index], and on_button
-    return false;
+    return -1;
   }
 
   // Push the arguments
   lua_pushboolean(L, val);
-  if (lua_pcall(L, 1, LUA_MULTRET, 0) !=
-      LUA_OK) {  // Call on_beat with 2 argument, expecting 1 return
+  int result = lua_pcall(L, 1, LUA_MULTRET, 0);
+  if (result != LUA_OK) {  // Call on_beat with 2 argument, expecting 1 return
     printf("[luaRunOnButton] error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
-    return false;
+    return result;  // Return error code
   }
 
   // Check how many results were returned
@@ -271,8 +271,8 @@ bool luaRunOnButton(int index, bool val, float *volts, bool *volts_new,
   if (num_results > 0) {
     // uncomment to print result
     // if (lua_isstring(L, -1)) {
-    //   const char *result = lua_tostring(L, -1);
-    //   printf("Result: %s\n", result);
+    //   const char *result_str = lua_tostring(L, -1);
+    //   printf("Result: %s\n", result_str);
     // }
     // Pop all results to clean up the stack
     lua_pop(L, num_results);
@@ -281,29 +281,29 @@ bool luaRunOnButton(int index, bool val, float *volts, bool *volts_new,
   lua_pop(L, 2);  // Pop envs[index]
 
   luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
-  return true;
+  return 0;  // Success
 }
 
-bool luaRunOnNoteOn(int index, int channel, int note, int velocity,
+int luaRunOnNoteOn(int index, int channel, int note, int velocity,
                     float *volts, bool *volts_new, bool *trigger) {
-  if (!withLuaEnv(index)) return false;
+  if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1,
                "on_note_on");    // Push envs[index].on_button onto the stack
   if (!lua_isfunction(L, -1)) {  // Check if on_note_on is a function
     lua_pop(L, 3);               // Pop envs, envs[index], and on_button
-    return false;
+    return -1;
   }
 
   // Push the arguments
   lua_pushinteger(L, channel);
   lua_pushinteger(L, note);
   lua_pushinteger(L, velocity);
-  if (lua_pcall(L, 3, LUA_MULTRET, 0) !=
-      LUA_OK) {  // Call on_note_on with 2 argument, expecting 1 return
+  int result = lua_pcall(L, 3, LUA_MULTRET, 0);
+  if (result != LUA_OK) {  // Call on_note_on with 2 argument, expecting 1 return
     printf("[luaRunOnNoteOn] error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
-    return false;
+    return result;  // Return error code
   }
 
   // Check how many results were returned
@@ -312,8 +312,8 @@ bool luaRunOnNoteOn(int index, int channel, int note, int velocity,
   if (num_results > 0) {
     // uncomment to print result
     // if (lua_isstring(L, -1)) {
-    //   const char *result = lua_tostring(L, -1);
-    //   printf("Result: %s\n", result);
+    //   const char *result_str = lua_tostring(L, -1);
+    //   printf("Result: %s\n", result_str);
     // }
     // Pop all results to clean up the stack
     lua_pop(L, num_results);
@@ -321,28 +321,28 @@ bool luaRunOnNoteOn(int index, int channel, int note, int velocity,
 
   lua_pop(L, 2);  // Pop envs[index]
   luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
-  return true;
+  return 0;  // Success
 }
 
-bool luaRunOnNoteOff(int index, int channel, int note, float *volts,
+int luaRunOnNoteOff(int index, int channel, int note, float *volts,
                      bool *volts_new, bool *trigger) {
-  if (!withLuaEnv(index)) return false;
+  if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1,
                "on_note_off");   // Push envs[index].on_button onto the stack
   if (!lua_isfunction(L, -1)) {  // Check if on_note_off is a function
     lua_pop(L, 3);               // Pop envs, envs[index], and on_button
-    return false;
+    return -1;
   }
 
   // Push the arguments
   lua_pushinteger(L, channel);
   lua_pushinteger(L, note);
-  if (lua_pcall(L, 2, LUA_MULTRET, 0) !=
-      LUA_OK) {  // Call on_note_off with 2 argument, expecting 1 return
+  int result = lua_pcall(L, 2, LUA_MULTRET, 0);
+  if (result != LUA_OK) {  // Call on_note_off with 2 argument, expecting 1 return
     printf("[luaRunOnNoteOff] error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
-    return false;
+    return result;  // Return error code
   }
 
   // Check how many results were returned
@@ -351,8 +351,8 @@ bool luaRunOnNoteOff(int index, int channel, int note, float *volts,
   if (num_results > 0) {
     // uncomment to print result
     // if (lua_isstring(L, -1)) {
-    //   const char *result = lua_tostring(L, -1);
-    //   printf("Result: %s\n", result);
+    //   const char *result_str = lua_tostring(L, -1);
+    //   printf("Result: %s\n", result_str);
     // }
     // Pop all results to clean up the stack
     lua_pop(L, num_results);
@@ -360,27 +360,27 @@ bool luaRunOnNoteOff(int index, int channel, int note, float *volts,
 
   lua_pop(L, 2);  // Pop envs[index]
   luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
-  return true;
+  return 0;  // Success
 }
 
-bool luaRunOnCc(int index, int cc, int value, float *volts, bool *volts_new,
+int luaRunOnCc(int index, int cc, int value, float *volts, bool *volts_new,
                 bool *trigger) {
-  if (!withLuaEnv(index)) return false;
+  if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1, "on_cc");  // Push envs[index].on_button onto the stack
   if (!lua_isfunction(L, -1)) {  // Check if on_cc is a function
     lua_pop(L, 3);               // Pop envs, envs[index], and on_button
-    return false;
+    return -1;
   }
 
   // Push the arguments
   lua_pushinteger(L, cc);
   lua_pushinteger(L, value);
-  if (lua_pcall(L, 2, LUA_MULTRET, 0) !=
-      LUA_OK) {  // Call on_cc with 2 argument, expecting 1 return
+  int result = lua_pcall(L, 2, LUA_MULTRET, 0);
+  if (result != LUA_OK) {  // Call on_cc with 2 argument, expecting 1 return
     printf("[luaRunOnCc] error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
-    return false;
+    return result;  // Return error code
   }
 
   // Check how many results were returned
@@ -389,8 +389,8 @@ bool luaRunOnCc(int index, int cc, int value, float *volts, bool *volts_new,
   if (num_results > 0) {
     // uncomment to print result
     // if (lua_isstring(L, -1)) {
-    //   const char *result = lua_tostring(L, -1);
-    //   printf("Result: %s\n", result);
+    //   const char *result_str = lua_tostring(L, -1);
+    //   printf("Result: %s\n", result_str);
     // }
     // Pop all results to clean up the stack
     lua_pop(L, num_results);
@@ -399,7 +399,7 @@ bool luaRunOnCc(int index, int cc, int value, float *volts, bool *volts_new,
   lua_pop(L, 2);  // Pop envs[index]
 
   luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
-  return true;
+  return 0;  // Success
 }
 
 void luaGarbageCollect() { lua_gc(L, LUA_GCCOLLECT, 0); }
