@@ -241,7 +241,7 @@ int luaRunOnBeat(int index, bool on, float *volts, bool *volts_new,
   int result = lua_pcall(L, 1, LUA_MULTRET, 0);
   if (result != LUA_OK) {  // Call on_beat with 1 argument, expecting 1 return
     printf("[luaRunOnBeat] error: %s\n", lua_tostring(L, -1));
-    lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
+    lua_pop(L, 3);  // Pop error message, envs[index], and envs (pcall consumed function+args)
     return result;  // Return error code (non-zero indicates panic/error)
   }
 
@@ -283,7 +283,7 @@ int luaRunOnKnob(int index, float val, float *volts, bool *volts_new,
   int result = lua_pcall(L, 1, LUA_MULTRET, 0);
   if (result != LUA_OK) {  // Call on_beat with 2 argument, expecting 1 return
     printf("[luaRunOnKnob] error: %s\n", lua_tostring(L, -1));
-    lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
+    lua_pop(L, 3);  // Pop error message, envs[index], and envs (pcall consumed function+args)
     return result;  // Return error code
   }
 
@@ -326,7 +326,7 @@ int luaRunOnButton(int index, bool val, float *volts, bool *volts_new,
   int result = lua_pcall(L, 1, LUA_MULTRET, 0);
   if (result != LUA_OK) {  // Call on_beat with 2 argument, expecting 1 return
     printf("[luaRunOnButton] error: %s\n", lua_tostring(L, -1));
-    lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
+    lua_pop(L, 3);  // Pop error message, envs[index], and envs (pcall consumed function+args)
     return result;  // Return error code
   }
 
@@ -372,7 +372,7 @@ int luaRunOnNoteOn(int index, int channel, int note, int velocity,
   int result = lua_pcall(L, 3, LUA_MULTRET, 0);
   if (result != LUA_OK) {  // Call on_note_on with 2 argument, expecting 1 return
     printf("[luaRunOnNoteOn] error: %s\n", lua_tostring(L, -1));
-    lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
+    lua_pop(L, 3);  // Pop error message, envs[index], and envs (pcall consumed function+args)
     return result;  // Return error code
   }
 
@@ -416,7 +416,7 @@ int luaRunOnNoteOff(int index, int channel, int note, float *volts,
   int result = lua_pcall(L, 2, LUA_MULTRET, 0);
   if (result != LUA_OK) {  // Call on_note_off with 2 argument, expecting 1 return
     printf("[luaRunOnNoteOff] error: %s\n", lua_tostring(L, -1));
-    lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
+    lua_pop(L, 3);  // Pop error message, envs[index], and envs (pcall consumed function+args)
     return result;  // Return error code
   }
 
@@ -459,7 +459,7 @@ int luaRunOnCc(int index, int cc, int value, float *volts, bool *volts_new,
   int result = lua_pcall(L, 2, LUA_MULTRET, 0);
   if (result != LUA_OK) {  // Call on_cc with 2 argument, expecting 1 return
     printf("[luaRunOnCc] error: %s\n", lua_tostring(L, -1));
-    lua_pop(L, 4);  // Pop envs, envs[index], on_beat, and error message
+    lua_pop(L, 3);  // Pop error message, envs[index], and envs (pcall consumed function+args)
     return result;  // Return error code
   }
 

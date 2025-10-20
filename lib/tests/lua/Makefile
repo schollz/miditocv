@@ -1,3 +1,7 @@
+LUA_DIR = ../../../lua-5.4.6
+LUA_INC = $(LUA_DIR)/src
+LUA_LIB = $(LUA_DIR)/src/liblua.a
+
 run:
 	luamin -f ../../../web/static/globals.lua > globals.lua || true
 	mkdir -p lib
@@ -8,8 +12,11 @@ run:
 	./main
 	# valgrind ./main
 
-clean:
-	rm -rf script.c main
+test_panic_simple: test_panic_simple.c ../../luavm.h ../../lua_globals.h
+	gcc -o test_panic_simple test_panic_simple.c -I$(LUA_INC) $(LUA_LIB) -lm -ldl
+	./test_panic_simple
 
-test:
-	lua ../../../web/static/globals.lua
+clean:
+	rm -rf script.c main test_panic_simple
+
+test: test_panic_simple

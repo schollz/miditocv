@@ -32,11 +32,8 @@ lua-5.4.6/src/lua:
 
 
 test: lib/lua_globals.h lua-5.4.6/src/lua
-	@echo "Running Lua tests..."
-	@echo "Checking for Lua dependencies..."
-	@echo "Running all C test files..."
 	@echo "Running C test: test_panic_simple.c"
-	@cd lib/tests/lua && gcc -o test_panic_simple test_panic_simple.c -I../../.. -llua -lm -ldl && ./test_panic_simple
+	@cd lib/tests/lua && gcc -o test_panic_simple test_panic_simple.c -I../../../lua-5.4.6/src ../../../lua-5.4.6/src/liblua.a -lm -ldl && ./test_panic_simple
 
 build:
 	mkdir -p build

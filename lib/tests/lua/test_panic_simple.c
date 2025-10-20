@@ -29,34 +29,34 @@ void simulate_panic_detection() {
   // Initialize Lua
   luaInit();
 
-  // Test 1: Load panicking code into output 0
+  // Test 1: Load panicking code into output 1 (environments are 1-indexed)
   const char *panic_code =
       "function on_button(value)\n"
       "  local result = some_undefined_function()\n"
       "  volts = result\n"
       "end\n";
 
-  printf("1. Loading panicking code into output 0...\n");
-  luaUpdateEnvironment(0, panic_code);
+  printf("1. Loading panicking code into output 1...\n");
+  luaUpdateEnvironment(1, panic_code);
 
   // Test 2: Try to execute the panicking code
   printf("2. Executing on_button (should panic)...\n");
   float volts;
   bool volts_new;
   bool trigger;
-  int error = luaRunOnButton(0, true, &volts, &volts_new, &trigger);
+  int error = luaRunOnButton(1, true, &volts, &volts_new, &trigger);
 
   if (error > 0) {
     printf("   ✓ Panic detected! Error code: %d\n", error);
-    outputs[0].lua_panic = true;
-    printf("   ✓ Set lua_panic flag for output 0\n");
+    outputs[1].lua_panic = true;
+    printf("   ✓ Set lua_panic flag for output 1\n");
   } else {
     printf("   ✗ Expected panic but got success\n");
   }
 
   // Test 3: Attempt to run the code again (should be blocked)
   printf("3. Attempting to run code again (should be blocked)...\n");
-  if (outputs[0].lua_panic) {
+  if (outputs[1].lua_panic) {
     printf("   ✓ Code execution blocked due to lua_panic flag\n");
   } else {
     printf("   ✗ Code was not blocked\n");
@@ -64,21 +64,21 @@ void simulate_panic_detection() {
 
   // Test 4: Load valid code (clears panic)
   printf("4. Simulating code reload (clears panic flag)...\n");
-  outputs[0].lua_panic = false;
+  outputs[1].lua_panic = false;
   printf("   ✓ Panic flag cleared\n");
 
-  // Test 5: Load and run valid code
+  // Test 5: Load and run valid code on output 2
   const char *valid_code =
       "function on_cc(cc, value)\n"
       "  volts = value / 127.0\n"
       "  trigger = true\n"
       "end\n";
 
-  printf("5. Loading valid code into output 1...\n");
-  luaUpdateEnvironment(1, valid_code);
+  printf("5. Loading valid code into output 2...\n");
+  luaUpdateEnvironment(2, valid_code);
 
   printf("6. Executing on_cc with valid code...\n");
-  error = luaRunOnCc(1, 7, 64, &volts, &volts_new, &trigger);
+  error = luaRunOnCc(2, 7, 64, &volts, &volts_new, &trigger);
 
   if (error == 0) {
     printf("   ✓ Valid code executed successfully\n");
