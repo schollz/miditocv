@@ -105,6 +105,7 @@ typedef struct Out {
   bool clock_disabled;
   bool lfo_disabled;
   bool lua_panic;  // Flag to indicate Lua code has panicked
+  float gate;      // Gate value from Lua (0.0 to 1.0)
   TapTempo taptempo;
 } Out;
 

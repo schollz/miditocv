@@ -142,7 +142,7 @@ void update_linked_outs(bool triggering_outs[], bool trigger, uint32_t ct) {
 }
 
 void on_successful_lua_callback(int i, float volts, bool volts_new,
-                                bool trigger) {
+                                bool trigger, float gate) {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   Out *out = &yocto.out[i];
   bool triggering_outs[8] = {false};
@@ -150,6 +150,9 @@ void on_successful_lua_callback(int i, float volts, bool volts_new,
   if (volts_new) {
     out->voltage_set = volts;
   }
+
+  // Store gate value for trigger timing (not currently used in update_linked_outs)
+  out->gate = gate;
 
   // find any linked outputs and activate the envelope
   triggering_outs[i] = true;
@@ -172,11 +175,12 @@ void timer_callback_sample_knob(bool on, int user_data) {
         float volts;
         bool volts_new;
         bool trigger;
+        float gate;
         float val = val_changed / 1023.0f;
         printf("Lua on_knob #%d - val=%f\n", i, val);
-        int result = luaRunOnKnob(i, val, &volts, &volts_new, &trigger);
+        int result = luaRunOnKnob(i, val, &volts, &volts_new, &trigger, &gate);
         if (result == 0) {
-          on_successful_lua_callback(i, volts, volts_new, trigger);
+          on_successful_lua_callback(i, volts, volts_new, trigger, gate);
         } else if (result > 0) {
           // Lua panic occurred
           out->lua_panic = true;
@@ -223,9 +227,10 @@ void timer_callback_beat(bool on, int user_data) {
     float volts;
     bool volts_new;
     bool trigger;
-    int result = luaRunOnBeat(user_data, on, &volts, &volts_new, &trigger);
+    float gate;
+    int result = luaRunOnBeat(user_data, on, &volts, &volts_new, &trigger, &gate);
     if (result == 0) {
-      on_successful_lua_callback(user_data, volts, volts_new, trigger);
+      on_successful_lua_callback(user_data, volts, volts_new, trigger, gate);
     } else if (result > 0) {
       // Lua panic occurred
       out->lua_panic = true;
@@ -368,11 +373,13 @@ void midi_note_off(int channel, int note) {
       float volts;
       bool volts_new;
       bool trigger;
+      float gate;
       printf("Lua on_note_off #%d - ch=%d, note=%d\n", i, channel, note);
-      int result = luaRunOnNoteOff(i, channel, note, &volts, &volts_new, &trigger);
+      int result = luaRunOnNoteOff(i, channel, note, &volts, &volts_new, &trigger, &gate);
       if (result == 0) {
-        // on_successful_lua_callback(i, volts, trigger);
+        // on_successful_lua_callback(i, volts, trigger, gate);
         out->voltage_set = volts;
+        out->gate = gate;
         outs_with_note_change[i] = !trigger;
       } else if (result > 0) {
         // Lua panic occurred
@@ -455,13 +462,15 @@ void midi_note_on(int channel, int note, int velocity) {
       float volts;
       bool volts_new;
       bool trigger;
+      float gate;
       printf("Lua on_note_on #%d - ch=%d, note=%d, vel=%d\n", i, channel, note,
              velocity);
       int result = luaRunOnNoteOn(i, channel, note, velocity, &volts, &volts_new,
-                         &trigger);
+                         &trigger, &gate);
       if (result == 0) {
-        // on_successful_lua_callback(i, volts, trigger);
+        // on_successful_lua_callback(i, volts, trigger, gate);
         out->voltage_set = volts;
+        out->gate = gate;
         outs_with_note_change[i] = trigger;
       } else if (result > 0) {
         // Lua panic occurred
@@ -501,10 +510,11 @@ void midi_cc(int channel, int cc, int value) {
       float volts;
       bool volts_new;
       bool trigger;
+      float gate;
       printf("Lua on_cc #%d - cc=%d, cal=%d\n", i, cc, value);
-      int result = luaRunOnCc(i, cc, value, &volts, &volts_new, &trigger);
+      int result = luaRunOnCc(i, cc, value, &volts, &volts_new, &trigger, &gate);
       if (result == 0) {
-        on_successful_lua_callback(i, volts, volts_new, trigger);
+        on_successful_lua_callback(i, volts, volts_new, trigger, gate);
       } else if (result > 0) {
         // Lua panic occurred
         out->lua_panic = true;
@@ -1086,10 +1096,11 @@ int main() {
                 float volts;
                 bool volts_new;
                 bool trigger;
+                float gate;
                 printf("Lua on_button #%d - val=%d\n", i, val);
-                int result = luaRunOnButton(i, val, &volts, &volts_new, &trigger);
+                int result = luaRunOnButton(i, val, &volts, &volts_new, &trigger, &gate);
                 if (result == 0) {
-                  on_successful_lua_callback(i, volts, volts_new, trigger);
+                  on_successful_lua_callback(i, volts, volts_new, trigger, gate);
                 } else if (result > 0) {
                   // Lua panic occurred
                   out->lua_panic = true;

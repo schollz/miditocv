@@ -432,7 +432,8 @@ button = {}
 for i = 1, 8 do
     table.insert(out, {
         volts = -10,
-        trigger = false
+        trigger = false,
+        gate = 0
     })
     table.insert(button, false)
 end
@@ -466,6 +467,7 @@ end
 local baseline_code = [[
 volts = -10
 trigger = false
+gate = 0
 iteration_num = 0
 bpm = 0
 ]]
@@ -502,10 +504,12 @@ math.randomseed(os.time())
 fn_new_volts = false
 fn_v = 0
 fn_do_trigger = false
+fn_gate = 0
 function volts_and_trigger(i)
     fn_new_volts = false
     fn_v = 0
     fn_do_trigger = false
+    fn_gate = 0
     -- i is expected to be 0-indexed
     if envs[i] and envs[i].volts ~= -10 then
         fn_new_volts = true
@@ -531,6 +535,14 @@ function volts_and_trigger(i)
             -- nil is treated as false, no trigger
         end
         envs[i].trigger = false
+        
+        -- Get gate value from environment (if it's not 0)
+        local gate_val = envs[i].gate
+        if type(gate_val) == "number" and gate_val ~= 0 then
+            fn_gate = gate_val
+        end
+        -- Reset gate to 0 after reading
+        envs[i].gate = 0
     end
     
     -- Check out[i+1].trigger with permissive type handling
@@ -545,9 +557,17 @@ function volts_and_trigger(i)
             -- nil is treated as false, no trigger
         end
         out[i + 1].trigger = false
+        
+        -- Get gate value from out table (overrides environment gate if not 0)
+        local gate_val = out[i + 1].gate
+        if type(gate_val) == "number" and gate_val ~= 0 then
+            fn_gate = gate_val
+        end
+        -- Reset gate to 0 after reading
+        out[i + 1].gate = 0
     end
     
-    return fn_v, fn_new_volts, fn_do_trigger
+    return fn_v, fn_new_volts, fn_do_trigger, fn_gate
 end
 
 print(volts_and_trigger(0))

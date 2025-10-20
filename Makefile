@@ -37,6 +37,9 @@ test: lib/lua_globals.h lua-5.4.6/src/lua
 	@echo ""
 	@echo "Running C test: test_basic_simple.c"
 	@cd lib/tests/lua && gcc -o test_basic_simple test_basic_simple.c -I../../../lua-5.4.6/src ../../../lua-5.4.6/src/liblua.a -lm -ldl && ./test_basic_simple
+	@echo ""
+	@echo "Running C test: test_gate.c"
+	@cd lib/tests/lua && gcc -o test_gate test_gate.c -I../../../lua-5.4.6/src ../../../lua-5.4.6/src/liblua.a -lm -ldl && ./test_gate
 
 build:
 	mkdir -p build

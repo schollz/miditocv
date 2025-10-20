@@ -28,7 +28,7 @@ The miditocv is programmable with the [Lua language](https://www.lua.org/manual/
 
 It is currently under development. Here is the implementation status:
 
-- [x] [`volts` and `trigger`](#volts-and-trigger)
+- [x] [`volts`, `trigger`, and `gate`](#volts-trigger-and-gate)
 - [x] [`out[i].volts`](#outivolts)
 - [x] [`shift` and `button[i]`](#shift-and-buttoni)
 - [x] [`on_beat(on)`](#on_beaton)
@@ -48,9 +48,9 @@ The miditocv has [an online editor](https://my.miditocv.com) that you can use to
 
 Yoctocore programs are based around a set of [callback functions](<https://en.wikipedia.org/wiki/Callback_(computer_programming)>) that are run on specific routines.
 
-### `volts` and `trigger`
+### `volts`, `trigger`, and `gate`
 
-For any function you can set the voltage, or you can raise a trigger. The voltage is a number between -5 and 10, and the trigger can be a boolean, number, or nil. The trigger is used if any other events are linked. To set the voltage you set the global variable `volts`:
+For any function you can set the voltage, raise a trigger, and control the gate duration. The voltage is a number between -5 and 10, the trigger can be a boolean, number, or nil, and the gate is a number between 0 and 1 that controls how long the trigger stays high. To set the voltage you set the global variable `volts`:
 
 ```lua
 volts = 5
@@ -65,7 +65,15 @@ trigger = 0       -- zero does not trigger (C-like behavior)
 trigger = nil     -- nil does not trigger
 ```
 
-The trigger will get reset to `false` after the trigger is used. You can also use `out[i].trigger` to set triggers for specific outputs.
+To set the gate duration you set the global variable `gate`:
+
+```lua
+gate = 0      -- trigger goes high and immediately low (default)
+gate = 0.5    -- trigger stays high for half a beat duration
+gate = 1.0    -- trigger stays high for the full beat duration
+```
+
+The gate parameter is useful for controlling ADSR envelopes, particularly for setting the release stage. The trigger only triggers on low to high transitions. The trigger and gate will be reset after they are used. You can also use `out[i].trigger` and `out[i].gate` to set these for specific outputs.
 
 You can also return values from the functions, which is useful in debugging as it will printed in the online code editor.
 
