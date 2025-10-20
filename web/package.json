@@ -16,6 +16,7 @@
     "process": "^0.11.10"
   },
   "dependencies": {
+    "codemirror": "^5.65.20",
     "lua-fmt": "^2.6.0",
     "lua-format": "^1.5.2",
     "luaparse": "^0.3.1",

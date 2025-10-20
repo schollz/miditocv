@@ -1022,10 +1022,18 @@ end`,
             // setup code mirror
             myCodeMirror = CodeMirror.fromTextArea(document.getElementById('mytext'));
             myCodeMirror.setOption("lineNumbers", true);
+            myCodeMirror.setOption("mode", "lua");
             myCodeMirror.setSize("100%", "100%");
+            myCodeMirror.setOption("extraKeys", {
+                "Ctrl-/": "toggleComment"
+            });
             outputCodeMirror = CodeMirror.fromTextArea(document.getElementById('output'));
             outputCodeMirror.setOption("lineNumbers", true);
+            outputCodeMirror.setOption("mode", "lua");
             outputCodeMirror.setSize("100%", "100%");
+            outputCodeMirror.setOption("extraKeys", {
+                "Ctrl-/": "toggleComment"
+            });
             // var outputElement = document.getElementById('output');
             // emscripten.print = function (x) {
             //     // Ensure the content doesn't persist between runs

@@ -3,6 +3,10 @@ const luamin = require('lua-format')
 import luaScript from './static/globals.lua';
 import { formatText } from 'lua-fmt';
 import markdownit from 'markdown-it'
+import CodeMirror from 'codemirror';
+import 'codemirror/lib/codemirror.css';
+import 'codemirror/mode/lua/lua.js';
+import 'codemirror/addon/comment/comment.js';
 
 // configure luamin so it doesn't rewrite variable names
 luamin.options = { renameVariables: false };
@@ -21,6 +25,9 @@ function beautifyLua(luaCode) {
 window.luaBeautifier = {
   beautify: beautifyLua,
 };
+
+// Attach CodeMirror to the global window object for browser usage
+window.CodeMirror = CodeMirror;
 
 const minify = (luaCode) => {
   const Settings = {
