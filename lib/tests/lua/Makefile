@@ -16,7 +16,11 @@ test_panic_simple: test_panic_simple.c ../../luavm.h ../../lua_globals.h
 	gcc -o test_panic_simple test_panic_simple.c -I$(LUA_INC) $(LUA_LIB) -lm -ldl
 	./test_panic_simple
 
-clean:
-	rm -rf script.c main test_panic_simple
+test_basic_simple: test_basic_simple.c ../../luavm.h ../../lua_globals.h
+	gcc -o test_basic_simple test_basic_simple.c -I$(LUA_INC) $(LUA_LIB) -lm -ldl
+	./test_basic_simple
 
-test: test_panic_simple
+clean:
+	rm -rf script.c main test_panic_simple test_basic_simple
+
+test: test_panic_simple test_basic_simple
