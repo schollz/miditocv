@@ -117,7 +117,12 @@ const float division_values[19] = {
 #include "lib/midicallback.h"
 #endif
 
-void update_linked_outs(bool triggering_outs[], bool trigger, uint32_t ct) {
+void update_linked_outs(bool triggering_outs[], bool trigger, float gate, 
+                        float bpm, uint32_t ct) {
+  // Calculate beat duration in milliseconds from BPM
+  // BPM = beats per minute, so beat_duration_ms = 60000 / BPM
+  float beat_duration_ms = (bpm > 0) ? (60000.0f / bpm) : 0;
+  
   for (uint8_t i2 = 0; i2 < 8; i2++) {
     Config *config = &yocto.config[yocto.i][i2];
     Out *out = &yocto.out[i2];
@@ -128,7 +133,22 @@ void update_linked_outs(bool triggering_outs[], bool trigger, uint32_t ct) {
     if (config->mode == MODE_ENVELOPE) {
       // trigger the envelope
       // printf("[out%d] env_off linked to out%d\n", i2 + 1, config->linked_to);
-      ADSR_gate(&out->adsr, trigger, ct);
+      
+      if (trigger) {
+        // Trigger going high
+        ADSR_gate(&out->adsr, true, ct);
+        
+        // Schedule gate off based on gate parameter
+        if (gate > 0 && beat_duration_ms > 0) {
+          out->gate_start_time = ct;
+          out->gate_duration_ms = (uint32_t)(gate * beat_duration_ms);
+          out->gate_is_scheduled = true;
+        } else {
+          // gate = 0 means immediate off
+          ADSR_gate(&out->adsr, false, ct);
+          out->gate_is_scheduled = false;
+        }
+      }
     } else if (config->mode == MODE_GATE) {
       // trigger the gate
       printf("[out%d] gate_off linked to out%d\n", i2 + 1, config->linked_to);
@@ -141,22 +161,55 @@ void update_linked_outs(bool triggering_outs[], bool trigger, uint32_t ct) {
   }
 }
 
+// Process scheduled gate-offs for ADSR envelopes
+void process_scheduled_gates(uint32_t ct) {
+  for (uint8_t i = 0; i < 8; i++) {
+    Out *out = &yocto.out[i];
+    Config *config = &yocto.config[yocto.i][i];
+    
+    // Check if gate off is scheduled and if it's time
+    // Only process for outputs that are in ENVELOPE mode and linked to something
+    if (out->gate_is_scheduled && config->mode == MODE_ENVELOPE && 
+        config->linked_to > 0) {
+      if ((ct - out->gate_start_time) >= out->gate_duration_ms) {
+        // Time to turn gate off
+        ADSR_gate(&out->adsr, false, ct);
+        out->gate_is_scheduled = false;
+      }
+    }
+  }
+}
+
 void on_successful_lua_callback(int i, float volts, bool volts_new,
                                 bool trigger, float gate) {
   uint32_t ct = to_ms_since_boot(get_absolute_time());
   Out *out = &yocto.out[i];
+  Config *config = &yocto.config[yocto.i][i];
   bool triggering_outs[8] = {false};
 
   if (volts_new) {
     out->voltage_set = volts;
   }
 
-  // Store gate value for trigger timing (not currently used in update_linked_outs)
+  // Store gate value for trigger timing
   out->gate = gate;
+
+  // Get BPM from config or Lua environment
+  float bpm = config->clock_tempo;
+  if (bpm <= 0) {
+    // Try to get BPM from Lua
+    float lua_bpm = luaGetBPM(i);
+    if (lua_bpm > 0) {
+      bpm = lua_bpm;
+    } else {
+      // Fallback to global tempo
+      bpm = yocto.global_tempo;
+    }
+  }
 
   // find any linked outputs and activate the envelope
   triggering_outs[i] = true;
-  update_linked_outs(triggering_outs, trigger, ct);
+  update_linked_outs(triggering_outs, trigger, gate, bpm, ct);
 }
 
 void timer_callback_sample_knob(bool on, int user_data) {
@@ -1021,6 +1074,9 @@ int main() {
       timer_per[3 + i] = time_us_32() - us;
     }
     timer_per[2] = time_us_32() - us;
+
+    // Process scheduled gate-offs for ADSR envelopes
+    process_scheduled_gates(ct);
 
     // read buttons
     for (uint8_t i = 0; i < button_num; i++) {

@@ -106,6 +106,9 @@ typedef struct Out {
   bool lfo_disabled;
   bool lua_panic;  // Flag to indicate Lua code has panicked
   float gate;      // Gate value from Lua (0.0 to 1.0)
+  uint32_t gate_start_time;  // Time when gate was set high (ms)
+  uint32_t gate_duration_ms;  // Duration gate should stay high (ms)
+  bool gate_is_scheduled;     // Whether gate off is scheduled
   TapTempo taptempo;
 } Out;
 
@@ -175,6 +178,10 @@ void Yoctocore_init(Yoctocore *self) {
     self->out[output].clock_disabled = false;
     self->out[output].lfo_disabled = false;
     self->out[output].lua_panic = false;
+    self->out[output].gate = 0;
+    self->out[output].gate_start_time = 0;
+    self->out[output].gate_duration_ms = 0;
+    self->out[output].gate_is_scheduled = false;
     TapTempo_init(&self->out[output].taptempo);
   }
   self->debounce_save = 0;
