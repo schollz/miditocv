@@ -24,6 +24,29 @@ int _unlink(const char *pathname) {
 #include "lua_globals.h"
 
 lua_State *L = NULL;
+static bool lua_global_panic_flag = false;
+
+// Forward declarations
+void luaClearPanicFlag();
+
+// Custom panic handler that prevents device from becoming unresponsive
+static int custom_panic_handler(lua_State *L) {
+  const char *msg = lua_tostring(L, -1);
+  if (msg == NULL) msg = "error object is not a string";
+  printf("PANIC: unprotected error in call to Lua API (%s)\n", msg);
+  printf("Setting global panic flag to prevent device unresponsiveness\n");
+  
+  // Set global panic flag instead of aborting
+  lua_global_panic_flag = true;
+  
+  // Note: After a panic, the Lua state may be in an inconsistent state.
+  // The panic flag will prevent further Lua operations until code is reloaded.
+  // When code is reloaded, luaClearPanicFlag() is called to reset the state.
+  
+  // Return to Lua - this prevents abort() from being called
+  // The error will propagate but won't crash the system
+  return 0;
+}
 
 /**
 function update_env(i, code)
@@ -36,6 +59,10 @@ int luaUpdateEnvironment(int index, const char *code) {
     printf("[luaUpdateEnvironment] Lua VM not initialized.\n");
     return 1;
   }
+  
+  // Clear panic flag when updating environment
+  luaClearPanicFlag();
+  
   lua_getglobal(L, "update_env");
   if (!lua_isfunction(L, -1)) {
     printf(
@@ -70,6 +97,10 @@ int luaInit() {
     return 0;
   }
   L = luaL_newstate();  // Create a new Lua state
+  
+  // Install custom panic handler to prevent device from becoming unresponsive
+  lua_atpanic(L, custom_panic_handler);
+  
   luaL_openlibs(L);     // Open standard libraries
 
   // Load Lua script from embedded string
@@ -181,8 +212,23 @@ float luaGetBPM(int index) {
   return bpm;
 }
 
+// Check if a Lua panic has occurred
+bool luaHasPanicked() {
+  return lua_global_panic_flag;
+}
+
+// Clear the global panic flag (called when reloading code)
+void luaClearPanicFlag() {
+  lua_global_panic_flag = false;
+}
+
 int luaRunOnBeat(int index, bool on, float *volts, bool *volts_new,
                   bool *trigger) {
+  // Check for global panic flag
+  if (lua_global_panic_flag) {
+    return LUA_ERRRUN; // Return error to indicate panic state
+  }
+  
   if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1, "on_beat");  // Push envs[index].on_beat onto the stack
@@ -219,6 +265,11 @@ int luaRunOnBeat(int index, bool on, float *volts, bool *volts_new,
 
 int luaRunOnKnob(int index, float val, float *volts, bool *volts_new,
                   bool *trigger) {
+  // Check for global panic flag
+  if (lua_global_panic_flag) {
+    return LUA_ERRRUN; // Return error to indicate panic state
+  }
+  
   if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1, "on_knob");  // Push envs[index].on_knob onto the stack
@@ -256,6 +307,11 @@ int luaRunOnKnob(int index, float val, float *volts, bool *volts_new,
 
 int luaRunOnButton(int index, bool val, float *volts, bool *volts_new,
                     bool *trigger) {
+  // Check for global panic flag
+  if (lua_global_panic_flag) {
+    return LUA_ERRRUN; // Return error to indicate panic state
+  }
+  
   if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1,
@@ -295,6 +351,11 @@ int luaRunOnButton(int index, bool val, float *volts, bool *volts_new,
 
 int luaRunOnNoteOn(int index, int channel, int note, int velocity,
                     float *volts, bool *volts_new, bool *trigger) {
+  // Check for global panic flag
+  if (lua_global_panic_flag) {
+    return LUA_ERRRUN; // Return error to indicate panic state
+  }
+  
   if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1,
@@ -335,6 +396,11 @@ int luaRunOnNoteOn(int index, int channel, int note, int velocity,
 
 int luaRunOnNoteOff(int index, int channel, int note, float *volts,
                      bool *volts_new, bool *trigger) {
+  // Check for global panic flag
+  if (lua_global_panic_flag) {
+    return LUA_ERRRUN; // Return error to indicate panic state
+  }
+  
   if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1,
@@ -374,6 +440,11 @@ int luaRunOnNoteOff(int index, int channel, int note, float *volts,
 
 int luaRunOnCc(int index, int cc, int value, float *volts, bool *volts_new,
                 bool *trigger) {
+  // Check for global panic flag
+  if (lua_global_panic_flag) {
+    return LUA_ERRRUN; // Return error to indicate panic state
+  }
+  
   if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1, "on_cc");  // Push envs[index].on_button onto the stack

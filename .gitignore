@@ -82,3 +82,6 @@ lib/lua_globals.h
 dev/channel_plots.pdf
 lib/tests/lua/test_panic
 lib/tests/lua/test_panic_simple
+lib/tests/lua/test_panic_handler
+lib/tests/lua/test_real_panic
+lib/tests/lua/test_load_failure
