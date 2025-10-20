@@ -663,15 +663,15 @@ end`,
                 name: "Playing Different Notes",
                 code: `-- Example: Playing different notes
 note_vals = S {
-  "c4", "e4", "g4", 
-  S {"c5", "e5"}, 
+  "c4", "e4", "g4",
+  S {"c5", "e5"},
   "g5"
 }
 riddim = er(5, 8)
 bpm = 120
 
-function on_beat(beat)
-  if beat % 1 == 0 then
+function on_beat(on)
+  if on then
     local note = note_vals()
     trigger = riddim()
     volts = to_cv(note)
@@ -693,6 +693,14 @@ end`
                         clearLua();
                     });
                 }
+            } else {
+                // Reset to device code when selecting "Code on device"
+                Vue.nextTick(() => {
+                    const code = scenes.value[current_scene.value].outputs[current_output.value].code;
+                    const beautify_code = luaBeautifier.beautify(code).trim();
+                    myCodeMirror.setValue(beautify_code);
+                    clearLua();
+                });
             }
         }
 
@@ -949,6 +957,8 @@ end`,
             (newOutput) => {
                 // check if Ctrl is held
                 console.log(`[output_change] ${current_scene.value} ${current_output.value}`);
+                // Reset selector to "Code on device" when switching outputs
+                selectedExampleCode.value = "";
                 Vue.nextTick(() => {
                     const beautify_code = luaBeautifier.beautify(newOutput.code).trim();
                     myCodeMirror.setValue(beautify_code);

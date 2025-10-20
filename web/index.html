@@ -126,7 +126,7 @@
         </div>
         <div class="col col-10">
           <select id="example-code-select" v-model="selectedExampleCode" @change="loadExampleCode()">
-            <option value="">-- Select an example --</option>
+            <option value="">Code on device</option>
             <option v-for="(example, index) in exampleCodes" :key="index" :value="index">
               {{ example.name }}
             </option>
