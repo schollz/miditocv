@@ -182,13 +182,16 @@ void process_scheduled_gates(uint32_t ct) {
     // Check if gate off is scheduled and if it's time
     // Process for outputs in ENVELOPE mode that have a scheduled gate-off
     if (out->gate_is_scheduled && config->mode == MODE_ENVELOPE) {
-      uint32_t elapsed = ct - out->gate_start_time;
-      if (elapsed >= out->gate_duration_ms) {
-        // Time to turn gate off
-        printf("[out%d] Scheduled gate off triggered after %u ms (duration was %u ms, start=%u ct=%u)\n", 
-               i + 1, elapsed, out->gate_duration_ms, out->gate_start_time, ct);
-        ADSR_gate(&out->adsr, false, ct);
-        out->gate_is_scheduled = false;
+      // Check if ct >= gate_start_time to avoid underflow
+      if (ct >= out->gate_start_time) {
+        uint32_t elapsed = ct - out->gate_start_time;
+        if (elapsed >= out->gate_duration_ms) {
+          // Time to turn gate off
+          printf("[out%d] Scheduled gate off triggered after %u ms (duration was %u ms, start=%u ct=%u)\n", 
+                 i + 1, elapsed, out->gate_duration_ms, out->gate_start_time, ct);
+          ADSR_gate(&out->adsr, false, ct);
+          out->gate_is_scheduled = false;
+        }
       }
     }
   }
