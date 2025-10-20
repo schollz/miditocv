@@ -28,22 +28,14 @@ lua:
 	lua web/static/globals.lua
 
 test:
-	@echo "Running Lua panic handling tests..."
+	@echo "Running Lua tests..."
 	@echo "Checking for Lua dependencies..."
 	@which lua5.3 > /dev/null 2>&1 || (echo "Error: lua5.3 not found. Install with: sudo apt-get install lua5.3 liblua5.3-dev" && exit 1)
 	@which luamin > /dev/null 2>&1 || (echo "Error: luamin not found. Install with: npm install -g luamin" && exit 1)
 	@echo "Building lua_globals.h..."
 	@$(MAKE) lib/lua_globals.h > /dev/null 2>&1 || (echo "Error: Failed to build lua_globals.h" && exit 1)
-	@echo "Running basic Lua tests..."
-	@cd lib/tests/lua && $(MAKE) run > /dev/null 2>&1 && echo "✓ Basic Lua tests passed" || (echo "✗ Basic Lua tests failed" && exit 1)
-	@echo "Compiling panic handling test..."
-	@cd lib/tests/lua && gcc -o test_panic_simple test_panic_simple.c -llua5.3 -lm 2>&1 | grep -v "warning:" || true
-	@echo "Running panic handling test..."
-	@cd lib/tests/lua && ./test_panic_simple > /tmp/test_output.txt 2>&1 || (cat /tmp/test_output.txt && echo "✗ Panic handling tests failed" && exit 1)
-	@grep -q "Test Complete" /tmp/test_output.txt && echo "✓ Panic handling tests passed" || (cat /tmp/test_output.txt && echo "✗ Panic handling tests failed" && exit 1)
-	@rm -f /tmp/test_output.txt
-	@echo ""
-	@echo "✓ All tests passed!"
+	@echo "Running all C test files..."
+	@cd lib/tests/lua && $(MAKE) test
 
 build:
 	mkdir -p build
