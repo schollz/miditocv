@@ -130,6 +130,9 @@ void update_linked_outs(bool triggering_outs[], bool trigger, float gate,
     if (config->linked_to < 1) continue;
     if (!triggering_outs[config->linked_to - 1]) continue;
 
+    // Get the gate value from the source output (the one triggering)
+    float source_gate = yocto.out[config->linked_to - 1].gate;
+
     if (config->mode == MODE_ENVELOPE) {
       // trigger the envelope
       // printf("[out%d] env_off linked to out%d\n", i2 + 1, config->linked_to);
@@ -138,16 +141,20 @@ void update_linked_outs(bool triggering_outs[], bool trigger, float gate,
         // Trigger going high
         ADSR_gate(&out->adsr, true, ct);
         
-        // Schedule gate off based on gate parameter
-        if (gate > 0 && beat_duration_ms > 0) {
+        // Schedule gate off based on gate parameter from source output
+        if (source_gate > 0 && beat_duration_ms > 0) {
           out->gate_start_time = ct;
-          out->gate_duration_ms = (uint32_t)(gate * beat_duration_ms);
+          out->gate_duration_ms = (uint32_t)(source_gate * beat_duration_ms);
           out->gate_is_scheduled = true;
         } else {
           // gate = 0 means immediate off
           ADSR_gate(&out->adsr, false, ct);
           out->gate_is_scheduled = false;
         }
+      } else {
+        // Trigger going low - turn off gate immediately
+        ADSR_gate(&out->adsr, false, ct);
+        out->gate_is_scheduled = false;
       }
     } else if (config->mode == MODE_GATE) {
       // trigger the gate
@@ -168,9 +175,8 @@ void process_scheduled_gates(uint32_t ct) {
     Config *config = &yocto.config[yocto.i][i];
     
     // Check if gate off is scheduled and if it's time
-    // Only process for outputs that are in ENVELOPE mode and linked to something
-    if (out->gate_is_scheduled && config->mode == MODE_ENVELOPE && 
-        config->linked_to > 0) {
+    // Process for outputs in ENVELOPE mode that have a scheduled gate-off
+    if (out->gate_is_scheduled && config->mode == MODE_ENVELOPE) {
       if ((ct - out->gate_start_time) >= out->gate_duration_ms) {
         // Time to turn gate off
         ADSR_gate(&out->adsr, false, ct);
