@@ -39,6 +39,10 @@ static int custom_panic_handler(lua_State *L) {
   // Set global panic flag instead of aborting
   lua_global_panic_flag = true;
   
+  // Note: After a panic, the Lua state may be in an inconsistent state.
+  // The panic flag will prevent further Lua operations until code is reloaded.
+  // When code is reloaded, luaClearPanicFlag() is called to reset the state.
+  
   // Return to Lua - this prevents abort() from being called
   // The error will propagate but won't crash the system
   return 0;
