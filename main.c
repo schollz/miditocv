@@ -147,7 +147,8 @@ void update_linked_outs(bool triggering_outs[], bool trigger, float gate,
           out->gate_start_time = ct;
           out->gate_duration_ms = (uint32_t)(source_gate * beat_duration_ms);
           out->gate_is_scheduled = true;
-          printf("[out%d] Scheduled gate off in %u ms\n", i2 + 1, out->gate_duration_ms);
+          printf("[out%d] Scheduled gate off in %u ms (start_time=%u ct=%u)\n", 
+                 i2 + 1, out->gate_duration_ms, out->gate_start_time, ct);
         } else {
           // gate = 0 means immediate off
           ADSR_gate(&out->adsr, false, ct);
@@ -184,8 +185,8 @@ void process_scheduled_gates(uint32_t ct) {
       uint32_t elapsed = ct - out->gate_start_time;
       if (elapsed >= out->gate_duration_ms) {
         // Time to turn gate off
-        printf("[out%d] Scheduled gate off triggered after %u ms (duration was %u ms)\n", 
-               i + 1, elapsed, out->gate_duration_ms);
+        printf("[out%d] Scheduled gate off triggered after %u ms (duration was %u ms, start=%u ct=%u)\n", 
+               i + 1, elapsed, out->gate_duration_ms, out->gate_start_time, ct);
         ADSR_gate(&out->adsr, false, ct);
         out->gate_is_scheduled = false;
       }
