@@ -442,7 +442,8 @@ void midi_note_off(int channel, int note) {
     }
   }
   // find any linked outputs and activate the envelope
-  update_linked_outs(outs_with_note_change, false, ct);
+  // For MIDI note off, use gate=0 for immediate release
+  update_linked_outs(outs_with_note_change, false, 0.0f, yocto.global_tempo, ct);
 }
 
 void midi_note_on(int channel, int note, int velocity) {
@@ -533,7 +534,9 @@ void midi_note_on(int channel, int note, int velocity) {
     }
   }
   // find any linked outputs and activate the envelope
-  update_linked_outs(outs_with_note_change, true, ct);
+  // For MIDI note on, use gate=0 for immediate trigger (no sustain)
+  // unless Lua code sets a specific gate value
+  update_linked_outs(outs_with_note_change, true, 0.0f, yocto.global_tempo, ct);
 }
 
 void midi_cc(int channel, int cc, int value) {
