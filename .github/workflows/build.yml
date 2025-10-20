@@ -28,7 +28,7 @@ jobs:
       - name: Install Pico SDK dependencies
         run: |
           sudo apt update
-          sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential gcc wget tar
+          sudo apt install cmake gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential gcc wget tar xxd
       - name: Checkout pico-sdk
         uses: actions/checkout@v4.2.1
         with:
