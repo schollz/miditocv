@@ -27,13 +27,13 @@ lib/lua_globals.h:
 lua:
 	lua web/static/globals.lua
 
-test:
+lua-5.4.6/src/lua:
+	cd lua-5.4.6 && make linux
+
+
+test: lib/lua_globals.h lua-5.4.6/src/lua
 	@echo "Running Lua tests..."
 	@echo "Checking for Lua dependencies..."
-	@which lua5.3 > /dev/null 2>&1 || (echo "Error: lua5.3 not found. Install with: sudo apt-get install lua5.3 liblua5.3-dev" && exit 1)
-	@which luamin > /dev/null 2>&1 || (echo "Error: luamin not found. Install with: npm install -g luamin" && exit 1)
-	@echo "Building lua_globals.h..."
-	@$(MAKE) lib/lua_globals.h > /dev/null 2>&1 || (echo "Error: Failed to build lua_globals.h" && exit 1)
 	@echo "Running all C test files..."
 	@cd lib/tests/lua && $(MAKE) test
 

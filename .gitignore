@@ -85,3 +85,5 @@ lib/tests/lua/test_panic_simple
 lib/tests/lua/test_panic_handler
 lib/tests/lua/test_real_panic
 lib/tests/lua/test_load_failure
+lua-5.4.6/src/lua
+lua-5.4.6/src/luac
