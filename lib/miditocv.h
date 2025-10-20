@@ -104,6 +104,7 @@ typedef struct Out {
   uint8_t code_updated_scene;  // Track which scene the code update is for
   bool clock_disabled;
   bool lfo_disabled;
+  bool lua_panic;  // Flag to indicate Lua code has panicked
   TapTempo taptempo;
 } Out;
 
@@ -172,6 +173,7 @@ void Yoctocore_init(Yoctocore *self) {
     self->out[output].code_updated_scene = 0;
     self->out[output].clock_disabled = false;
     self->out[output].lfo_disabled = false;
+    self->out[output].lua_panic = false;
     TapTempo_init(&self->out[output].taptempo);
   }
   self->debounce_save = 0;
