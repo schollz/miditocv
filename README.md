@@ -50,7 +50,7 @@ Yoctocore programs are based around a set of [callback functions](<https://en.wi
 
 ### `volts` and `trigger`
 
-For any function you can set the voltage, or you can raise a trigger. The voltage is a number between -5 and 10, and the trigger is a boolean. The trigger is used if any other events are linked. To set the voltage you set the global variable `volts`:
+For any function you can set the voltage, or you can raise a trigger. The voltage is a number between -5 and 10, and the trigger can be a boolean, number, or nil. The trigger is used if any other events are linked. To set the voltage you set the global variable `volts`:
 
 ```lua
 volts = 5
@@ -59,10 +59,13 @@ volts = 5
 To set the trigger you set the global variable `trigger`:
 
 ```lua
-trigger = true
+trigger = true    -- boolean true triggers
+trigger = 1       -- any non-zero number triggers
+trigger = 0       -- zero does not trigger (C-like behavior)
+trigger = nil     -- nil does not trigger
 ```
 
-The trigger will get reset to `false` after the trigger is used.
+The trigger will get reset to `false` after the trigger is used. You can also use `out[i].trigger` to set triggers for specific outputs.
 
 You can also return values from the functions, which is useful in debugging as it will printed in the online code editor.
 

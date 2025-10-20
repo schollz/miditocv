@@ -518,11 +518,33 @@ function volts_and_trigger(i)
         fn_new_volts = true
     end
 
-    if envs[i] and ((type(envs[i].trigger) == "number" and envs[i].trigger > 0) or
-        (type(envs[i].trigger) == "boolean" and envs[i].trigger == true)) then
-        fn_do_trigger = true
+    -- Check envs[i].trigger with permissive type handling
+    if envs[i] then
+        local trigger_val = envs[i].trigger
+        if type(trigger_val) == "boolean" and trigger_val == true then
+            fn_do_trigger = true
+        elseif type(trigger_val) == "number" and trigger_val ~= 0 then
+            fn_do_trigger = true
+        elseif trigger_val == nil then
+            -- nil is treated as false, no trigger
+        end
         envs[i].trigger = false
     end
+    
+    -- Check out[i+1].trigger with permissive type handling
+    -- i is expected to be 1-indexed for out
+    if out[i + 1] then
+        local trigger_val = out[i + 1].trigger
+        if type(trigger_val) == "boolean" and trigger_val == true then
+            fn_do_trigger = true
+        elseif type(trigger_val) == "number" and trigger_val ~= 0 then
+            fn_do_trigger = true
+        elseif trigger_val == nil then
+            -- nil is treated as false, no trigger
+        end
+        out[i + 1].trigger = false
+    end
+    
     return fn_v, fn_new_volts, fn_do_trigger
 end
 
