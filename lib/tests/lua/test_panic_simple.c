@@ -44,7 +44,8 @@ void simulate_panic_detection() {
   float volts;
   bool volts_new;
   bool trigger;
-  int error = luaRunOnButton(1, true, &volts, &volts_new, &trigger);
+  float gate;
+  int error = luaRunOnButton(1, true, &volts, &volts_new, &trigger, &gate);
 
   if (error > 0) {
     printf("   ✓ Panic detected! Error code: %d\n", error);
@@ -78,7 +79,7 @@ void simulate_panic_detection() {
   luaUpdateEnvironment(2, valid_code);
 
   printf("6. Executing on_cc with valid code...\n");
-  error = luaRunOnCc(2, 7, 64, &volts, &volts_new, &trigger);
+  error = luaRunOnCc(2, 7, 64, &volts, &volts_new, &trigger, &gate);
 
   if (error == 0) {
     printf("   ✓ Valid code executed successfully\n");

@@ -60,15 +60,16 @@ void test_on_beat() {
     float volts;
     bool volts_new;
     bool trigger;
+    float gate;
 
     // Test with on=true
-    result = luaRunOnBeat(1, true, &volts, &volts_new, &trigger);
+    result = luaRunOnBeat(1, true, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_beat(true) executed without error");
     ASSERT_FLOAT_EQ(volts, 5.0, 0.001, "volts set to 5.0 when on=true");
     ASSERT(trigger == true, "trigger set to true when on=true");
 
     // Test with on=false
-    result = luaRunOnBeat(1, false, &volts, &volts_new, &trigger);
+    result = luaRunOnBeat(1, false, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_beat(false) executed without error");
     ASSERT_FLOAT_EQ(volts, 0.0, 0.001, "volts set to 0.0 when on=false");
     ASSERT(trigger == false, "trigger set to false when on=false");
@@ -89,15 +90,16 @@ void test_on_knob() {
     float volts;
     bool volts_new;
     bool trigger;
+    float gate;
 
     // Test with value=0.5
-    result = luaRunOnKnob(2, 0.5, &volts, &volts_new, &trigger);
+    result = luaRunOnKnob(2, 0.5, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_knob(0.5) executed without error");
     ASSERT_FLOAT_EQ(volts, 5.0, 0.001, "volts calculated correctly (0.5 * 10.0 = 5.0)");
     ASSERT(trigger == false, "trigger is false when value <= 0.5");
 
     // Test with value=0.8
-    result = luaRunOnKnob(2, 0.8, &volts, &volts_new, &trigger);
+    result = luaRunOnKnob(2, 0.8, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_knob(0.8) executed without error");
     ASSERT_FLOAT_EQ(volts, 8.0, 0.001, "volts calculated correctly (0.8 * 10.0 = 8.0)");
     ASSERT(trigger == true, "trigger is true when value > 0.5");
@@ -125,15 +127,16 @@ void test_on_button() {
     float volts;
     bool volts_new;
     bool trigger;
+    float gate;
 
     // Test button press
-    result = luaRunOnButton(3, true, &volts, &volts_new, &trigger);
+    result = luaRunOnButton(3, true, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_button(true) executed without error");
     ASSERT_FLOAT_EQ(volts, 3.3, 0.001, "volts set to 3.3 when button pressed");
     ASSERT(trigger == true, "trigger set when button pressed");
 
     // Test button release
-    result = luaRunOnButton(3, false, &volts, &volts_new, &trigger);
+    result = luaRunOnButton(3, false, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_button(false) executed without error");
     ASSERT_FLOAT_EQ(volts, 0.0, 0.001, "volts set to 0.0 when button released");
     ASSERT(trigger == false, "trigger cleared when button released");
@@ -154,15 +157,16 @@ void test_on_cc() {
     float volts;
     bool volts_new;
     bool trigger;
+    float gate;
 
     // Test CC 7 with value 127
-    result = luaRunOnCc(4, 7, 127, &volts, &volts_new, &trigger);
+    result = luaRunOnCc(4, 7, 127, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_cc(7, 127) executed without error");
     ASSERT_FLOAT_EQ(volts, 5.0, 0.001, "volts calculated correctly (127/127 * 5.0 = 5.0)");
     ASSERT(trigger == true, "trigger set when CC is 7");
 
     // Test CC 1 with value 64
-    result = luaRunOnCc(4, 1, 64, &volts, &volts_new, &trigger);
+    result = luaRunOnCc(4, 1, 64, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_cc(1, 64) executed without error");
     ASSERT_FLOAT_EQ(volts, 2.519685, 0.001, "volts calculated correctly (64/127 * 5.0)");
     ASSERT(trigger == false, "trigger cleared when CC is not 7");
@@ -184,21 +188,22 @@ void test_on_note_on() {
     float volts;
     bool volts_new;
     bool trigger;
+    float gate;
 
     // Test middle C (note 60)
-    result = luaRunOnNoteOn(5, 1, 60, 100, &volts, &volts_new, &trigger);
+    result = luaRunOnNoteOn(5, 1, 60, 100, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_note_on(1, 60, 100) executed without error");
     ASSERT_FLOAT_EQ(volts, 0.0, 0.001, "volts = 0.0 for middle C (note 60)");
     ASSERT(trigger == true, "trigger set when velocity > 0");
 
     // Test C5 (note 72)
-    result = luaRunOnNoteOn(5, 1, 72, 127, &volts, &volts_new, &trigger);
+    result = luaRunOnNoteOn(5, 1, 72, 127, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_note_on(1, 72, 127) executed without error");
     ASSERT_FLOAT_EQ(volts, 1.0, 0.001, "volts = 1.0 for C5 (one octave up)");
     ASSERT(trigger == true, "trigger set when velocity > 0");
 
     // Test C3 (note 48)
-    result = luaRunOnNoteOn(5, 1, 48, 64, &volts, &volts_new, &trigger);
+    result = luaRunOnNoteOn(5, 1, 48, 64, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_note_on(1, 48, 64) executed without error");
     ASSERT_FLOAT_EQ(volts, -1.0, 0.001, "volts = -1.0 for C3 (one octave down)");
     ASSERT(trigger == true, "trigger set when velocity > 0");
@@ -226,14 +231,15 @@ void test_on_note_off() {
     float volts;
     bool volts_new;
     bool trigger;
+    float gate;
 
     // Trigger a note on
-    result = luaRunOnNoteOn(6, 1, 60, 100, &volts, &volts_new, &trigger);
+    result = luaRunOnNoteOn(6, 1, 60, 100, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_note_on executed without error");
     ASSERT(trigger == true, "trigger set on note on");
 
     // Trigger note off
-    result = luaRunOnNoteOff(6, 1, 60, &volts, &volts_new, &trigger);
+    result = luaRunOnNoteOff(6, 1, 60, &volts, &volts_new, &trigger, &gate);
     ASSERT(result == 0, "on_note_off(1, 60) executed without error");
     ASSERT_FLOAT_EQ(volts, 0.0, 0.001, "volts cleared on note off");
     ASSERT(trigger == false, "trigger cleared on note off");
@@ -264,21 +270,22 @@ void test_multiple_environments() {
 
     float volts1, volts2;
     bool volts_new, trigger;
+    float gate;
 
     // Run on_beat in environment 7
-    luaRunOnBeat(7, true, &volts1, &volts_new, &trigger);
+    luaRunOnBeat(7, true, &volts1, &volts_new, &trigger, &gate);
     ASSERT_FLOAT_EQ(volts1, 1.0, 0.001, "Environment 7 counter incremented to 1");
 
     // Run on_beat in environment 8
-    luaRunOnBeat(8, true, &volts2, &volts_new, &trigger);
+    luaRunOnBeat(8, true, &volts2, &volts_new, &trigger, &gate);
     ASSERT_FLOAT_EQ(volts2, 110.0, 0.001, "Environment 8 counter incremented to 110");
 
     // Run again in environment 7 to verify isolation
-    luaRunOnBeat(7, true, &volts1, &volts_new, &trigger);
+    luaRunOnBeat(7, true, &volts1, &volts_new, &trigger, &gate);
     ASSERT_FLOAT_EQ(volts1, 2.0, 0.001, "Environment 7 counter still independent (2)");
 
     // Verify environment 8 unchanged
-    luaRunOnBeat(8, false, &volts2, &volts_new, &trigger);
+    luaRunOnBeat(8, false, &volts2, &volts_new, &trigger, &gate);
     ASSERT_FLOAT_EQ(volts2, 110.0, 0.001, "Environment 8 counter unchanged (110)");
 }
 
@@ -334,7 +341,8 @@ void test_error_handling() {
 
     float volts;
     bool volts_new, trigger;
-    result = luaRunOnBeat(1, true, &volts, &volts_new, &trigger);
+    float gate;
+    result = luaRunOnBeat(1, true, &volts, &volts_new, &trigger, &gate);
     ASSERT(result != 0, "Runtime error detected during execution");
 }
 

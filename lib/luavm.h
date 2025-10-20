@@ -184,16 +184,41 @@ bool luaGetVoltsAndTrigger(int index, float *volts, bool *volt_set,
   }
 
   lua_pushinteger(L, index);
-  if (lua_pcall(L, 1, 3, 0) != LUA_OK) {
+  if (lua_pcall(L, 1, 4, 0) != LUA_OK) {
     printf("[luaGetVoltsAndTrigger] error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 1);  // Pop error message
     return false;
   }
 
-  *volts = lua_tonumber(L, -3);
-  *volt_set = lua_toboolean(L, -2);
-  *trigger = lua_toboolean(L, -1);
-  lua_pop(L, 3);  // Pop v, new_volts, and do_trigger
+  *volts = lua_tonumber(L, -4);
+  *volt_set = lua_toboolean(L, -3);
+  *trigger = lua_toboolean(L, -2);
+  // gate is at -1 but we're not using it in this function
+  lua_pop(L, 4);  // Pop v, new_volts, do_trigger, and gate
+
+  return true;
+}
+
+bool luaGetVoltsTriggerAndGate(int index, float *volts, bool *volt_set,
+                                bool *trigger, float *gate) {
+  lua_getglobal(L, "volts_and_trigger");
+  if (!lua_isfunction(L, -1)) {
+    lua_pop(L, 1);  // Pop volts_and_trigger
+    return false;
+  }
+
+  lua_pushinteger(L, index);
+  if (lua_pcall(L, 1, 4, 0) != LUA_OK) {
+    printf("[luaGetVoltsTriggerAndGate] error: %s\n", lua_tostring(L, -1));
+    lua_pop(L, 1);  // Pop error message
+    return false;
+  }
+
+  *volts = lua_tonumber(L, -4);
+  *volt_set = lua_toboolean(L, -3);
+  *trigger = lua_toboolean(L, -2);
+  *gate = lua_tonumber(L, -1);
+  lua_pop(L, 4);  // Pop v, new_volts, do_trigger, and gate
 
   return true;
 }
@@ -223,7 +248,7 @@ void luaClearPanicFlag() {
 }
 
 int luaRunOnBeat(int index, bool on, float *volts, bool *volts_new,
-                  bool *trigger) {
+                  bool *trigger, float *gate) {
   // Check for global panic flag
   if (lua_global_panic_flag) {
     return LUA_ERRRUN; // Return error to indicate panic state
@@ -259,12 +284,12 @@ int luaRunOnBeat(int index, bool on, float *volts, bool *volts_new,
   }
 
   lua_pop(L, 2);  // Pop envs[index]
-  luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
+  luaGetVoltsTriggerAndGate(index, volts, volts_new, trigger, gate);
   return 0;  // Success
 }
 
 int luaRunOnKnob(int index, float val, float *volts, bool *volts_new,
-                  bool *trigger) {
+                  bool *trigger, float *gate) {
   // Check for global panic flag
   if (lua_global_panic_flag) {
     return LUA_ERRRUN; // Return error to indicate panic state
@@ -301,12 +326,12 @@ int luaRunOnKnob(int index, float val, float *volts, bool *volts_new,
   }
 
   lua_pop(L, 2);  // Pop envs[index]
-  luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
+  luaGetVoltsTriggerAndGate(index, volts, volts_new, trigger, gate);
   return 0;  // Success
 }
 
 int luaRunOnButton(int index, bool val, float *volts, bool *volts_new,
-                    bool *trigger) {
+                    bool *trigger, float *gate) {
   // Check for global panic flag
   if (lua_global_panic_flag) {
     return LUA_ERRRUN; // Return error to indicate panic state
@@ -345,12 +370,12 @@ int luaRunOnButton(int index, bool val, float *volts, bool *volts_new,
 
   lua_pop(L, 2);  // Pop envs[index]
 
-  luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
+  luaGetVoltsTriggerAndGate(index, volts, volts_new, trigger, gate);
   return 0;  // Success
 }
 
 int luaRunOnNoteOn(int index, int channel, int note, int velocity,
-                    float *volts, bool *volts_new, bool *trigger) {
+                    float *volts, bool *volts_new, bool *trigger, float *gate) {
   // Check for global panic flag
   if (lua_global_panic_flag) {
     return LUA_ERRRUN; // Return error to indicate panic state
@@ -390,12 +415,12 @@ int luaRunOnNoteOn(int index, int channel, int note, int velocity,
   }
 
   lua_pop(L, 2);  // Pop envs[index]
-  luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
+  luaGetVoltsTriggerAndGate(index, volts, volts_new, trigger, gate);
   return 0;  // Success
 }
 
 int luaRunOnNoteOff(int index, int channel, int note, float *volts,
-                     bool *volts_new, bool *trigger) {
+                     bool *volts_new, bool *trigger, float *gate) {
   // Check for global panic flag
   if (lua_global_panic_flag) {
     return LUA_ERRRUN; // Return error to indicate panic state
@@ -434,12 +459,12 @@ int luaRunOnNoteOff(int index, int channel, int note, float *volts,
   }
 
   lua_pop(L, 2);  // Pop envs[index]
-  luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
+  luaGetVoltsTriggerAndGate(index, volts, volts_new, trigger, gate);
   return 0;  // Success
 }
 
 int luaRunOnCc(int index, int cc, int value, float *volts, bool *volts_new,
-                bool *trigger) {
+                bool *trigger, float *gate) {
   // Check for global panic flag
   if (lua_global_panic_flag) {
     return LUA_ERRRUN; // Return error to indicate panic state
@@ -478,7 +503,7 @@ int luaRunOnCc(int index, int cc, int value, float *volts, bool *volts_new,
 
   lua_pop(L, 2);  // Pop envs[index]
 
-  luaGetVoltsAndTrigger(index, volts, volts_new, trigger);
+  luaGetVoltsTriggerAndGate(index, volts, volts_new, trigger, gate);
   return 0;  // Success
 }
 
@@ -509,13 +534,14 @@ int luaTest() {
       float volts;
       bool volts_set;
       bool trigger;
-      if (luaRunOnBeat(channel, beat % 2 == 0, &volts, &volts_set, &trigger)) {
-        printf("luaRunOnBeat out[%d].volts: %f, %d, %d\n", channel, volts,
-               volts_set, trigger);
+      float gate;
+      if (luaRunOnBeat(channel, beat % 2 == 0, &volts, &volts_set, &trigger, &gate)) {
+        printf("luaRunOnBeat out[%d].volts: %f, %d, %d, gate: %f\n", channel, volts,
+               volts_set, trigger, gate);
       }
-      if (luaGetVoltsAndTrigger(channel, &volts, &volts_set, &trigger)) {
-        printf("out[%d].volts: %f, %d, %d\n", channel, volts, volts_set,
-               trigger);
+      if (luaGetVoltsTriggerAndGate(channel, &volts, &volts_set, &trigger, &gate)) {
+        printf("out[%d].volts: %f, %d, %d, gate: %f\n", channel, volts, volts_set,
+               trigger, gate);
       }
     }
   }
