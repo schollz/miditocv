@@ -135,7 +135,8 @@ void update_linked_outs(bool triggering_outs[], bool trigger, float gate,
 
     if (config->mode == MODE_ENVELOPE) {
       // trigger the envelope
-      // printf("[out%d] env_off linked to out%d\n", i2 + 1, config->linked_to);
+      printf("[out%d] ADSR linked to out%d: trigger=%d gate=%.2f bpm=%.1f beat_ms=%.1f\n", 
+             i2 + 1, config->linked_to, trigger, source_gate, bpm, beat_duration_ms);
       
       if (trigger) {
         // Trigger going high
@@ -146,15 +147,18 @@ void update_linked_outs(bool triggering_outs[], bool trigger, float gate,
           out->gate_start_time = ct;
           out->gate_duration_ms = (uint32_t)(source_gate * beat_duration_ms);
           out->gate_is_scheduled = true;
+          printf("[out%d] Scheduled gate off in %u ms\n", i2 + 1, out->gate_duration_ms);
         } else {
           // gate = 0 means immediate off
           ADSR_gate(&out->adsr, false, ct);
           out->gate_is_scheduled = false;
+          printf("[out%d] Gate=0, immediate off\n", i2 + 1);
         }
       } else {
         // Trigger going low - turn off gate immediately
         ADSR_gate(&out->adsr, false, ct);
         out->gate_is_scheduled = false;
+        printf("[out%d] Trigger low, gate off\n", i2 + 1);
       }
     } else if (config->mode == MODE_GATE) {
       // trigger the gate
@@ -177,8 +181,11 @@ void process_scheduled_gates(uint32_t ct) {
     // Check if gate off is scheduled and if it's time
     // Process for outputs in ENVELOPE mode that have a scheduled gate-off
     if (out->gate_is_scheduled && config->mode == MODE_ENVELOPE) {
-      if ((ct - out->gate_start_time) >= out->gate_duration_ms) {
+      uint32_t elapsed = ct - out->gate_start_time;
+      if (elapsed >= out->gate_duration_ms) {
         // Time to turn gate off
+        printf("[out%d] Scheduled gate off triggered after %u ms (duration was %u ms)\n", 
+               i + 1, elapsed, out->gate_duration_ms);
         ADSR_gate(&out->adsr, false, ct);
         out->gate_is_scheduled = false;
       }
@@ -199,6 +206,7 @@ void on_successful_lua_callback(int i, float volts, bool volts_new,
 
   // Store gate value for trigger timing
   out->gate = gate;
+  printf("[out%d] Lua callback: trigger=%d gate=%.2f\n", i + 1, trigger, gate);
 
   // Get BPM from config or Lua environment
   float bpm = config->clock_tempo;
@@ -212,6 +220,8 @@ void on_successful_lua_callback(int i, float volts, bool volts_new,
       bpm = yocto.global_tempo;
     }
   }
+  printf("[out%d] BPM: config=%.1f lua=%.1f global=%.1f final=%.1f\n", 
+         i + 1, config->clock_tempo, luaGetBPM(i), yocto.global_tempo, bpm);
 
   // find any linked outputs and activate the envelope
   triggering_outs[i] = true;
