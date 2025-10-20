@@ -47,12 +47,21 @@ int luaUpdateEnvironment(int index, const char *code) {
   lua_pushinteger(L, index);
   lua_pushstring(L, code);
 
-  if (lua_pcall(L, 2, 0, 0) != LUA_OK) {
+  if (lua_pcall(L, 2, 1, 0) != LUA_OK) {
     printf("[luaUpdateEnvironment] error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 1);  // Remove error message
     return 1;
   }
-  // No need to pop anything here
+  
+  // Check if update_env returned false (code load failed)
+  bool success = lua_toboolean(L, -1);
+  lua_pop(L, 1);  // Remove return value
+  
+  if (!success) {
+    printf("[luaUpdateEnvironment] Code failed to load\n");
+    return 1;
+  }
+  
   return 0;
 }
 

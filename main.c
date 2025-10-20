@@ -972,7 +972,11 @@ int main() {
           case MODE_CODE:
             // load the new code environment and clear panic flag
             out->lua_panic = false;
-            Yoctocore_load_code(&yocto, yocto.i, i);
+            if (!Yoctocore_load_code(&yocto, yocto.i, i)) {
+              // Code failed to load - set panic flag
+              out->lua_panic = true;
+              printf("[output%d] Lua code failed to load, disabling code execution\n", i);
+            }
             break;
           default:
             // Clear panic flag when switching to non-CODE mode
@@ -987,7 +991,11 @@ int main() {
           if (uploaded_config->mode == MODE_CODE) {
             // load the new code from the correct scene and clear panic flag
             out->lua_panic = false;
-            Yoctocore_load_code(&yocto, out->code_updated_scene, i);
+            if (!Yoctocore_load_code(&yocto, out->code_updated_scene, i)) {
+              // Code failed to load - set panic flag
+              out->lua_panic = true;
+              printf("[output%d] Lua code failed to load, disabling code execution\n", i);
+            }
           }
           // reset the flag regardless
           out->code_updated = false;

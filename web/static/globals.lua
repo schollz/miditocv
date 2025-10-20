@@ -480,8 +480,10 @@ function update_env(i, code)
     local new_env_made = new_env(baseline_code .. code)
     if new_env_made then
         envs[i] = new_env_made
+        return true
     else
         envs[i] = new_env(baseline_code)
+        return false
     end
 end
 
