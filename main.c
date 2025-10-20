@@ -208,20 +208,18 @@ void on_successful_lua_callback(int i, float volts, bool volts_new,
   out->gate = gate;
   printf("[out%d] Lua callback: trigger=%d gate=%.2f\n", i + 1, trigger, gate);
 
-  // Get BPM from config or Lua environment
-  float bpm = config->clock_tempo;
-  if (bpm <= 0) {
-    // Try to get BPM from Lua
-    float lua_bpm = luaGetBPM(i);
-    if (lua_bpm > 0) {
-      bpm = lua_bpm;
-    } else {
-      // Fallback to global tempo
-      bpm = yocto.global_tempo;
-    }
+  // Get BPM: prioritize Lua, then config, then global tempo
+  float lua_bpm = luaGetBPM(i);
+  float bpm;
+  if (lua_bpm > 0) {
+    bpm = lua_bpm;
+  } else if (config->clock_tempo > 0) {
+    bpm = config->clock_tempo;
+  } else {
+    bpm = yocto.global_tempo;
   }
   printf("[out%d] BPM: config=%.1f lua=%.1f global=%.1f final=%.1f\n", 
-         i + 1, config->clock_tempo, luaGetBPM(i), yocto.global_tempo, bpm);
+         i + 1, config->clock_tempo, lua_bpm, yocto.global_tempo, bpm);
 
   // find any linked outputs and activate the envelope
   triggering_outs[i] = true;
@@ -1085,6 +1083,9 @@ int main() {
       }
     }
 
+    // Update current time for this iteration
+    ct = to_ms_since_boot(get_absolute_time());
+    
     // process timers
     us = time_us_32();
     for (uint8_t i = 0; i < 16; i++) {
