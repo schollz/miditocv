@@ -298,9 +298,12 @@ void timer_callback_ws2812(bool on, int user_data) {
     if (out->tuning && blink_on) {
       WS2812_fill(&ws2812, leds_second_8[i - 8] + 8, 0, 0, 0);
     } else if (out->lua_panic) {
-      // Blink RED for panicked Lua code
+      // Blink mode color (purple for CODE) for panicked Lua code
       if (blink_on) {
-        WS2812_fill(&ws2812, leds_second_8[i - 8] + 8, 255, 0, 0);
+        WS2812_fill(&ws2812, leds_second_8[i - 8] + 8,
+                    const_colors[config->mode][0],
+                    const_colors[config->mode][1],
+                    const_colors[config->mode][2]);
       } else {
         WS2812_fill(&ws2812, leds_second_8[i - 8] + 8, 0, 0, 0);
       }
