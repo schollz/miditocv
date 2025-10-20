@@ -657,6 +657,45 @@ end`,
             Array.from({ length: 8 }, () => []) // Initialize with empty arrays for 8 sparklines
         );
 
+        // Example code templates
+        const exampleCodes = ref([
+            {
+                name: "Playing Different Notes",
+                code: `-- Example: Playing different notes
+note_vals = S {
+  "c4", "e4", "g4", 
+  S {"c5", "e5"}, 
+  "g5"
+}
+riddim = er(5, 8)
+bpm = 120
+
+function on_beat(beat)
+  if beat % 1 == 0 then
+    local note = note_vals()
+    trigger = riddim()
+    volts = to_cv(note)
+    return note
+  end
+  return "off"
+end`
+            }
+        ]);
+        const selectedExampleCode = ref("");
+
+        function loadExampleCode() {
+            if (selectedExampleCode.value !== "") {
+                const example = exampleCodes.value[selectedExampleCode.value];
+                if (example) {
+                    scenes.value[current_scene.value].outputs[current_output.value].code = example.code;
+                    Vue.nextTick(() => {
+                        myCodeMirror.setValue(example.code);
+                        clearLua();
+                    });
+                }
+            }
+        }
+
         function updateSparkline(index, value) {
             const maxDataPoints = 50; // Limit the number of data points per sparkline
 
@@ -1146,6 +1185,9 @@ end`,
             inLearningMode,
             luaBeatNumber,
             uploadLua,
+            exampleCodes,
+            selectedExampleCode,
+            loadExampleCode,
         };
     },
 });
