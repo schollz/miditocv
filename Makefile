@@ -16,13 +16,18 @@ miditocv-release: lib/lua_globals.h pico-extras release
 	echo "build success"
 	cp build/*.uf2 miditocv.uf2
 
-lib/lua_globals.h:	
-	npm install -g luamin || true
-	luamin --version || true
-	xxd --version || true
-	luamin -f web/static/globals.lua > globals.lua 
-	xxd -i globals.lua > lib/lua_globals.h
-	rm globals.lua
+lib/lua_globals.h:
+	@echo "🌀 Building lib/lua_globals.h..."
+	@npm install -g luamin >/dev/null 2>&1 || true
+	@luamin --version || true
+	@xxd --version || true
+	@echo "Minifying web/static/globals.lua..."
+	@if ! luamin -f web/static/globals.lua > globals.lua 2>/dev/null; then \
+		echo "⚠️ luamin failed, copying unminified source instead"; \
+		cp web/static/globals.lua globals.lua; \
+	fi
+	@xxd -i globals.lua > lib/lua_globals.h
+	@rm globals.lua
 
 lua:
 	lua web/static/globals.lua

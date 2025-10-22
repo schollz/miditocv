@@ -33,13 +33,6 @@ jobs:
       - name: Build Lua
         run: cd lua-5.4.6 && make linux
 
-      - name: Debug luamin
-        run: |
-          ls -l web/static/globals.lua
-          head -n 20 web/static/globals.lua
-          luamin -f web/static/globals.lua > globals.lua || echo "luamin failed: $?"
-          echo "Exit code: $?"
-
       - name: Run tests
         run: make test
 
