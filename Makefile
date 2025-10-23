@@ -5,6 +5,10 @@ NPROCS := $(shell grep -c 'processor' /proc/cpuinfo)
 GOVERSION = go1.21.11
 GOBIN = $(HOME)/go/bin
 GOINSTALLPATH = $(GOBIN)/$(GOVERSION)
+PARCEL = $(CURDIR)/web/node_modules/.bin/parcel
+
+$(PARCEL):
+	cd web && npm install parcel
 
 miditocv-debug: lib/lua_globals.h pico-extras build
 	make -C build -j$(NPROCS)
@@ -98,22 +102,18 @@ web/localhost.pem:
 	cd web && mkcert localhost
 
 .PHONY: web
-BROWSERSYNC_CMD = cd web && npm install && parcel index.html --no-source-maps
+BROWSERSYNC_CMD = cd web && npm install && $(PARCEL) index.html --no-source-maps
 SSL_PROXY_CMD = cd web && local-ssl-proxy --key localhost-key.pem --cert localhost.pem --source 8000 --target 1234
-web: web/localhost.pem
+web: web/localhost.pem $(PARCEL)
 	-pkill -f -9 browsersync
 	-pkill -f -9 browser-sync
 	-pkill -f -9 local-ssl-proxy
-	# npm install -g browser-sync local-ssl-proxy
 	@echo "Starting BrowserSync in the background..."
 	@($(BROWSERSYNC_CMD) &) && \
 	echo "Starting local SSL proxy..." && \
 	$(SSL_PROXY_CMD)
 
-
-publish:
-	# npm install --verbose -g npm@latest
-	# npm install --verbose -g parcel@latest
+publish: $(PARCEL)
 	cd web && npm install
 	cd web && rm -rf dist
-	cd web && parcel build index.html --dist-dir ./dist --no-optimize
+	cd web && $(PARCEL) build index.html --dist-dir ./dist --no-optimize
