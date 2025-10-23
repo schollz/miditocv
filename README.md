@@ -115,7 +115,7 @@ function on_beat(on)
 end
 ```
 
-This function is special, in that it _can be linked to a clock output_, but if it is not linked to a clock output it will run at the tempo defined by the `bpm` variable.
+This function is special, in that the Code output _can be linked to a Clock output_. If linked to a Clock output and the `bpm` variable is not defined, the Code output will use the Clock output's BPM. If the `bpm` variable is defined, it takes precedence. If neither is set, it will run at the global tempo. Note that linking only synchronizes the BPM; the Code output is not triggered by the Clock output.
 
 ### `on_knob(value)`
 
