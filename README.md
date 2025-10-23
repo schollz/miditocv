@@ -22,6 +22,29 @@ The **bold** things are implemented.
 | LFO              |                | **period** | **pause**       | **max voltage**   | **shape**     |
 | Code             | on_button(on)  | on_knob(x) | on_button(on)   | on_knob(x)        |               |
 
+## Output Linking
+
+Envelope and Gate outputs can be linked to other outputs (like Clock or Code outputs) to create synchronized timing relationships. This is configured in the editor by setting the "linked to" parameter.
+
+### Linking to Clock Outputs
+
+When an Envelope or Gate output is linked to a Clock output:
+- The linked output triggers whenever the Clock output goes high
+- The linked output stays high for the duration of the Clock's high phase
+- The duration is automatically calculated based on the Clock's BPM and division settings
+- Clock division affects timing: higher divisions create shorter gate durations
+
+**Example use case**: Link an Envelope output to a Clock output set to quarter notes (x1 division) at 120 BPM. The Envelope will trigger every quarter note and stay high for half the quarter note duration, creating a rhythmic gate pattern synchronized to the clock.
+
+### Linking to Code Outputs
+
+Code outputs can also trigger linked Envelope and Gate outputs. The `gate` parameter in Lua code controls how long the linked output stays high:
+- `gate = 0.5` means the gate stays high for half a beat
+- `gate = 1.0` means the gate stays high for a full beat
+- The beat duration is determined by the Code output's BPM setting
+
+This allows for complex, programmable triggering patterns while maintaining proper ADSR envelope behavior.
+
 ## Code
 
 The miditocv is programmable with the [Lua language](https://www.lua.org/manual/5.4/manual.html), a powerful, efficient, lightweight, embeddable scripting language.

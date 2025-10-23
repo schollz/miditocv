@@ -163,25 +163,44 @@ void update_linked_outs(bool triggering_outs[], bool trigger, float gate,
       }
     } else if (config->mode == MODE_GATE) {
       // trigger the gate
-      printf("[out%d] gate_off linked to out%d\n", i2 + 1, config->linked_to);
+      printf("[out%d] Gate linked to out%d: trigger=%d gate=%.2f bpm=%.1f beat_ms=%.1f\n", 
+             i2 + 1, config->linked_to, trigger, source_gate, bpm, beat_duration_ms);
+      
       if (trigger) {
+        // Set gate high
         out->voltage_set = config->max_voltage;
+        
+        // Schedule gate off based on gate parameter from source output
+        if (source_gate > 0 && beat_duration_ms > 0) {
+          out->gate_start_time = ct;
+          out->gate_duration_ms = (uint32_t)(source_gate * beat_duration_ms);
+          out->gate_is_scheduled = true;
+          printf("[out%d] Scheduled gate off in %u ms (start_time=%u ct=%u)\n", 
+                 i2 + 1, out->gate_duration_ms, out->gate_start_time, ct);
+        } else {
+          // gate = 0 means immediate off
+          out->voltage_set = config->min_voltage;
+          out->gate_is_scheduled = false;
+          printf("[out%d] Gate=0, immediate off\n", i2 + 1);
+        }
       } else {
+        // Trigger going low - turn off gate immediately
         out->voltage_set = config->min_voltage;
+        out->gate_is_scheduled = false;
+        printf("[out%d] Trigger low, gate off\n", i2 + 1);
       }
     }
   }
 }
 
-// Process scheduled gate-offs for ADSR envelopes
+// Process scheduled gate-offs for ADSR envelopes and GATE outputs
 void process_scheduled_gates(uint32_t ct) {
   for (uint8_t i = 0; i < 8; i++) {
     Out *out = &yocto.out[i];
     Config *config = &yocto.config[yocto.i][i];
     
     // Check if gate off is scheduled and if it's time
-    // Process for outputs in ENVELOPE mode that have a scheduled gate-off
-    if (out->gate_is_scheduled && config->mode == MODE_ENVELOPE) {
+    if (out->gate_is_scheduled) {
       // Check if ct >= gate_start_time to avoid underflow
       if (ct >= out->gate_start_time) {
         uint32_t elapsed = ct - out->gate_start_time;
@@ -189,7 +208,15 @@ void process_scheduled_gates(uint32_t ct) {
           // Time to turn gate off
           printf("[out%d] Scheduled gate off triggered after %u ms (duration was %u ms, start=%u ct=%u)\n", 
                  i + 1, elapsed, out->gate_duration_ms, out->gate_start_time, ct);
-          ADSR_gate(&out->adsr, false, ct);
+          
+          if (config->mode == MODE_ENVELOPE) {
+            // For ENVELOPE mode, turn off ADSR gate
+            ADSR_gate(&out->adsr, false, ct);
+          } else if (config->mode == MODE_GATE) {
+            // For GATE mode, set voltage to min
+            out->voltage_set = config->min_voltage;
+          }
+          
           out->gate_is_scheduled = false;
         }
       }
@@ -283,12 +310,32 @@ const uint8_t const_colors[11][3] = {
 void timer_callback_beat(bool on, int user_data) {
   Config *config = &yocto.config[yocto.i][user_data];
   Out *out = &yocto.out[user_data];
+  uint32_t ct = to_ms_since_boot(get_absolute_time());
+  
   if (config->mode == MODE_CLOCK) {
     if (on && !out->clock_disabled) {
       // trigger the clock
       out->voltage_current = config->max_voltage;
+      
+      // Calculate gate duration for clock: 0.5 means half the period
+      // Division affects the tempo, so effective BPM = clock_tempo * division
+      float effective_bpm = config->clock_tempo * division_values[config->clock_division];
+      float beat_duration_ms = (effective_bpm > 0) ? (60000.0f / effective_bpm) : 0;
+      // Clock stays high for half the beat (0.5 gate)
+      float clock_gate = 0.5f;
+      out->gate = clock_gate;
+      
+      // Trigger linked outputs
+      bool triggering_outs[8] = {false};
+      triggering_outs[user_data] = true;
+      update_linked_outs(triggering_outs, true, clock_gate, effective_bpm, ct);
     } else {
       out->voltage_current = config->min_voltage;
+      
+      // Trigger low for linked outputs
+      bool triggering_outs[8] = {false};
+      triggering_outs[user_data] = true;
+      update_linked_outs(triggering_outs, false, 0.0f, config->clock_tempo, ct);
     }
   } else if (config->mode == MODE_CODE) {
     // Don't run if Lua code has panicked
