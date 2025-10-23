@@ -16,6 +16,7 @@ miditocv-release: lib/lua_globals.h pico-extras release
 	echo "build success"
 	cp build/*.uf2 miditocv.uf2
 
+.PHONY: lib/lua_globals.h
 lib/lua_globals.h:
 	@echo "🌀 Building lib/lua_globals.h..."
 	@npm install -g luamin >/dev/null 2>&1 || true
