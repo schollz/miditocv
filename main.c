@@ -1237,7 +1237,7 @@ int main() {
             // check if the linked output is a Clock and use its BPM
             Config *linked_config = &yocto.config[yocto.i][config->linked_to - 1];
             if (linked_config->mode == MODE_CLOCK && linked_config->clock_tempo > 0) {
-              config->clock_tempo = linked_config->clock_tempo;
+              config->clock_tempo = linked_config->clock_tempo * division_values[linked_config->clock_division];
             }
           }
         }
