@@ -12,6 +12,7 @@
 
 <body>
   <div id="app" class="app appbox">
+    <div class="sync-icon" :class="{ 'sync-active': showSyncIcon }">↻</div>
     <h1 style="margin-bottom:0;">my miditocv</h1>
     <p style="margin-bottom:2em;">device<span v-if="device_connected" style="color:green;"> connected</span><span
         style="color:red;" v-else> not
