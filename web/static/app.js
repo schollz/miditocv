@@ -918,6 +918,24 @@ end`
             return `mode-${mode}`;
         }
 
+        function getModeName(mode) {
+            mode = Number(mode);
+            const modeNames = {
+                0: "MIDI Note",
+                1: "Envelope",
+                2: "Gate",
+                3: "MIDI Key Pressure",
+                4: "MIDI Control Change",
+                5: "MIDI Program Change",
+                6: "MIDI Channel Pressure",
+                7: "MIDI Pitch Bend",
+                8: "Clock",
+                9: "LFO",
+                10: "Code"
+            };
+            return modeNames[mode] || "Unknown";
+        }
+
         const defaultValues = {
             0: {
                 quantization: 0,
@@ -1192,6 +1210,7 @@ end`,
             select_scene,
             select_output,
             getButtonClass,
+            getModeName,
             device_connected,
             midi_input_active,
             midi_input_last_message,
