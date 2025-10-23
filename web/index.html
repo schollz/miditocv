@@ -295,7 +295,7 @@
           <select id="linked-to" v-model="selected_output.linked_to">
             <option value=0>None</option>
             <option v-for="(output, index) in scenes[current_scene].outputs" :key="index" :value="index+1">
-              Output {{ index + 1 }}
+              Output {{ index + 1 }} ({{ getModeName(output.mode) }})
             </option>
           </select>
         </div>
