@@ -277,7 +277,7 @@
 
       <!-- linked to -->
       <div class="row"
-        v-if="[definitionsModes.MODE_ENVELOPE,definitionsModes.MODE_GATE].includes(Number(selected_output.mode))">
+        v-if="[definitionsModes.MODE_ENVELOPE,definitionsModes.MODE_GATE,definitionsModes.MODE_CODE].includes(Number(selected_output.mode))">
         <div class="col col-2 fr">
           <label for="linked-to">
             Linked to:

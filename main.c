@@ -1232,6 +1232,13 @@ int main() {
           float code_bpm = luaGetBPM(i);
           if (code_bpm >= 1 && code_bpm < 300) {
             config->clock_tempo = code_bpm;
+          } else if (config->linked_to >= 1 && config->linked_to <= 8) {
+            // If Code output doesn't define BPM and is linked to another output,
+            // check if the linked output is a Clock and use its BPM
+            Config *linked_config = &yocto.config[yocto.i][config->linked_to - 1];
+            if (linked_config->mode == MODE_CLOCK && linked_config->clock_tempo > 0) {
+              config->clock_tempo = linked_config->clock_tempo;
+            }
           }
         }
         if (config->clock_tempo > 0) {
