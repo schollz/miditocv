@@ -483,6 +483,7 @@ body {
     width: 100%;
     max-width: 800px;
     margin: 1em;
+    position: relative;
 }
 
 input:disabled,

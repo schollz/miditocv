@@ -623,6 +623,7 @@ end`,
         const midi_input_last_message = ref({});
         const clockTempos = ref([]);
         const luaBeatNumber = ref(0);
+        const showSyncIcon = ref(false);
 
         const definitionsModes = ref({
             "MODE_NOTE": 0,
@@ -1074,6 +1075,14 @@ end`,
             return `${sceneIndex}-${outputIndex}-${property}`;
         }
 
+        // Function to trigger sync icon animation
+        function triggerSyncIcon() {
+            showSyncIcon.value = true;
+            setTimeout(() => {
+                showSyncIcon.value = false;
+            }, 2000); // 2s total (1s fade in + 1s fade out)
+        }
+
         // Function to log changes with per-output debouncing
         function logChange(sceneIndex, outputIndex, property, value) {
             const key = getDebounceKey(sceneIndex, outputIndex, property);
@@ -1096,6 +1105,7 @@ end`,
                         const sysex_string = `${sceneIdx}_${outputIdx}_${hash_djb(prop)}_${val.toPrecision(4)}`;
                         console.log(`[sending_sysex] ${prop} ${sysex_string}`);
                         send_sysex(sysex_string);
+                        triggerSyncIcon();
                     }, 300)
                 );
             }
@@ -1206,6 +1216,7 @@ end`,
             exampleCodes,
             selectedExampleCode,
             loadExampleCode,
+            showSyncIcon,
         };
     },
 });
