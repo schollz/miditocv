@@ -63,6 +63,12 @@ envs:
 	export PICO_EXTRAS_PATH=/home/zns/pico/pico-extras
 	export PICO_SDK_PATH=/home/zns/pico/pico-sdk
 
+
+pico-sdk:
+	git clone https://github.com/raspberrypi/pico-sdk
+	cd pico-sdk && git checkout 1.5.1
+	cd pico-sdk && git submodule update --init --recursive
+
 pico-extras:
 	git clone https://github.com/raspberrypi/pico-extras.git pico-extras
 	cd pico-extras && git checkout sdk-1.5.1
