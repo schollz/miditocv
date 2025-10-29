@@ -725,6 +725,24 @@ void midi_channel_pressure(int channel, int pressure) {
         // save the config
         Yoctocore_schedule_save(&yocto);
       }
+    } else if (config->mode == MODE_CODE) {
+      // Don't run if Lua code has panicked
+      if (out->lua_panic) {
+        continue;
+      }
+      float volts;
+      bool volts_new;
+      bool trigger;
+      float gate;
+      printf("Lua on_channel_pressure #%d - ch=%d, pressure=%d\n", i, channel, pressure);
+      int result = luaRunOnChannelPressure(i, channel, pressure, &volts, &volts_new, &trigger, &gate);
+      if (result == 0) {
+        on_successful_lua_callback(i, volts, volts_new, trigger, gate);
+      } else if (result > 0) {
+        // Lua panic occurred
+        out->lua_panic = true;
+        printf("[output%d] Lua panic detected, disabling code execution\n", i);
+      }
     }
   }
 }
