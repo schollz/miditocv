@@ -47,9 +47,7 @@ This allows for complex, programmable triggering patterns while maintaining prop
 
 ## Code
 
-The miditocv is programmable with the [Lua language](https://www.lua.org/manual/5.4/manual.html), a powerful, efficient, lightweight, embeddable scripting language.
-
-It is currently under development. Here is the implementation status:
+The miditocv is programmable with the [Lua language](https://www.lua.org/manual/5.4/manual.html), a powerful, efficient, lightweight, embeddable scripting language. Here is the implementation status:
 
 - [x] [`volts`, `trigger`, and `gate`](#volts-trigger-and-gate)
 - [x] [`out[i].volts`](#outivolts)
@@ -69,7 +67,7 @@ It is currently under development. Here is the implementation status:
 
 The miditocv has [an online editor](https://my.miditocv.com) that you can use to test out your programs.
 
-Yoctocore programs are based around a set of [callback functions](<https://en.wikipedia.org/wiki/Callback_(computer_programming)>) that are run on specific routines.
+miditocv programs are based around a set of [callback functions](<https://en.wikipedia.org/wiki/Callback_(computer_programming)>) that are run on specific routines.
 
 ### `volts`, `trigger`, and `gate`
 

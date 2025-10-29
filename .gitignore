@@ -89,3 +89,5 @@ lua-5.4.6/src/lua
 lua-5.4.6/src/luac
 lib/tests/lua/test_basic_simple
 globals.lua
+pico-sdk/
+lib/tests/lua/test_gate
