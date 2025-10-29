@@ -60,7 +60,7 @@ It is currently under development. Here is the implementation status:
 - [x] [`on_note_on(channel,note,velocity)`](#on_note_onchannelnotevelocity)
 - [x] [`on_note_off(channel,note)`](#on_note_offchannelnote)
 - [x] [`on_cc(channel,cc,value)`](#on_ccchannelccvalue)
-- [ ] [`on_key_pressure(channel,key,pressure)`](#on_key_pressurechannelkeypressure)
+- [x] [`on_key_pressure(channel,key,pressure)`](#on_key_pressurechannelkeypressure)
 - [ ] [`on_channel_pressure(channel,pressure)`](#on_channel_pressurechannelpressure)
 - [ ] [`on_pitch_bend(channel,pitch)`](#on_pitch_bendchannelpitch)
 - [x] [`er(k,n,w)`](#erknw)
