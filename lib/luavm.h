@@ -469,7 +469,7 @@ int luaRunOnCc(int index, int cc, int value, float *volts, bool *volts_new,
   if (lua_global_panic_flag) {
     return LUA_ERRRUN; // Return error to indicate panic state
   }
-  
+
   if (!withLuaEnv(index)) return -1;
 
   lua_getfield(L, -1, "on_cc");  // Push envs[index].on_button onto the stack
@@ -484,6 +484,51 @@ int luaRunOnCc(int index, int cc, int value, float *volts, bool *volts_new,
   int result = lua_pcall(L, 2, LUA_MULTRET, 0);
   if (result != LUA_OK) {  // Call on_cc with 2 argument, expecting 1 return
     printf("[luaRunOnCc] error: %s\n", lua_tostring(L, -1));
+    lua_pop(L, 3);  // Pop error message, envs[index], and envs (pcall consumed function+args)
+    return result;  // Return error code
+  }
+
+  // Check how many results were returned
+  int num_results = lua_gettop(L) - 2;
+  // Process the results if needed
+  if (num_results > 0) {
+    // uncomment to print result
+    // if (lua_isstring(L, -1)) {
+    //   const char *result_str = lua_tostring(L, -1);
+    //   printf("Result: %s\n", result_str);
+    // }
+    // Pop all results to clean up the stack
+    lua_pop(L, num_results);
+  }
+
+  lua_pop(L, 2);  // Pop envs[index]
+
+  luaGetVoltsTriggerAndGate(index, volts, volts_new, trigger, gate);
+  return 0;  // Success
+}
+
+int luaRunOnKeyPressure(int index, int channel, int note, int pressure,
+                        float *volts, bool *volts_new, bool *trigger, float *gate) {
+  // Check for global panic flag
+  if (lua_global_panic_flag) {
+    return LUA_ERRRUN; // Return error to indicate panic state
+  }
+
+  if (!withLuaEnv(index)) return -1;
+
+  lua_getfield(L, -1, "on_key_pressure");  // Push envs[index].on_key_pressure onto the stack
+  if (!lua_isfunction(L, -1)) {            // Check if on_key_pressure is a function
+    lua_pop(L, 3);                         // Pop envs, envs[index], and on_key_pressure
+    return -1;
+  }
+
+  // Push the arguments
+  lua_pushinteger(L, channel);
+  lua_pushinteger(L, note);
+  lua_pushinteger(L, pressure);
+  int result = lua_pcall(L, 3, LUA_MULTRET, 0);
+  if (result != LUA_OK) {  // Call on_key_pressure with 3 arguments
+    printf("[luaRunOnKeyPressure] error: %s\n", lua_tostring(L, -1));
     lua_pop(L, 3);  // Pop error message, envs[index], and envs (pcall consumed function+args)
     return result;  // Return error code
   }
