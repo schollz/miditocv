@@ -1,6 +1,6 @@
-<p align="center"> <a href="https://www.youtube.com/watch?v=zViMACW6VbQ"> <img
-width="600" alt="vlcsnap-2025-08-23-18h24m04s244"
-src="https://github.com/user-attachments/assets/7d4c36c0-bd28-4611-a41b-ddf864af045c"
+<p align="center"> <a href="https://www.youtube.com/watch?v=9bbGdvTweDQ"> <img
+width="600" alt="miditocv"
+src="https://github.com/user-attachments/assets/8677d7c9-285d-48c7-8f19-c4101e0e66c3"
 /> </a> <br> <a
 href="https://github.com/schollz/miditocv/releases/latest"> <img
 src="https://img.shields.io/github/v/release/schollz/miditocv"
