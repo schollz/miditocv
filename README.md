@@ -62,7 +62,7 @@ It is currently under development. Here is the implementation status:
 - [x] [`on_cc(channel,cc,value)`](#on_ccchannelccvalue)
 - [x] [`on_key_pressure(channel,key,pressure)`](#on_key_pressurechannelkeypressure)
 - [x] [`on_channel_pressure(channel,pressure)`](#on_channel_pressurechannelpressure)
-- [ ] [`on_pitch_bend(channel,pitch)`](#on_pitch_bendchannelpitch)
+- [x] [`on_pitch_bend(channel,pitch)`](#on_pitch_bendchannelpitch)
 - [x] [`er(k,n,w)`](#erknw)
 - [x] [`to_cv(value)`](#to_cvvalue)
 - [x] [`S` - A Minimal Sequencing Library](#s---a-minimal-sequencing-library)
