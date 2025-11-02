@@ -365,6 +365,17 @@ Install the required debugging tools:
 sudo apt install gdb-multiarch openocd minicom
 ```
 
+### Connections
+
+Connect the "D" part of the probe to the debug pins:
+
+![PXL_20250114_023504966](https://github.com/user-attachments/assets/8a2e8d86-3af3-4728-bb8b-391e0a6bbecb)
+
+Connect the "U" part of the probe to the UART pins underneath:
+
+![PXL_20250114_023511338](https://github.com/user-attachments/assets/6c5023ad-fd23-463e-8cc5-d911b2807572)
+
+
 ### Step-by-Step Debugging
 
 #### 1. Build the firmware in debug mode
