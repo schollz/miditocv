@@ -355,43 +355,78 @@ The `dist` folder can now be used.
 
 ## Debugger
 
-### Pre-requisites
+This guide shows how to debug the miditocv firmware using GDB and OpenOCD with a CMSIS-DAP compatible debugger.
+
+### Prerequisites
+
+Install the required debugging tools:
 
 ```bash
 sudo apt install gdb-multiarch openocd minicom
 ```
 
-**uploading:**
+### Step-by-Step Debugging
 
-(Make sure to make in debug mode).
+#### 1. Build the firmware in debug mode
+
+```bash
+make miditocv-debug
+```
+
+This creates a debug build with symbols in the `build/` directory.
+
+#### 2. Upload the debug firmware to the device
 
 ```bash
 cd build && make && sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program miditocv.elf verify reset exit"
 ```
 
-**setup server:**
+This uploads `miditocv.elf` to the RP2040 and verifies the upload.
+
+#### 3. Start the OpenOCD debug server
+
+In a **separate terminal**, start the OpenOCD server:
 
 ```bash
 sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000"
 ```
 
-**continue:**
+Leave this running. OpenOCD will listen on port 3333 for GDB connections.
+
+#### 4. Connect GDB to the debug server
+
+In another terminal, start GDB and connect to OpenOCD:
 
 ```bash
-gdb-multiarch miditocv.elf  -ex "target remote localhost:3333" -ex "monitor reset init" -ex "continue"
+gdb-multiarch build/miditocv.elf -ex "target remote localhost:3333" -ex "monitor reset init" -ex "continue"
 ```
 
-```
-step
-```
+This connects to the OpenOCD server, resets the device, and starts execution.
+
+### Common GDB Commands
+
+Once connected, you can use these GDB commands:
 
 ```
-backtrace
+(gdb) break main              # Set a breakpoint at main()
+(gdb) break filename.c:123    # Set a breakpoint at line 123
+(gdb) continue                # Continue execution
+(gdb) step                    # Step into functions
+(gdb) next                    # Step over functions
+(gdb) backtrace               # Show the call stack
+(gdb) print variable_name     # Print variable value
+(gdb) info locals             # Show local variables
+(gdb) quit                    # Exit GDB
 ```
 
-**minicom**:
-quit with `Ctrl-A` and then `Q`
+### Monitoring Serial Output
+
+To view serial output from the device during debugging, open another terminal and run:
 
 ```bash
 minicom -b 115200 -o -D /dev/ttyACM1
 ```
+
+**Note:** The device may appear on `/dev/ttyACM0` instead, depending on your system. Use `ls /dev/ttyACM*` to check.
+
+To quit minicom, press `Ctrl-A` then `Q`.
