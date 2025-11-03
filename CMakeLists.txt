@@ -93,6 +93,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     WS2812_PIN=7
     WS2812_SM=2
     WS2812_NUM_LEDS=16
+    GPIO_USER_KEY=23
 
     # constants
     REFERENCE_5V=5.0

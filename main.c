@@ -117,12 +117,12 @@ const float division_values[19] = {
 #include "lib/midicallback.h"
 #endif
 
-void update_linked_outs(bool triggering_outs[], bool trigger, float gate, 
+void update_linked_outs(bool triggering_outs[], bool trigger, float gate,
                         float bpm, uint32_t ct) {
   // Calculate beat duration in milliseconds from BPM
   // BPM = beats per minute, so beat_duration_ms = 60000 / BPM
   float beat_duration_ms = (bpm > 0) ? (60000.0f / bpm) : 0;
-  
+
   for (uint8_t i2 = 0; i2 < 8; i2++) {
     Config *config = &yocto.config[yocto.i][i2];
     Out *out = &yocto.out[i2];
@@ -135,19 +135,22 @@ void update_linked_outs(bool triggering_outs[], bool trigger, float gate,
 
     if (config->mode == MODE_ENVELOPE) {
       // trigger the envelope
-      printf("[out%d] ADSR linked to out%d: trigger=%d gate=%.2f bpm=%.1f beat_ms=%.1f\n", 
-             i2 + 1, config->linked_to, trigger, source_gate, bpm, beat_duration_ms);
-      
+      printf(
+          "[out%d] ADSR linked to out%d: trigger=%d gate=%.2f bpm=%.1f "
+          "beat_ms=%.1f\n",
+          i2 + 1, config->linked_to, trigger, source_gate, bpm,
+          beat_duration_ms);
+
       if (trigger) {
         // Trigger going high
         ADSR_gate(&out->adsr, true, ct);
-        
+
         // Schedule gate off based on gate parameter from source output
         if (source_gate > 0 && beat_duration_ms > 0) {
           out->gate_start_time = ct;
           out->gate_duration_ms = (uint32_t)(source_gate * beat_duration_ms);
           out->gate_is_scheduled = true;
-          printf("[out%d] Scheduled gate off in %u ms (start_time=%u ct=%u)\n", 
+          printf("[out%d] Scheduled gate off in %u ms (start_time=%u ct=%u)\n",
                  i2 + 1, out->gate_duration_ms, out->gate_start_time, ct);
         } else {
           // gate = 0 means immediate off
@@ -163,19 +166,22 @@ void update_linked_outs(bool triggering_outs[], bool trigger, float gate,
       }
     } else if (config->mode == MODE_GATE) {
       // trigger the gate
-      printf("[out%d] Gate linked to out%d: trigger=%d gate=%.2f bpm=%.1f beat_ms=%.1f\n", 
-             i2 + 1, config->linked_to, trigger, source_gate, bpm, beat_duration_ms);
-      
+      printf(
+          "[out%d] Gate linked to out%d: trigger=%d gate=%.2f bpm=%.1f "
+          "beat_ms=%.1f\n",
+          i2 + 1, config->linked_to, trigger, source_gate, bpm,
+          beat_duration_ms);
+
       if (trigger) {
         // Set gate high
         out->voltage_set = config->max_voltage;
-        
+
         // Schedule gate off based on gate parameter from source output
         if (source_gate > 0 && beat_duration_ms > 0) {
           out->gate_start_time = ct;
           out->gate_duration_ms = (uint32_t)(source_gate * beat_duration_ms);
           out->gate_is_scheduled = true;
-          printf("[out%d] Scheduled gate off in %u ms (start_time=%u ct=%u)\n", 
+          printf("[out%d] Scheduled gate off in %u ms (start_time=%u ct=%u)\n",
                  i2 + 1, out->gate_duration_ms, out->gate_start_time, ct);
         } else {
           // gate = 0 means immediate off
@@ -198,7 +204,7 @@ void process_scheduled_gates(uint32_t ct) {
   for (uint8_t i = 0; i < 8; i++) {
     Out *out = &yocto.out[i];
     Config *config = &yocto.config[yocto.i][i];
-    
+
     // Check if gate off is scheduled and if it's time
     if (out->gate_is_scheduled) {
       // Check if ct >= gate_start_time to avoid underflow
@@ -206,9 +212,11 @@ void process_scheduled_gates(uint32_t ct) {
         uint32_t elapsed = ct - out->gate_start_time;
         if (elapsed >= out->gate_duration_ms) {
           // Time to turn gate off
-          printf("[out%d] Scheduled gate off triggered after %u ms (duration was %u ms, start=%u ct=%u)\n", 
-                 i + 1, elapsed, out->gate_duration_ms, out->gate_start_time, ct);
-          
+          printf(
+              "[out%d] Scheduled gate off triggered after %u ms (duration was "
+              "%u ms, start=%u ct=%u)\n",
+              i + 1, elapsed, out->gate_duration_ms, out->gate_start_time, ct);
+
           if (config->mode == MODE_ENVELOPE) {
             // For ENVELOPE mode, turn off ADSR gate
             ADSR_gate(&out->adsr, false, ct);
@@ -216,7 +224,7 @@ void process_scheduled_gates(uint32_t ct) {
             // For GATE mode, set voltage to min
             out->voltage_set = config->min_voltage;
           }
-          
+
           out->gate_is_scheduled = false;
         }
       }
@@ -249,8 +257,8 @@ void on_successful_lua_callback(int i, float volts, bool volts_new,
   } else {
     bpm = yocto.global_tempo;
   }
-  printf("[out%d] BPM: config=%.1f lua=%.1f global=%.1f final=%.1f\n", 
-         i + 1, config->clock_tempo, lua_bpm, yocto.global_tempo, bpm);
+  printf("[out%d] BPM: config=%.1f lua=%.1f global=%.1f final=%.1f\n", i + 1,
+         config->clock_tempo, lua_bpm, yocto.global_tempo, bpm);
 
   // find any linked outputs and activate the envelope
   triggering_outs[i] = true;
@@ -282,7 +290,8 @@ void timer_callback_sample_knob(bool on, int user_data) {
         } else if (result > 0) {
           // Lua panic occurred
           out->lua_panic = true;
-          printf("[output%d] Lua panic detected, disabling code execution\n", i);
+          printf("[output%d] Lua panic detected, disabling code execution\n",
+                 i);
         }
       }
     }
@@ -311,27 +320,29 @@ void timer_callback_beat(bool on, int user_data) {
   Config *config = &yocto.config[yocto.i][user_data];
   Out *out = &yocto.out[user_data];
   uint32_t ct = to_ms_since_boot(get_absolute_time());
-  
+
   if (config->mode == MODE_CLOCK) {
     if (on && !out->clock_disabled) {
       // trigger the clock
       out->voltage_current = config->max_voltage;
-      
+
       // Calculate gate duration for clock: 0.5 means half the period
       // Division affects the tempo, so effective BPM = clock_tempo * division
-      float effective_bpm = config->clock_tempo * division_values[config->clock_division];
-      float beat_duration_ms = (effective_bpm > 0) ? (60000.0f / effective_bpm) : 0;
+      float effective_bpm =
+          config->clock_tempo * division_values[config->clock_division];
+      float beat_duration_ms =
+          (effective_bpm > 0) ? (60000.0f / effective_bpm) : 0;
       // Clock stays high for half the beat (0.5 gate)
       float clock_gate = 0.5f;
       out->gate = clock_gate;
-      
+
       // Trigger linked outputs
       bool triggering_outs[8] = {false};
       triggering_outs[user_data] = true;
       update_linked_outs(triggering_outs, true, clock_gate, effective_bpm, ct);
     } else {
       out->voltage_current = config->min_voltage;
-      
+
       // Trigger low for linked outputs
       bool triggering_outs[8] = {false};
       triggering_outs[user_data] = true;
@@ -346,13 +357,15 @@ void timer_callback_beat(bool on, int user_data) {
     bool volts_new;
     bool trigger;
     float gate;
-    int result = luaRunOnBeat(user_data, on, &volts, &volts_new, &trigger, &gate);
+    int result =
+        luaRunOnBeat(user_data, on, &volts, &volts_new, &trigger, &gate);
     if (result == 0) {
       on_successful_lua_callback(user_data, volts, volts_new, trigger, gate);
     } else if (result > 0) {
       // Lua panic occurred
       out->lua_panic = true;
-      printf("[output%d] Lua panic detected, disabling code execution\n", user_data);
+      printf("[output%d] Lua panic detected, disabling code execution\n",
+             user_data);
     }
   }
 }
@@ -423,10 +436,9 @@ void timer_callback_ws2812(bool on, int user_data) {
     } else if (out->lua_panic) {
       // Blink mode color (purple for CODE) for panicked Lua code
       if (blink_on) {
-        WS2812_fill(&ws2812, leds_second_8[i - 8] + 8,
-                    const_colors[config->mode][0],
-                    const_colors[config->mode][1],
-                    const_colors[config->mode][2]);
+        WS2812_fill(
+            &ws2812, leds_second_8[i - 8] + 8, const_colors[config->mode][0],
+            const_colors[config->mode][1], const_colors[config->mode][2]);
       } else {
         WS2812_fill(&ws2812, leds_second_8[i - 8] + 8, 0, 0, 0);
       }
@@ -493,7 +505,8 @@ void midi_note_off(int channel, int note) {
       bool trigger;
       float gate;
       printf("Lua on_note_off #%d - ch=%d, note=%d\n", i, channel, note);
-      int result = luaRunOnNoteOff(i, channel, note, &volts, &volts_new, &trigger, &gate);
+      int result = luaRunOnNoteOff(i, channel, note, &volts, &volts_new,
+                                   &trigger, &gate);
       if (result == 0) {
         // on_successful_lua_callback(i, volts, trigger, gate);
         out->voltage_set = volts;
@@ -508,7 +521,8 @@ void midi_note_off(int channel, int note) {
   }
   // find any linked outputs and activate the envelope
   // For MIDI note off, use gate=0 for immediate release
-  update_linked_outs(outs_with_note_change, false, 0.0f, yocto.global_tempo, ct);
+  update_linked_outs(outs_with_note_change, false, 0.0f, yocto.global_tempo,
+                     ct);
 }
 
 void midi_note_on(int channel, int note, int velocity) {
@@ -584,8 +598,8 @@ void midi_note_on(int channel, int note, int velocity) {
       float gate;
       printf("Lua on_note_on #%d - ch=%d, note=%d, vel=%d\n", i, channel, note,
              velocity);
-      int result = luaRunOnNoteOn(i, channel, note, velocity, &volts, &volts_new,
-                         &trigger, &gate);
+      int result = luaRunOnNoteOn(i, channel, note, velocity, &volts,
+                                  &volts_new, &trigger, &gate);
       if (result == 0) {
         // on_successful_lua_callback(i, volts, trigger, gate);
         out->voltage_set = volts;
@@ -633,7 +647,8 @@ void midi_cc(int channel, int cc, int value) {
       bool trigger;
       float gate;
       printf("Lua on_cc #%d - cc=%d, cal=%d\n", i, cc, value);
-      int result = luaRunOnCc(i, cc, value, &volts, &volts_new, &trigger, &gate);
+      int result =
+          luaRunOnCc(i, cc, value, &volts, &volts_new, &trigger, &gate);
       if (result == 0) {
         on_successful_lua_callback(i, volts, volts_new, trigger, gate);
       } else if (result > 0) {
@@ -672,8 +687,10 @@ void midi_key_pressure(int channel, int note, int pressure) {
       bool volts_new;
       bool trigger;
       float gate;
-      printf("Lua on_key_pressure #%d - ch=%d, note=%d, pressure=%d\n", i, channel, note, pressure);
-      int result = luaRunOnKeyPressure(i, channel, note, pressure, &volts, &volts_new, &trigger, &gate);
+      printf("Lua on_key_pressure #%d - ch=%d, note=%d, pressure=%d\n", i,
+             channel, note, pressure);
+      int result = luaRunOnKeyPressure(i, channel, note, pressure, &volts,
+                                       &volts_new, &trigger, &gate);
       if (result == 0) {
         on_successful_lua_callback(i, volts, volts_new, trigger, gate);
       } else if (result > 0) {
@@ -734,8 +751,10 @@ void midi_channel_pressure(int channel, int pressure) {
       bool volts_new;
       bool trigger;
       float gate;
-      printf("Lua on_channel_pressure #%d - ch=%d, pressure=%d\n", i, channel, pressure);
-      int result = luaRunOnChannelPressure(i, channel, pressure, &volts, &volts_new, &trigger, &gate);
+      printf("Lua on_channel_pressure #%d - ch=%d, pressure=%d\n", i, channel,
+             pressure);
+      int result = luaRunOnChannelPressure(i, channel, pressure, &volts,
+                                           &volts_new, &trigger, &gate);
       if (result == 0) {
         on_successful_lua_callback(i, volts, volts_new, trigger, gate);
       } else if (result > 0) {
@@ -776,7 +795,8 @@ void midi_pitch_bend(int channel, int value) {
       bool trigger;
       float gate;
       printf("Lua on_pitch_bend #%d - ch=%d, pitch=%d\n", i, channel, value);
-      int result = luaRunOnPitchBend(i, channel, value, &volts, &volts_new, &trigger, &gate);
+      int result = luaRunOnPitchBend(i, channel, value, &volts, &volts_new,
+                                     &trigger, &gate);
       if (result == 0) {
         on_successful_lua_callback(i, volts, volts_new, trigger, gate);
       } else if (result > 0) {
@@ -972,6 +992,9 @@ int main() {
     gpio_set_dir(button_pins[i], GPIO_IN);
     gpio_pull_up(button_pins[i]);
   }
+  gpio_init(GPIO_USER_KEY);
+  gpio_set_dir(GPIO_USER_KEY, GPIO_IN);
+  gpio_pull_up(GPIO_USER_KEY);
 
   // initialize MCP3208
   MCP3208_init(&mcp3208, spi0, PIN_SPI_CSN, PIN_SPI_CLK, PIN_SPI_RX,
@@ -1160,7 +1183,10 @@ int main() {
             if (!Yoctocore_load_code(&yocto, yocto.i, i)) {
               // Code failed to load - set panic flag
               out->lua_panic = true;
-              printf("[output%d] Lua code failed to load, disabling code execution\n", i);
+              printf(
+                  "[output%d] Lua code failed to load, disabling code "
+                  "execution\n",
+                  i);
             }
             break;
           default:
@@ -1179,7 +1205,10 @@ int main() {
             if (!Yoctocore_load_code(&yocto, out->code_updated_scene, i)) {
               // Code failed to load - set panic flag
               out->lua_panic = true;
-              printf("[output%d] Lua code failed to load, disabling code execution\n", i);
+              printf(
+                  "[output%d] Lua code failed to load, disabling code "
+                  "execution\n",
+                  i);
             }
           }
           // reset the flag regardless
@@ -1190,7 +1219,7 @@ int main() {
 
     // Update current time for this iteration
     ct = to_ms_since_boot(get_absolute_time());
-    
+
     // process timers
     us = time_us_32();
     for (uint8_t i = 0; i < 16; i++) {
@@ -1203,6 +1232,8 @@ int main() {
     // Process scheduled gate-offs for ADSR envelopes
     process_scheduled_gates(ct);
 
+    bool user_key_on = gpio_get(GPIO_USER_KEY);
+
     // read buttons
     for (uint8_t i = 0; i < button_num; i++) {
       bool val = 1 - gpio_get(button_pins[i]);
@@ -1213,6 +1244,17 @@ int main() {
         if (val) {
           printf("button_on  %d: %d (%d)\n", i, val, unique_id);
           button_time_on[i] = ct;
+          if (user_key_on) {
+            printf("user key + button %d pressed", i);
+            // change scene if current scene is not this scene
+            if (i < 8 && yocto.i != i) {
+              yocto.i = i;
+              printf("switch scene %d\n", yocto.i);
+              // save the config
+              Yoctocore_schedule_save(&yocto);
+            }
+            continue;
+          }
         } else {
           uint32_t time_button_was_on = ct - button_time_on[i];
           printf("button_off  %d: %d (%d) %d\n", i, val, unique_id,
@@ -1279,13 +1321,18 @@ int main() {
                 bool trigger;
                 float gate;
                 printf("Lua on_button #%d - val=%d\n", i, val);
-                int result = luaRunOnButton(i, val, &volts, &volts_new, &trigger, &gate);
+                int result =
+                    luaRunOnButton(i, val, &volts, &volts_new, &trigger, &gate);
                 if (result == 0) {
-                  on_successful_lua_callback(i, volts, volts_new, trigger, gate);
+                  on_successful_lua_callback(i, volts, volts_new, trigger,
+                                             gate);
                 } else if (result > 0) {
                   // Lua panic occurred
                   out->lua_panic = true;
-                  printf("[output%d] Lua panic detected, disabling code execution\n", i);
+                  printf(
+                      "[output%d] Lua panic detected, disabling code "
+                      "execution\n",
+                      i);
                 }
               }
               break;
@@ -1334,11 +1381,15 @@ int main() {
           if (code_bpm >= 1 && code_bpm < 300) {
             config->clock_tempo = code_bpm;
           } else if (config->linked_to >= 1 && config->linked_to <= 8) {
-            // If Code output doesn't define BPM and is linked to another output,
-            // check if the linked output is a Clock and use its BPM
-            Config *linked_config = &yocto.config[yocto.i][config->linked_to - 1];
-            if (linked_config->mode == MODE_CLOCK && linked_config->clock_tempo > 0) {
-              config->clock_tempo = linked_config->clock_tempo * division_values[linked_config->clock_division];
+            // If Code output doesn't define BPM and is linked to another
+            // output, check if the linked output is a Clock and use its BPM
+            Config *linked_config =
+                &yocto.config[yocto.i][config->linked_to - 1];
+            if (linked_config->mode == MODE_CLOCK &&
+                linked_config->clock_tempo > 0) {
+              config->clock_tempo =
+                  linked_config->clock_tempo *
+                  division_values[linked_config->clock_division];
             }
           }
         }
