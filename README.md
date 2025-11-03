@@ -12,7 +12,7 @@ alt="Build Status"> </a> <a href="https://github.com/sponsors/schollz"> <img
 alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/schollz">
 </a> </p>
 
-there are eight scenes. each scene is selected by TBD.
+there are eight scenes. each scene is selected by holding the User Key (the key above the second knob) and pressing any other key.
 
 each scene has eight outputs. each output can be configured to a different mode. modes are selected holding `shift` and pressing one of the eight buttons.
 
