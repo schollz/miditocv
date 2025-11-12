@@ -815,6 +815,59 @@ end`
 
         }
 
+        async function uploadLuaToOutput(scene_num, output_num, code) {
+            try {
+                let new_code = "";
+                try {
+                    new_code = luamin.minify(code);
+                    console.log(`[uploadLuaToOutput]: scene=${scene_num} output=${output_num} ${new_code}`);
+                } catch (error) {
+                    console.error(`[uploadLuaToOutput] minify error: ${error}`);
+                    return;
+                }
+                new_code = new_code.trim();
+
+                if (window.miditocvDevice) {
+                    console.log(`[uploadLuaToOutput]: uploading code for scene=${scene_num} output=${output_num}`);
+                    // upload the code to the device.
+                    // split new_code into 32 byte chunks
+                    const chunk_size = 32;
+                    const num_chunks = Math.ceil(new_code.length / chunk_size);
+                    for (let i = 0; i < num_chunks; i++) {
+                        let chunk = new_code.slice(i * chunk_size, (i + 1) * chunk_size);
+                        if (i == 0) {
+                            chunk = `LN${scene_num}${output_num}${chunk}`;
+                        } else if (i == num_chunks - 1) {
+                            chunk = `LE${scene_num}${output_num}${chunk}`;
+                        } else {
+                            chunk = `LA${scene_num}${output_num}${chunk}`;
+                        }
+
+                        // Retry up to 3 times with ACK waiting
+                        let success = false;
+                        for (let retry = 0; retry < 3; retry++) {
+                            try {
+                                console.log(`[uploadLuaToOutput] chunk ${i + 1}/${num_chunks} (attempt ${retry + 1})`);
+                                send_sysex(chunk);
+                                await waitForTriggerOrTimeout(500); // Wait for ACK with 500ms timeout
+                                success = true;
+                                break; // ACK received, move to next chunk
+                            } catch (error) {
+                                console.warn(`[uploadLuaToOutput] chunk ${i + 1} retry ${retry + 1} failed: ${error.message}`);
+                                if (retry === 2) {
+                                    throw new Error(`Failed to upload chunk ${i + 1}/${num_chunks} after 3 attempts`);
+                                }
+                                await new Promise(r => setTimeout(r, 50)); // Brief delay before retry
+                            }
+                        }
+                    }
+                    console.log(`[uploadLuaToOutput]: upload complete for scene=${scene_num} output=${output_num}!`);
+                }
+            } catch (error) {
+                console.error(`[uploadLuaToOutput] error: ${error}`);
+            }
+        }
+
         async function uploadLua() {
 
             try {
@@ -834,43 +887,9 @@ end`
                 });
                 await window.luaState;
                 console.log(`[uploadLua]: ${new_code}`);
-                if (window.miditocvDevice) {
-                    console.log(`[executeLua]: uploading code`);
-                    // upload the code to the device.
-                    // split new_code into 32 byte chunks
-                    const chunk_size = 32;
-                    const num_chunks = Math.ceil(new_code.length / chunk_size);
-                    for (let i = 0; i < num_chunks; i++) {
-                        let chunk = new_code.slice(i * chunk_size, (i + 1) * chunk_size);
-                        if (i == 0) {
-                            chunk = `LN${current_scene.value}${current_output.value}${chunk}`;
-                        } else if (i == num_chunks - 1) {
-                            chunk = `LE${current_scene.value}${current_output.value}${chunk}`;
-                        } else {
-                            chunk = `LA${current_scene.value}${current_output.value}${chunk}`;
-                        }
 
-                        // Retry up to 3 times with ACK waiting
-                        let success = false;
-                        for (let retry = 0; retry < 3; retry++) {
-                            try {
-                                console.log(`[uploadLua] chunk ${i + 1}/${num_chunks} (attempt ${retry + 1})`);
-                                send_sysex(chunk);
-                                await waitForTriggerOrTimeout(500); // Wait for ACK with 500ms timeout
-                                success = true;
-                                break; // ACK received, move to next chunk
-                            } catch (error) {
-                                console.warn(`[uploadLua] chunk ${i + 1} retry ${retry + 1} failed: ${error.message}`);
-                                if (retry === 2) {
-                                    throw new Error(`Failed to upload chunk ${i + 1}/${num_chunks} after 3 attempts`);
-                                }
-                                await new Promise(r => setTimeout(r, 50)); // Brief delay before retry
-                            }
-                        }
-                    }
-                    console.log(`[uploadLua]: upload complete!`);
-                    outputCodeMirror.setValue(`Upload successful: ${new_code.length} bytes`);
-                }
+                await uploadLuaToOutput(current_scene.value, current_output.value, myCodeMirror.getValue());
+                outputCodeMirror.setValue(`Upload successful: ${new_code.length} bytes`);
             } catch (error) {
                 // show error in output
                 outputCodeMirror.setValue(`${error}`);
@@ -1186,7 +1205,14 @@ end`,
                 if (index != current_output.value) {
                     // copy the `copied_output` to the `index`
                     console.log(`[copy_output] ${copied_output.value} to ${index}`);
-                    scenes.value[current_scene.value].outputs[index] = JSON.parse(JSON.stringify(scenes.value[current_scene.value].outputs[current_output.value]));
+                    const sourceOutput = scenes.value[current_scene.value].outputs[current_output.value];
+                    scenes.value[current_scene.value].outputs[index] = JSON.parse(JSON.stringify(sourceOutput));
+
+                    // If the source output is a Code output (mode 10), automatically upload the code to the new output
+                    if (sourceOutput.mode === definitionsModes.value.MODE_CODE) {
+                        console.log(`[copy_output] Auto-uploading code to output ${index}`);
+                        uploadLuaToOutput(current_scene.value, index, sourceOutput.code);
+                    }
                 }
             } else {
                 current_output.value = index;
