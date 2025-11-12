@@ -889,6 +889,8 @@ end`
                 console.log(`[uploadLua]: ${new_code}`);
 
                 await uploadLuaToOutput(current_scene.value, current_output.value, myCodeMirror.getValue());
+                // Reset to "Code on device" after successful upload
+                selectedExampleCode.value = "";
                 outputCodeMirror.setValue(`Upload successful: ${new_code.length} bytes`);
             } catch (error) {
                 // show error in output
@@ -1059,6 +1061,8 @@ end`,
                 console.log(`Mode changed to ${newMode}`);
                 if (newMode == definitionsModes.value.MODE_CODE) {
                     console.log(`[mode_code]`);
+                    // Reset to "Code on device" when switching to code mode
+                    selectedExampleCode.value = "";
                     clearLua();
                 }
                 // const modeDefaults = defaultValues[newMode] || {};
