@@ -21,6 +21,8 @@ miditocv-debug: lib/lua_globals.h build/Makefile
 	$(MAKE) -C build -j$(NPROCS)
 	@echo "✅ Build success (debug)"
 	cp build/*.uf2 miditocv.uf2
+
+upload-debug: miditocv-debug
 	cd build && sudo openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program miditocv.elf verify reset exit"
 
 miditocv-release: lib/lua_globals.h build-release/Makefile
