@@ -146,7 +146,12 @@ void update_linked_outs(bool triggering_outs[], bool trigger, float gate,
         ADSR_gate(&out->adsr, true, ct);
 
         // Schedule gate off based on gate parameter from source output
-        if (source_gate > 0 && beat_duration_ms > 0) {
+        if (gate < 0) {
+          // gate < 0 means sustain indefinitely (for MIDI note inputs)
+          // Don't schedule a gate off - wait for explicit note_off
+          out->gate_is_scheduled = false;
+          printf("[out%d] Gate=%f, sustain until note_off\n", i2 + 1, gate);
+        } else if (source_gate > 0 && beat_duration_ms > 0) {
           out->gate_start_time = ct;
           out->gate_duration_ms = (uint32_t)(source_gate * beat_duration_ms);
           out->gate_is_scheduled = true;
@@ -177,7 +182,12 @@ void update_linked_outs(bool triggering_outs[], bool trigger, float gate,
         out->voltage_set = config->max_voltage;
 
         // Schedule gate off based on gate parameter from source output
-        if (source_gate > 0 && beat_duration_ms > 0) {
+        if (gate < 0) {
+          // gate < 0 means sustain indefinitely (for MIDI note inputs)
+          // Don't schedule a gate off - wait for explicit note_off
+          out->gate_is_scheduled = false;
+          printf("[out%d] Gate=%f, sustain until note_off\n", i2 + 1, gate);
+        } else if (source_gate > 0 && beat_duration_ms > 0) {
           out->gate_start_time = ct;
           out->gate_duration_ms = (uint32_t)(source_gate * beat_duration_ms);
           out->gate_is_scheduled = true;
@@ -613,9 +623,9 @@ void midi_note_on(int channel, int note, int velocity) {
     }
   }
   // find any linked outputs and activate the envelope
-  // For MIDI note on, use gate=0 for immediate trigger (no sustain)
-  // unless Lua code sets a specific gate value
-  update_linked_outs(outs_with_note_change, true, 0.0f, yocto.global_tempo, ct);
+  // For MIDI note on, use gate=-1 to indicate sustain until note_off
+  // (gate=-1 means "hold indefinitely until explicitly released")
+  update_linked_outs(outs_with_note_change, true, -1.0f, yocto.global_tempo, ct);
 }
 
 void midi_cc(int channel, int cc, int value) {
