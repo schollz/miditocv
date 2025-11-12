@@ -759,15 +759,15 @@ end`
             if (new_code != code_last) {
                 console.log(`[executeLua]: new state`);
 
-                luaState.then(async (L) => {
+                window.luaState.then(async (L) => {
                     await L.run(`update_env(${output_num}, [[${new_code}]])`);
                 });
-                await luaState;
+                await window.luaState;
                 code_last = new_code;
                 outputCodeMirror.setValue(`-- ${new_code.length} bytes`);
                 outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n-- volts\ttrigger\t    ${function_name}`);
             }
-            luaState.then(async (L) => {
+            window.luaState.then(async (L) => {
                 let value;
                 try {
                     if (function_name == "on_beat") {
@@ -777,7 +777,7 @@ end`
                     }
                 } catch (error) {
                     value = error;
-                    code_needs_upload = false;
+                    console.log(`[executeLua]: ${error}`);
                 }
                 // wait for promise
                 await value;
@@ -789,7 +789,7 @@ end`
                 }
                 // get the `volts` variable in the current environment
                 const volts = await L.run(`return envs[${output_num}].volts`);
-                // get the 'trigger' boolean 
+                // get the 'trigger' boolean
                 const trigger = await L.run(`return envs[${output_num}].trigger`);
                 // append to output
                 outputCodeMirror.setValue(outputCodeMirror.getValue() + `\n  ${(Math.round(volts * 1000) / 1000).toFixed(3).padStart(6, ' ')}    ${trigger}\t\t  ${value}`);
@@ -816,10 +816,10 @@ end`
                     return;
                 }
                 new_code = new_code.trim();
-                luaState.then(async (L) => {
+                window.luaState.then(async (L) => {
                     await L.run(`update_env(${current_output.value}, [[${new_code}]])`);
                 });
-                await luaState;
+                await window.luaState;
                 console.log(`[uploadLua]: ${new_code}`);
                 if (window.miditocvDevice) {
                     console.log(`[executeLua]: uploading code`);
