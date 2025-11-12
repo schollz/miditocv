@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>miditocv</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="/static/globals.css">
   <link rel="stylesheet" href="/static/material-darker.css">
   <link rel="stylesheet" href="/static/globals-adj.css">
@@ -20,21 +21,16 @@
         <polyline points="7 3 7 8 15 8"></polyline>
       </svg>
     </div>
-    <h1 style="margin-bottom:0;">my miditocv</h1>
+    <div class="header-container">
+      <h1 style="margin-bottom:0;">my miditocv</h1>
+      <div class="header-icons">
+        <i class="fa-solid" :class="inDarkMode ? 'fa-sun' : 'fa-moon'" @click="darkMode()" title="Toggle dark/light mode"></i>
+        <i class="fa-solid fa-floppy-disk" @click="doBoardReset()" v-show="device_connected" title="Disk mode"></i>
+      </div>
+    </div>
     <p style="margin-bottom:2em;">device<span v-if="device_connected" style="color:green;"> connected</span><span
         style="color:red;" v-else> not
         connected</span>.</p>
-    <div class="row">
-      <div class="col col-3">
-        <button @click="darkMode()">
-          {{ inDarkMode ? 'Light Mode' : 'Dark Mode' }}
-
-        </button>
-      </div>
-      <div class="col col-3" v-show="device_connected">
-        <button @click="doBoardReset()">Disk mode</button>
-      </div>
-    </div>
     <!-- check if device connected -->
     <div style="padding-top:1em;">
       <h3>MIDI routing</h3>

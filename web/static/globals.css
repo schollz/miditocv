@@ -573,3 +573,33 @@ select:disabled:hover {
 .copied {
     border-radius: 40%;
 }
+
+/* Header container with icons */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+.header-icons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.header-icons i {
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-color);
+}
+
+.header-icons i:hover {
+    transform: scale(1.2);
+    opacity: 0.8;
+}
+
+.header-icons i:active {
+    transform: scale(0.9);
+}
