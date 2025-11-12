@@ -27,6 +27,7 @@ void ADSR_init(ADSR *adsr, float attack, float decay, float sustain,
                float release, float shape) {
   adsr->attack = attack;
   adsr->level_attack = 0;
+  adsr->level_release = 0;
   adsr->decay = decay;
   adsr->sustain = sustain;
   adsr->release = release;
