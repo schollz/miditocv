@@ -1,16 +1,11 @@
 <p align="center"> <a href="https://www.youtube.com/watch?v=9bbGdvTweDQ"> <img
 width="600" alt="miditocv"
 src="https://github.com/user-attachments/assets/8677d7c9-285d-48c7-8f19-c4101e0e66c3"
-/> </a> <br> <a
-href="https://github.com/schollz/miditocv/releases/latest"> <img
-src="https://img.shields.io/github/v/release/schollz/miditocv"
-alt="Version"> </a> <a
-href="https://github.com/schollz/miditocv/actions/workflows/build.yml">
-<img
-src="https://github.com/schollz/miditocv/actions/workflows/build.yml/badge.svg"
-alt="Build Status"> </a> <a href="https://github.com/sponsors/schollz"> <img
-alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/schollz">
-</a> </p>
+/> </a> <br>
+<a href="https://github.com/schollz/miditocv/releases/latest"> <img src="https://img.shields.io/github/v/release/schollz/miditocv" alt="Version"></a> 
+<a href="https://github.com/schollz/miditocv/actions/workflows/build.yml"><img src="https://github.com/schollz/miditocv/actions/workflows/build.yml/badge.svg" alt="Build Status"></a> 
+<a href="https://github.com/sponsors/schollz"><img alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/schollz"></a> 
+</p>
 
 there are eight scenes. each scene is selected by holding the User Key (the key above the second knob) and pressing any other key.
 
