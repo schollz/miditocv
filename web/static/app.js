@@ -970,46 +970,14 @@ end`
             return modeNames[mode] || "Unknown";
         }
 
-        const defaultValues = {
-            0: {
-                quantization: 0,
-            },
-            1: {
-                quantization: 1,
-                root_note: 60,
-                min_voltage: 0,
-                max_voltage: 10,
-                probability: 100,
-            },
-            2: {
-
-            },
-            3: {
-
-            },
-            4: {
-                min_voltage: 0,
-            },
-            5: {
-                min_voltage: 0,
-
-            },
-            6: {
-                quantization: 0,
-            },
-            7: {
-                code: `function main()
-	return 60
-end`,
-            },
-        };
-
         // watch output change
         watch(
             () => selected_output.value,
             (newOutput) => {
                 // check if Ctrl is held
                 console.log(`[output_change] ${current_scene.value} ${current_output.value}`);
+                // Save current output to localStorage
+                localStorage.setItem('currentOutput', current_output.value);
                 // Reset selector to "Code on device" when switching outputs
                 selectedExampleCode.value = "";
                 Vue.nextTick(() => {
@@ -1021,10 +989,12 @@ end`,
             }
         );
 
-        // watch scene change 
+        // watch scene change
         watch(
             () => current_scene.value,
             (newScene) => {
+                // Save current scene to localStorage
+                localStorage.setItem('currentScene', newScene);
                 // send sysex to update the scene
                 updateLocalScene(newScene);
                 // update the scene on the device
@@ -1109,6 +1079,25 @@ end`,
             //             });
             initializeDarkMode();
 
+            // Restore saved scene and output from localStorage
+            const savedScene = localStorage.getItem('currentScene');
+            const savedOutput = localStorage.getItem('currentOutput');
+
+            if (savedScene !== null) {
+                const sceneNum = parseInt(savedScene, 10);
+                if (!isNaN(sceneNum) && sceneNum >= 0 && sceneNum < 8) {
+                    current_scene.value = sceneNum;
+                    console.log(`[restore] Restored scene ${sceneNum} from localStorage`);
+                }
+            }
+
+            if (savedOutput !== null) {
+                const outputNum = parseInt(savedOutput, 10);
+                if (!isNaN(outputNum) && outputNum >= 0 && outputNum < 8) {
+                    current_output.value = outputNum;
+                    console.log(`[restore] Restored output ${outputNum} from localStorage`);
+                }
+            }
 
         });
 

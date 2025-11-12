@@ -24,15 +24,15 @@
     <div class="header-container">
       <h1 style="margin-bottom:0;">my miditocv</h1>
       <div class="header-icons">
-        <i class="fa-solid" :class="inDarkMode ? 'fa-sun' : 'fa-moon'" @click="darkMode()" title="Toggle dark/light mode"></i>
+        <i class="fa-solid" :class="inDarkMode ? 'fa-sun' : 'fa-moon'" @click="darkMode()"
+          title="Toggle dark/light mode"></i>
         <i class="fa-solid fa-floppy-disk" @click="doBoardReset()" v-show="device_connected" title="Disk mode"></i>
       </div>
     </div>
-    <p style="margin-bottom:2em;">device<span v-if="device_connected" style="color:green;"> connected</span><span
-        style="color:red;" v-else> not
+    <p>device<span v-if="device_connected" style="color:green;"> connected</span><span style="color:red;" v-else> not
         connected</span>.</p>
     <!-- check if device connected -->
-    <div style="padding-top:1em;">
+    <div>
       <h3>MIDI routing</h3>
     </div>
     <div class="row routing" style="padding-bottom:1em;">
