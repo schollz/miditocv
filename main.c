@@ -112,6 +112,13 @@ const float division_values[19] = {
     2.0f,          3.0f,          4.0f,          6.0f,         8.0f,
     12.0f,         16.0f,         24.0f,         48.0f};
 
+static inline bool probability_passes(const Config *config) {
+  if (config->probability >= 100) {
+    return true;
+  }
+  return random_integer_in_range(0, 99) < config->probability;
+}
+
 #ifdef INCLUDE_MIDI
 #include "lib/midi_comm.h"
 #include "lib/midicallback.h"
@@ -178,6 +185,11 @@ void update_linked_outs(bool triggering_outs[], bool trigger, float gate,
           beat_duration_ms);
 
       if (trigger) {
+        if (!probability_passes(config)) {
+          out->voltage_set = config->min_voltage;
+          out->gate_is_scheduled = false;
+          continue;
+        }
         // Set gate high
         out->voltage_set = config->max_voltage;
 
@@ -1292,9 +1304,15 @@ int main() {
               ADSR_gate(&out->adsr, val, ct);
               break;
             case MODE_GATE:
-              // set the voltage
-              out->voltage_set =
-                  val ? config->max_voltage : config->min_voltage;
+              if (val) {
+                if (probability_passes(config)) {
+                  out->voltage_set = config->max_voltage;
+                } else {
+                  out->voltage_set = config->min_voltage;
+                }
+              } else {
+                out->voltage_set = config->min_voltage;
+              }
               break;
             case MODE_NOTE:
               if (button_shift && val) {
