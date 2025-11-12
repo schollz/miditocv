@@ -595,11 +595,24 @@ select:disabled:hover {
     color: var(--text-color);
 }
 
-.header-icons i:hover {
+.header-icons a {
+    text-decoration: none;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+}
+
+.header-icons a i {
+    font-size: 1.5rem;
+}
+
+.header-icons i:hover,
+.header-icons a:hover i {
     transform: scale(1.2);
     opacity: 0.8;
 }
 
-.header-icons i:active {
+.header-icons i:active,
+.header-icons a:active i {
     transform: scale(0.9);
 }

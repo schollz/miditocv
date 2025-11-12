@@ -7,6 +7,7 @@ import CodeMirror from 'codemirror';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/mode/lua/lua.js';
 import 'codemirror/addon/comment/comment.js';
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 // configure luamin so it doesn't rewrite variable names
 luamin.options = { renameVariables: false };

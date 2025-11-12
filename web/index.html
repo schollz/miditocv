@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>miditocv</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="/static/globals.css">
   <link rel="stylesheet" href="/static/material-darker.css">
   <link rel="stylesheet" href="/static/globals-adj.css">
@@ -27,6 +26,12 @@
         <i class="fa-solid" :class="inDarkMode ? 'fa-sun' : 'fa-moon'" @click="darkMode()"
           title="Toggle dark/light mode"></i>
         <i class="fa-solid fa-floppy-disk" @click="doBoardReset()" v-show="device_connected" title="Disk mode"></i>
+        <a href="https://github.com/schollz/miditocv/issues/new" target="_blank" rel="noopener noreferrer" title="Report a bug">
+          <i class="fa-solid fa-bug"></i>
+        </a>
+        <a href="https://github.com/schollz/miditocv" target="_blank" rel="noopener noreferrer" title="View on GitHub">
+          <i class="fa-brands fa-github"></i>
+        </a>
       </div>
     </div>
     <p>device<span v-if="device_connected" style="color:green;"> connected</span><span style="color:red;" v-else> not
