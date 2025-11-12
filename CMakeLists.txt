@@ -113,13 +113,8 @@ target_link_libraries(${PROJECT_NAME}
     tinyusb_device
     tinyusb_board
 )
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    pico_enable_stdio_usb(${PROJECT_NAME} 0)
-    add_compile_definitions(PICO_STDIO_USB_ENABLE=0)
-else()
-    pico_enable_stdio_usb(${PROJECT_NAME} 1)
-    add_compile_definitions(PICO_STDIO_USB_ENABLE=1)
-endif()
+pico_enable_stdio_usb(${PROJECT_NAME} 1)
+add_compile_definitions(PICO_STDIO_USB_ENABLE=1)
 pico_enable_stdio_uart(${PROJECT_NAME} 1)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 

@@ -926,6 +926,10 @@ int main() {
   // CLK peri is clocked from clk_sys so need to change clk_peri's freq
   clock_configure(clk_peri, 0, CLOCKS_CLK_PERI_CTRL_AUXSRC_VALUE_CLK_SYS,
                   main_line * MHZ, main_line * MHZ);
+#ifdef INCLUDE_MIDI
+  // Initialize TinyUSB before stdio so stdio_usb can attach safely.
+  tusb_init();
+#endif
   // Reinit uart now that clk_peri has changed
   stdio_init_all();
 
@@ -956,9 +960,6 @@ int main() {
   gpio_pull_up(I2C1_SCL_PIN);
 
 #ifdef INCLUDE_MIDI
-  // setup midi
-  tusb_init();
-
   // setup libmidi
   midi_init();
   midi_register_event_handler(EVT_CHAN_NOTE_ON, midi_event_note_on);
