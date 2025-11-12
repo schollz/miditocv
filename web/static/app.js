@@ -680,6 +680,19 @@ function on_beat(on)
   end
   return "off"
 end`
+            },
+            {
+                name: "Euclidean Rhythms",
+                code: `-- Example: Euclidean Rhythms
+riddim = er(6, 8)
+-- optional: set BPM
+bpm = 180 
+-- if you don't set 
+-- link it to a clock output
+function on_beat(on)
+  volts = riddim() and 5 or 0
+  return volts
+end`
             }
         ]);
         const selectedExampleCode = ref("");
