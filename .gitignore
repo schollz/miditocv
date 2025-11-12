@@ -91,3 +91,4 @@ lib/tests/lua/test_basic_simple
 globals.lua
 pico-sdk/
 lib/tests/lua/test_gate
+build-release/

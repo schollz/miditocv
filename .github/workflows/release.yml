@@ -49,9 +49,16 @@ jobs:
           zip -r miditocv_debug_${{ github.event.release.name }}.zip build/
           make miditocv-release
           cp miditocv.uf2 miditocv_${{ github.event.release.name }}.uf2
+
+      - name: Build and package website
+        run: |
+          make publish
+          zip -jr website_${{ github.event.release.name }}.zip web/dist
+
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             miditocv_${{ github.event.release.name }}.uf2
             miditocv_debug_${{ github.event.release.name }}.zip
+            website_${{ github.event.release.name }}.zip

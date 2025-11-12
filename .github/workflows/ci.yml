@@ -59,8 +59,10 @@ jobs:
       - name: Install luamin globally
         run: npm install -g luamin || true
 
-      - name: Build web assets
-        run: make publish
+      - name: Build and package website
+        run: |
+          make publish
+          zip -jr website_${{ github.event.release.name }}.zip web/dist
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

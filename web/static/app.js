@@ -267,13 +267,13 @@ async function updateLocalScene(scene_num) {
     for (let output_num = 0; output_num < 8; output_num++) {
         for (let i = 0; i < 3; i++) {
             try {
-                console.log(`[requesting code] scene=${scene_num} output=${output_num} (attempt ${i+1})`);
+                console.log(`[requesting code] scene=${scene_num} output=${output_num} (attempt ${i + 1})`);
                 send_sysex(`${scene_num}_${output_num}_${hash_djb("code")}`);
                 await waitForTriggerOrTimeout(1000); // Wait up to 1 second for code chunks
                 console.log(`[code received] scene=${scene_num} output=${output_num}`);
                 break;
             } catch (error) {
-                console.warn(`[code request] scene=${scene_num} output=${output_num} attempt ${i+1} failed`);
+                console.warn(`[code request] scene=${scene_num} output=${output_num} attempt ${i + 1} failed`);
                 if (i === 2) {
                     console.error(`[code request] scene=${scene_num} output=${output_num} failed after 3 attempts`);
                 }
@@ -535,16 +535,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // // ask for sparkline data (doubles as check if connected)
         const sparkline_update_time_ms = 50;
         setTimeout(() => {
-            // setInterval(() => {
-            //     if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
-            //         window.miditocvDevice && window.miditocvDevice.send([0x9F, 0x01, 0x01]);
-            //     }
-            //     // need to fix this to prevent multiple connects
-            //     // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
-            //     //     vm.device_connected = false;
-            //     //     setupMidi();
-            //     // }
-            // }, sparkline_update_time_ms);
+            setInterval(() => {
+                if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 2) {
+                    window.miditocvDevice && window.miditocvDevice.send([0x9F, 0x01, 0x01]);
+                }
+                // need to fix this to prevent multiple connects
+                // if (Date.now() - last_time_of_message_received > sparkline_update_time_ms * 4) {
+                //     vm.device_connected = false;
+                //     setupMidi();
+                // }
+            }, sparkline_update_time_ms);
         }, 3000);
 
     }
@@ -841,15 +841,15 @@ end`
                         let success = false;
                         for (let retry = 0; retry < 3; retry++) {
                             try {
-                                console.log(`[uploadLua] chunk ${i+1}/${num_chunks} (attempt ${retry+1})`);
+                                console.log(`[uploadLua] chunk ${i + 1}/${num_chunks} (attempt ${retry + 1})`);
                                 send_sysex(chunk);
                                 await waitForTriggerOrTimeout(500); // Wait for ACK with 500ms timeout
                                 success = true;
                                 break; // ACK received, move to next chunk
                             } catch (error) {
-                                console.warn(`[uploadLua] chunk ${i+1} retry ${retry+1} failed: ${error.message}`);
+                                console.warn(`[uploadLua] chunk ${i + 1} retry ${retry + 1} failed: ${error.message}`);
                                 if (retry === 2) {
-                                    throw new Error(`Failed to upload chunk ${i+1}/${num_chunks} after 3 attempts`);
+                                    throw new Error(`Failed to upload chunk ${i + 1}/${num_chunks} after 3 attempts`);
                                 }
                                 await new Promise(r => setTimeout(r, 50)); // Brief delay before retry
                             }
