@@ -185,3 +185,7 @@ publish: $(PARCEL)
 	cd web && rm -rf dist
 	cd web && $(PARCEL) build index.html --dist-dir ./dist --no-optimize
 	@echo "✅ Web build complete (web/dist)"
+
+miditest:
+	-python dev/miditest.py
+
