@@ -1050,7 +1050,26 @@ end`
             myCodeMirror.setOption("mode", "lua");
             myCodeMirror.setSize("100%", "100%");
             myCodeMirror.setOption("extraKeys", {
-                "Ctrl-/": "toggleComment"
+                "Ctrl-/": "toggleComment",
+                "Ctrl-Space": function(cm) {
+                    cm.showHint({ hint: window.CodeMirror.hint.lua });
+                }
+            });
+            // Auto-show hints while typing
+            myCodeMirror.on("inputRead", function(cm, change) {
+                if (change.origin !== "+input") return;
+                const ch = change.text[0];
+                // Only trigger on word characters, after typing at least 2 chars
+                if (/[a-zA-Z_]/.test(ch)) {
+                    const cur = cm.getCursor();
+                    const token = cm.getTokenAt(cur);
+                    if (token.string.length >= 2) {
+                        cm.showHint({
+                            hint: window.CodeMirror.hint.lua,
+                            completeSingle: false
+                        });
+                    }
+                }
             });
             outputCodeMirror = CodeMirror.fromTextArea(document.getElementById('output'));
             outputCodeMirror.setOption("lineNumbers", true);
