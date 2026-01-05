@@ -669,26 +669,6 @@ Hold any of the buttons for > 2 seconds and then let go of the button to switch 
   <script src="/static/vue.global.prod.js"></script>
   <script src="/static/lua.js"></script>
   <script src="index.js" type="module"></script>
-  <script type="module">
-    async function initializeLuaJS() {
-      const emscriptenInit = (await import('/static/dist/luajs.mjs')).default;
-      const LuaJS = await emscriptenInit();
-      window.LuaJS = LuaJS;
-      try {
-        const response = await fetch(window.globalsLua);
-        const data = await response.text();
-        window.luaState = window.LuaJS.newState();
-        window.luaState.then(async (L) => {
-          await L.run(data);
-        });
-        await window.luaState;
-        console.log(`[LuaJS] created lua environments`);
-      } catch (error) {
-        console.error('Error fetching or setting up Lua environment:', error);
-      }
-    }
-    initializeLuaJS();
-  </script>
   <script src="/static/app.js" type="module"></script>
 
 </body>

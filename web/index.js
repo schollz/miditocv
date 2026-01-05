@@ -61,3 +61,23 @@ document.querySelectorAll('.markydown').forEach((el) => {
   console.log(text);
   el.innerHTML = markdownParser.render(text);
 });
+
+// Initialize LuaJS - must be in same module as globalsLua to ensure correct ordering
+async function initializeLuaJS() {
+  const emscriptenInit = (await import('./static/dist/luajs.mjs')).default;
+  const LuaJS = await emscriptenInit();
+  window.LuaJS = LuaJS;
+  try {
+    const response = await fetch(luaScript);
+    const data = await response.text();
+    window.luaState = window.LuaJS.newState();
+    window.luaState.then(async (L) => {
+      await L.run(data);
+    });
+    await window.luaState;
+    console.log(`[LuaJS] created lua environments`);
+  } catch (error) {
+    console.error('Error fetching or setting up Lua environment:', error);
+  }
+}
+initializeLuaJS();
